@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/pages/Home.vue';
 import QuestionnairesResearcher from '@/pages/QuestionnairesResearcher.vue';
@@ -85,3 +86,5 @@ router.afterEach((to) => {
 
 >>>>>>> b0f377a659633ba5340fa1ca16f16366d0e75425
 export default router;
+=======
+>>>>>>> ab0c0a65615a01d3888e2cb309172459c83b02d7
