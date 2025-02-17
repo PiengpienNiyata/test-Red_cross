@@ -6,6 +6,7 @@ import BootstrapVue3 from 'bootstrap-vue-3';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import App from './App.vue'
 import router from './router';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
 
