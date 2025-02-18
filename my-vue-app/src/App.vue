@@ -31,13 +31,12 @@ export default {
 };
 </script>
 
-<style>
-
+<style scoped>
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .content-wrapper {
@@ -52,7 +51,7 @@ export default {
 .section-title {
   color: #000;
   display: flex;
-margin: 16px 24px;
+  margin: 16px 24px;
   padding-top: 8px;
   padding-bottom: 8px;
   font-size: 20px;
@@ -74,6 +73,7 @@ margin: 16px 24px;
 }
 
 .sidebar {
+  height: calc(100vh - 250px);
   width: 230px;
   background-color: #fff;
   border-right: 1px dashed #ccc;
