@@ -172,17 +172,15 @@ const saveResponses = () => {
 .checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .radio-option,
 .checkbox-option {
   font-size: 18px;
-  padding: 8px;
+  padding: 0px 8px;
   display: flex;
   align-items: center;
-  margin-top: 12px;
-  margin-bottom: 12px;
+  margin: 12px 0px;
   gap: 10px;
 }
 
