@@ -60,11 +60,14 @@ export const questionnaireData: Questionnaire2[] = [
                         id: 2.21, type: "radio", question: "2.2.1) Several expressing cell/s",
                         options: ["ใช่", "ไม่"]
                     },
-
+                    {
+                        id: 2.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-bookto category of the mechanism of pathogenesis",
+                        options: ["ใช่", "ไม่แน่ใจ"]
+                    },
                     {
                         id: 99, type: "radio", question: "80% Remission with in primary end point time frame",
                     },
-                    
+
                 ]
             },
 
