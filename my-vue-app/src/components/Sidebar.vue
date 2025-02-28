@@ -1,20 +1,25 @@
 <template>
   <div class="sidebar d-flex flex-column">
     <div class="sidebar-item">
-      <img src="@/assets/icon1.png" alt="icon" class="icon">
-      <span class="text-danger">แบบสอบถาม</span>
+      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher')">
+        <img src="@/assets/icon1.png" alt="icon" class="icon">
+        <span class="text-danger">แบบสอบถาม</span>
+      </div>
     </div>
     <div class="divider"></div>
 
     <div class="sidebar-item">
-      <img src="@/assets/icon2.png" alt="icon" class="icon">
-      <span>บันทึก<br>รายละเอียด<br>โครงการ</span>
+      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher2')">
+        <img src="@/assets/icon2.png" alt="icon" class="icon">
+        <span>Explore the<br>precision <br>intervention</span>
+      </div>
+
     </div>
     <div class="divider"></div>
 
     <div class="sidebar-item">
       <img src="@/assets/icon3.png" alt="icon" class="icon">
-      <span>List Item</span>
+      <span>รอตรวจสอบ</span>
     </div>
   </div>
 </template>
@@ -29,11 +34,20 @@
 }
 
 .sidebar-item {
+  cursor: pointer;
   max-height: 100px;
   display: flex;
   align-items: center;
   padding: 8px;
 }
+
+.sidebar-item-2 {
+  cursor: pointer;
+  max-height: 100px;
+  display: flex;
+  align-items: center;
+}
+
 
 .icon {
   width: 40px;
@@ -47,7 +61,7 @@
   margin: 11px;
 }
 
-.span{
+.span {
   text-align: left;
   font-size: 18px;
 }

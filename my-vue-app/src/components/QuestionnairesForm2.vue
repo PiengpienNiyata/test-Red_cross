@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { defineProps, ref, onMounted } from "vue";
+import { defineProps, ref, onMounted, computed } from "vue";
 import type { Questionnaire } from "@/stores/questionnaires";
 import { saveAs } from "file-saver";
 
 const props = defineProps<{ questionnaire: Questionnaire }>();
 const answers = ref<Record<number, string | string[]>>({});
+const currentQuestionIndex = ref(0);
 
 props.questionnaire.sections.forEach((section) => {
   section.questions.forEach((q) => {
@@ -15,9 +16,7 @@ props.questionnaire.sections.forEach((section) => {
 });
 
 const existingResponses = ref([]);
-
-const responseFile = `${props.questionnaire.title
-  .replace(/\s+/g, "_")}_response.json`;
+const responseFile = `${props.questionnaire.title.replace(/\s+/g, "_")}_response.json`;
 
 const loadExistingResponses = async () => {
   try {
@@ -46,9 +45,37 @@ const saveResponses = () => {
 
   saveAs(blob, responseFile);
 };
+
+const nextQuestion = () => {
+  if (currentQuestionIndex.value < props.questionnaire.sections.flatMap(s => s.questions).length - 1) {
+    currentQuestionIndex.value++;
+  }
+};
+
+const prevQuestion = () => {
+  if (currentQuestionIndex.value > 0) {
+    currentQuestionIndex.value--;
+  }
+};
+
+// Computed property to check if "Next" should be disabled
+const isNextDisabled = computed(() => {
+  const allQuestions = props.questionnaire.sections.flatMap(s => s.questions);
+  const currentQuestion = allQuestions[currentQuestionIndex.value];
+
+  if (!currentQuestion) return true; // No question found, disable button
+
+  const answer = answers.value[currentQuestion.id];
+
+  if (currentQuestion.type === "checkbox") {
+    return !answer || (Array.isArray(answer) && answer.length === 0);
+  }
+
+  return !answer; // Disable "Next" if no answer is selected
+});
 </script>
 
-<template >
+<template>
   <div class="questionnaire">
     <h3 v-if="questionnaire.title !== 'null'" class="title">{{ questionnaire.title }}</h3>
 
@@ -57,16 +84,9 @@ const saveResponses = () => {
         <h4 v-if="section.name !== 'null'" class="section-title">{{ section.name }}</h4>
 
         <div class="row">
-          <div v-for="q in section.questions ?? []" :key="q.id" :class="{
-            'col-md-6': q.id === 1 || q.id === 2,
-            'col-md-12': q.id === 3,
-            'no-margin': q.id === 1 || q.id === 2 || q.id === 3,
-            'padding-left': q.id === 1,
-            'padding-right': q.id === 2
-          }" class="question">
+          <div v-for="(q, index) in section.questions.filter((_, i) => i === currentQuestionIndex)" 
+               :key="q.id" class="question">
             <label class="question-label" v-text="q.question"></label>
-
-
 
             <input v-if="q.type === 'text'" v-model="answers[q.id]" :placeholder="q.question" type="text"
               class="input-text" />
@@ -88,7 +108,14 @@ const saveResponses = () => {
         </div>
       </div>
 
-      <button type="submit" class="submit-btn">Submit</button>
+      <div class="btn-container">
+        <button type="button" class="back-btn" @click="prevQuestion" :disabled="currentQuestionIndex === 0">
+          กลับ
+        </button>
+        <button type="button" class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">
+          ถัดไป
+        </button>
+      </div>
     </form>
   </div>
 </template>
@@ -133,25 +160,6 @@ const saveResponses = () => {
   padding-right: 16px;
 }
 
-.question.no-margin {
-  margin-bottom: 0 !important;
-}
-
-.no-margin {
-  margin: 0 !important;
-}
-
-.padding-left{
-  padding-right: 0px !important;
-  padding-left: 16px !important;
-}
-
-.padding-right{
-  padding-right: 16px !important;
-}
-
-
-
 .question-label {
   font-size: 18px;
   display: block;
@@ -190,19 +198,45 @@ const saveResponses = () => {
   cursor: pointer;
 }
 
-.submit-btn {
-  margin-top: 190px;
+.btn-container {
+  display: flex;
+  gap: 14px;
+}
+
+.back-btn,
+.next-btn {
   height: 100%;
-  width: 144px;
-  background-color: #EB4648;
-  color: white;
+  width: 95px;
   padding: 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.submit-btn:hover {
+.back-btn {
+  background-color: #D6D6D6;
+  color: white;
+  margin-right: 14px;
+}
+
+.next-btn {
+  background-color: #EB4648;
+  color: white;
+}
+
+.next-btn:hover {
   background-color: #c9302c;
+}
+
+.back-btn:hover {
+  background-color: #b0b0b0;
+}
+
+.back-btn:disabled{
+  background-color: #E0E0E0;
+  cursor: not-allowed;
+}
+.next-btn:disabled{
+  background-color: #eb46496b;
 }
 </style>

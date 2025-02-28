@@ -4,7 +4,7 @@
 
     <div class="content-wrapper">
       <div class="content-section">
-        <h1 class="section-title">header</h1>
+        <h1 class="section-title">Questionnaire for Researcher</h1>
 
         <div class="content-body">
           <Sidebar />
