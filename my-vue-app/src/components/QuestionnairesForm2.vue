@@ -1,19 +1,11 @@
 <script setup lang="ts">
 import { defineProps, ref, onMounted, computed } from "vue";
-import type { Questionnaire } from "@/stores/questionnaires";
+import type { Questionnaire2, Question2 } from "@/stores/questionnairesResearcher2";
 import { saveAs } from "file-saver";
 
-const props = defineProps<{ questionnaire: Questionnaire }>();
+const props = defineProps<{ questionnaire: Questionnaire2 }>();
 const answers = ref<Record<number, string | string[]>>({});
-const currentQuestionIndex = ref(0);
-
-props.questionnaire.sections.forEach((section) => {
-  section.questions.forEach((q) => {
-    if (q.type === "checkbox" && !Array.isArray(answers.value[q.id])) {
-      answers.value[q.id] = [];
-    }
-  });
-});
+const currentQuestion = ref<Question2 | null>(props.questionnaire.sections[0].questions[0]);
 
 const existingResponses = ref([]);
 const responseFile = `${props.questionnaire.title.replace(/\s+/g, "_")}_response.json`;
@@ -47,31 +39,38 @@ const saveResponses = () => {
 };
 
 const nextQuestion = () => {
-  if (currentQuestionIndex.value < props.questionnaire.sections.flatMap(s => s.questions).length - 1) {
-    currentQuestionIndex.value++;
+  if (!currentQuestion.value) return;
+  
+  const selectedAnswer = answers.value[currentQuestion.value.id];
+  if (!selectedAnswer) return;
+  
+  const nextId = currentQuestion.value.next?.[selectedAnswer as string];
+  if (nextId === "preResult") {
+    showPreResult();
+  } else if (nextId === "finalResult") {
+    showFinalResult();
+  } else {
+    const allQuestions = props.questionnaire.sections.flatMap(s => s.questions);
+    currentQuestion.value = allQuestions.find(q => q.id === nextId) || null;
   }
 };
 
 const prevQuestion = () => {
-  if (currentQuestionIndex.value > 0) {
-    currentQuestionIndex.value--;
-  }
+  // Logic for navigating back if necessary
 };
 
-// Computed property to check if "Next" should be disabled
+const showPreResult = () => {
+  console.log("User selected 'ไม่แน่ใจ'. Showing pre-result page.");
+  // Implement logic for pre-result display
+};
+
+const showFinalResult = () => {
+  console.log("Questionnaire complete. Showing final result.");
+  // Implement logic for final result display
+};
+
 const isNextDisabled = computed(() => {
-  const allQuestions = props.questionnaire.sections.flatMap(s => s.questions);
-  const currentQuestion = allQuestions[currentQuestionIndex.value];
-
-  if (!currentQuestion) return true; // No question found, disable button
-
-  const answer = answers.value[currentQuestion.id];
-
-  if (currentQuestion.type === "checkbox") {
-    return !answer || (Array.isArray(answer) && answer.length === 0);
-  }
-
-  return !answer; // Disable "Next" if no answer is selected
+  return !currentQuestion.value || !answers.value[currentQuestion.value.id];
 });
 </script>
 
@@ -80,36 +79,21 @@ const isNextDisabled = computed(() => {
     <h3 v-if="questionnaire.title !== 'null'" class="title">{{ questionnaire.title }}</h3>
 
     <form @submit.prevent="saveResponses" class="form-container">
-      <div v-for="section in questionnaire.sections" :key="section.name" class="section">
-        <h4 v-if="section.name !== 'null'" class="section-title">{{ section.name }}</h4>
+      <div v-if="currentQuestion" class="question">
+        <label class="question-label" v-text="currentQuestion.question"></label>
 
-        <div class="row">
-          <div v-for="(q, index) in section.questions.filter((_, i) => i === currentQuestionIndex)" 
-               :key="q.id" class="question">
-            <label class="question-label" v-text="q.question"></label>
+        <input v-if="currentQuestion.type === 'text'" v-model="answers[currentQuestion.id]" :placeholder="currentQuestion.question" type="text" class="input-text" />
 
-            <input v-if="q.type === 'text'" v-model="answers[q.id]" :placeholder="q.question" type="text"
-              class="input-text" />
-
-            <div v-else-if="q.type === 'radio'" class="radio-group">
-              <div v-for="option in q.options" :key="option" class="radio-option">
-                <input type="radio" :name="'q' + q.id" :value="option" v-model="answers[q.id]" class="radio-input" />
-                <label class="radio-label">{{ option }}</label>
-              </div>
-            </div>
-
-            <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-              <div v-for="option in q.options" :key="option" class="checkbox-option">
-                <input type="checkbox" :value="option" v-model="answers[q.id]" class="checkbox-input" />
-                <label class="checkbox-label">{{ option }}</label>
-              </div>
-            </div>
+        <div v-else-if="currentQuestion.type === 'radio'" class="radio-group">
+          <div v-for="option in currentQuestion.options" :key="option" class="radio-option">
+            <input type="radio" :name="'q' + currentQuestion.id" :value="option" v-model="answers[currentQuestion.id]" class="radio-input" />
+            <label class="radio-label">{{ option }}</label>
           </div>
         </div>
       </div>
 
       <div class="btn-container">
-        <button type="button" class="back-btn" @click="prevQuestion" :disabled="currentQuestionIndex === 0">
+        <button type="button" class="back-btn" @click="prevQuestion" :disabled="!currentQuestion">
           กลับ
         </button>
         <button type="button" class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">
