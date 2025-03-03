@@ -2,10 +2,17 @@
 import { defineProps, ref, onMounted, computed } from "vue";
 import type { Questionnaire2, Question2 } from "@/stores/questionnairesResearcher2";
 import { saveAs } from "file-saver";
+import PreResult from "@/components/preResult.vue";
+import FinalResult from "@/components/result.vue";
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
 const answers = ref<Record<number, string | string[]>>({});
+const questionHistory = ref<Question2[]>([]);
 const currentQuestion = ref<Question2 | null>(props.questionnaire.sections[0].questions[0]);
+const isPreResult = ref(false);
+const isFinalResult = ref(false);
+const lastAnsweredQuestion = ref<Question2 | null>(null);
+const finalRoute = ref<string>("");
 
 const existingResponses = ref([]);
 const responseFile = `${props.questionnaire.title.replace(/\s+/g, "_")}_response.json`;
@@ -27,6 +34,7 @@ const saveResponses = () => {
   const newResponse = {
     title: props.questionnaire.title,
     responses: JSON.parse(JSON.stringify(answers.value)),
+    route: finalRoute.value
   };
 
   existingResponses.value.push(newResponse);
@@ -44,6 +52,8 @@ const nextQuestion = () => {
   const selectedAnswer = answers.value[currentQuestion.value.id];
   if (!selectedAnswer) return;
   
+  lastAnsweredQuestion.value = currentQuestion.value;
+  updateFinalRoute(currentQuestion.value.id);
   const nextId = currentQuestion.value.next?.[selectedAnswer as string];
   if (nextId === "preResult") {
     showPreResult();
@@ -51,22 +61,46 @@ const nextQuestion = () => {
     showFinalResult();
   } else {
     const allQuestions = props.questionnaire.sections.flatMap(s => s.questions);
-    currentQuestion.value = allQuestions.find(q => q.id === nextId) || null;
+    const nextQuestion = allQuestions.find(q => q.id === nextId) || null;
+    if (nextQuestion) {
+      questionHistory.value.push(currentQuestion.value);
+      currentQuestion.value = nextQuestion;
+    }
   }
 };
 
 const prevQuestion = () => {
-  // Logic for navigating back if necessary
+  if (questionHistory.value.length > 0) {
+    currentQuestion.value = questionHistory.value.pop() || null;
+    isPreResult.value = false;
+    isFinalResult.value = false;
+  }
 };
 
 const showPreResult = () => {
-  console.log("User selected 'ไม่แน่ใจ'. Showing pre-result page.");
-  // Implement logic for pre-result display
+  isPreResult.value = true;
 };
 
 const showFinalResult = () => {
-  console.log("Questionnaire complete. Showing final result.");
-  // Implement logic for final result display
+  isPreResult.value = false;
+  isFinalResult.value = true;
+};
+
+const updateFinalRoute = (questionId: number) => {
+  const routeMapping: Record<number, string> = {
+    1: "Route A",
+    2.22: "Route B",
+    2.211021: "Route C",
+    2.211011: "Route D",
+    2.2103: "Route G",
+    2.2104: "Route H",
+    2.2114: "Route E",
+    2.2116: "Route F"
+  };
+
+  if (routeMapping[questionId]) {
+    finalRoute.value = routeMapping[questionId];
+  }
 };
 
 const isNextDisabled = computed(() => {
@@ -78,7 +112,10 @@ const isNextDisabled = computed(() => {
   <div class="questionnaire">
     <h3 v-if="questionnaire.title !== 'null'" class="title">{{ questionnaire.title }}</h3>
 
-    <form @submit.prevent="saveResponses" class="form-container">
+    <PreResult v-if="isPreResult" :lastQuestion="lastAnsweredQuestion?.question" @continue="showFinalResult" />
+    <FinalResult v-else-if="isFinalResult" :route="finalRoute" @save="saveResponses" />
+    
+    <form v-else @submit.prevent="saveResponses" class="form-container">
       <div v-if="currentQuestion" class="question">
         <label class="question-label" v-text="currentQuestion.question"></label>
 
@@ -93,7 +130,7 @@ const isNextDisabled = computed(() => {
       </div>
 
       <div class="btn-container">
-        <button type="button" class="back-btn" @click="prevQuestion" :disabled="!currentQuestion">
+        <button type="button" class="back-btn" @click="prevQuestion" :disabled="questionHistory.length === 0">
           กลับ
         </button>
         <button type="button" class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">
@@ -103,6 +140,7 @@ const isNextDisabled = computed(() => {
     </form>
   </div>
 </template>
+
 
 <style scoped>
 .questionnaire {

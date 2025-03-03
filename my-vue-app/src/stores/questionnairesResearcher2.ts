@@ -268,7 +268,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.14, type: "radio", question: "2.1.4) Precision intervention",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 99, "ไม่แน่ใจ": "preResult" }
                     },
                     //end of precision invention route A
                     {
@@ -279,8 +279,9 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.21, type: "radio", question: "(2.2.1) Several expressing cell/s",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.22, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.210, "ไม่": 2.22, "ไม่แน่ใจ": "preResult" }
                     },
+                    //Route B
                     {
                         id: 2.22, type: "radio", question: "Route B (2.2.2) Solely induce sign of irregularities by a signal cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
@@ -299,7 +300,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.223, type: "radio", question: "(2.2.2.1) Intervention",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.224, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.224, type: "radio", question: "Sustainable normalization the originate cell",
@@ -309,13 +310,15 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.225, type: "radio", question: "Controller cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.226, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.226, type: "radio", question: "(2.2.2.2) Remission",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 99, "ไม่แน่ใจ": "preResult" }
                     },
+                    //end of route B
+
                     {
                         id: 2.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-book to category of the mechanism of pathogenesis",
                         options: ["ใช่", "ไม่แน่ใจ"],
@@ -324,12 +327,17 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.2101, type: "radio", question: "Type**",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2102, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2102, "ไม่": 2.2110, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2102, type: "radio", question: "Draw cascade",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2103, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.21025, "ไม่แน่ใจ": "preResult" }
+                    },
+                    {
+                        id: 2.21025, type: "radio", question: "Identify the originated cell and expression cell each typed** and each stage*",
+                        options: ["ใช่", "ไม่แน่ใจ"],
+                        next: { "ใช่": 2.2103, "ไม่": 2.2104, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2103, type: "radio", question: "Route G Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
@@ -342,9 +350,19 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
                     },
                     {
+                        id: 2.2105, type: "radio", question: "Set signal intervention",
+                        options: ["ใช่", "ไม่แน่ใจ"],
+                        next: { "ใช่": 2.2106, "ไม่แน่ใจ": "preResult" }
+                    },
+                    {
+                        id: 2.2106, type: "radio", question: "80% of the amount a sign or symptom of a type** is clear in a set of time frame that meet satisfaction (expectation)",
+                        options: ["ใช่", "ไม่แน่ใจ"],
+                        next: { "ใช่": 99, "ไม่แน่ใจ": "preResult" }
+                    },
+                    {
                         id: 2.2110, type: "radio", question: "(A 2.2.1) Stage*",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2111, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2111, "ไม่": 2.21101, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2111, type: "radio", question: "Draw cascade",
@@ -354,7 +372,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.2112, type: "radio", question: "Identified the originated cell and expression cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2113, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2113, "ไม่": 2.2115, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2113, type: "radio", question: "Stage 1*",
@@ -364,7 +382,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.2114, type: "radio", question: "Route E Combination of intervention of originated cell and expressing cell of a stage* cascade",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2115, type: "radio", question: "Stage 2*",
@@ -374,12 +392,12 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.2116, type: "radio", question: "Route F Combination of intervention of originated cell and expressing cell of another stage 2 cascade",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.21101, type: "radio", question: "(B) Evidently explainable of obvious contrast in irregularity natural courses",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.211011, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.211021, "ไม่": 2.211011, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.211011, type: "radio", question: "Route D Deductive Hypothesis for separable",
@@ -394,7 +412,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.211013, type: "radio", question: "Identify the originated cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.211014, type: "radio", question: "Draw molecular cascade - 2",
@@ -404,7 +422,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.211015, type: "radio", question: "Identify the originated cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.211021, type: "radio", question: "Route C Existing diagnosis",
@@ -424,12 +442,12 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.2229, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of expression",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.22291, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.22291, "ไม่": 2.22292, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.22291, type: "radio", question: "Sustainable normalization of the originated cell",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.222910, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.222910, "ไม่": 2.222911, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.222910, type: "radio", question: "Remission",
@@ -444,7 +462,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 2.22292, type: "radio", question: "Match to any section of the molecular cascade",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.222920, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.222920, "ไม่": 2.222921, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.222920, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
