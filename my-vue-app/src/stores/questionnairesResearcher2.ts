@@ -272,14 +272,14 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     //end of precision invention route A
                     {
-                        id: 2.2, type: "radio", question: "2.2) A cell or cells probable to be responsible for symptom expression",
+                        id: 2.2, type: "radio", question: "2.2) A cell or cells probable to be responsible the expression of symptom or sign of the irregularities",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.21, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.21, type: "radio", question: "(2.2.1) Several expressing cell/s",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.210, "ไม่": 2.22, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 22.210, "ไม่": 2.22, "ไม่แน่ใจ": "preResult" }
                     },
                     //Route B
                     {
@@ -320,7 +320,7 @@ export const questionnaireData: Questionnaire2[] = [
                     //end of route B
 
                     {
-                        id: 2.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-book to category of the mechanism of pathogenesis",
+                        id: 22.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-book to category of the mechanism of pathogenesis",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.2101, "ไม่แน่ใจ": "preResult" }
                     },
@@ -336,7 +336,7 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 2.21025, type: "radio", question: "Identify the originated cell and expression cell each typed** and each stage*",
-                        options: ["ใช่", "ไม่แน่ใจ"],
+                        options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.2103, "ไม่": 2.2104, "ไม่แน่ใจ": "preResult" }
                     },
                     {
@@ -371,8 +371,8 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 2.2112, type: "radio", question: "Identified the originated cell and expression cell",
-                        options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2113, "ไม่": 2.2115, "ไม่แน่ใจ": "preResult" }
+                        options: ["Stage 1", "Stage 2"],
+                        next: { "Stage 1": 2.2113, "Stage 2": 2.2115, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2113, type: "radio", question: "Stage 1*",
@@ -446,8 +446,8 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 2.22291, type: "radio", question: "Sustainable normalization of the originated cell",
-                        options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.222910, "ไม่": 2.222911, "ไม่แน่ใจ": "preResult" }
+                        options: ["Remission", "Controlling", "ไม่แน่ใจ"],
+                        next: { "Remission": 2.222910, "Controlling": 2.222911, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.222910, type: "radio", question: "Remission",
