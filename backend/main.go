@@ -1,15 +1,20 @@
 package main
 
 import (
+	"backend/database"
 	"backend/routes"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default() // Initialize router
+	// Connect to Database
+	database.ConnectDatabase()
 
-	routes.SetupRoutes(r) // Load API routes
+	// Initialize Router
+	router := gin.Default()
+	routes.SetupRoutes(router)
 
-	r.Run(":8080") // Start server on port 8080
+	// Start Server
+	router.Run(":8080")
 }

@@ -11,5 +11,8 @@ func SetupRoutes(router *gin.Engine) {
 	{
 		api.GET("/users", controllers.GetUsers)
 		api.POST("/users", controllers.CreateUser)
+
+		api.GET("/questions", controllers.GetQuestions)
+		api.GET("/questions/:section_id", controllers.GetQuestionsBySection)
 	}
 }
