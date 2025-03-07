@@ -35,7 +35,7 @@ func ConnectDatabase() error {
 		dbHost, dbUser, dbPass, dbName, dbPort)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info), // Log queries for debugging
+		Logger: logger.Default.LogMode(logger.Info),
 	})
 
 	if err != nil {

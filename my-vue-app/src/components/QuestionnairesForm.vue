@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { saveAs } from "file-saver";
 
 const questionnaire = ref<{ title: string; sections: any[] }>({
   title: "Loading...",
@@ -8,8 +7,8 @@ const questionnaire = ref<{ title: string; sections: any[] }>({
 });
 
 const answers = ref<Record<number, string | string[]>>({});
-const existingResponses = ref([]);
-const responseFile = ref("questionnaire_1_response.json");
+const researcherID = ref<number | null>(1);
+const questionnaireID = ref<number>(1);
 
 const loadQuestionnaire = async () => {
   try {
@@ -19,36 +18,29 @@ const loadQuestionnaire = async () => {
     if (!response.ok) throw new Error("Failed to fetch sections.");
 
     const sections = await response.json();
-    console.log("✅ Sections received:", sections);
 
     questionnaire.value = {
       title: sections.length > 0 ? `${sections[0].section_name}` : "no_title",
       sections: sections.map((section) => ({
         ...section,
-        questions: [], // Ensure questions exist
+        questions: [],
       })),
     };
 
-    // Fetch questions for each section
     for (const section of questionnaire.value.sections) {
       const questionResponse = await fetch(
         `http://localhost:8080/api/questions/${section.id}`
       );
       if (questionResponse.ok) {
         const questionData = await questionResponse.json();
-        console.log(
-          `✅ Questions received for Section ${section.id}:`,
-          questionData
-        );
 
-        // ✅ Ensure Vue reactivity by using `Object.assign()`
         Object.assign(section, {
           questions: questionData.map((q) => ({
             ...q,
-            choices: q.choices ? JSON.parse(q.choices) : [], // Parse JSONB choices field
+            choices: q.choices ? JSON.parse(q.choices) : [],
           })),
         });
-        // Initialize answers as array for checkbox type
+
         section.questions.forEach((s) => {
           if (
             s.question_type === "checkbox" &&
@@ -66,41 +58,73 @@ const loadQuestionnaire = async () => {
   }
 };
 
-const loadExistingResponses = async () => {
-  try {
-    const response = await fetch(responseFile.value);
-    if (!response.ok) throw new Error("Response file not found.");
-    existingResponses.value = await response.json();
-  } catch (error) {
-    console.error("Error loading existing responses:", error);
-    existingResponses.value = [];
-  }
-};
-
 onMounted(async () => {
   await loadQuestionnaire();
-  console.log(
-    "✅ Final Questionnaire Data:",
-    JSON.stringify(questionnaire.value, null, 2)
-  );
-  await loadExistingResponses();
 });
 
-const saveResponses = () => {
-  const newResponse = {
-    title: questionnaire.value.title,
-    responses: JSON.parse(JSON.stringify(answers.value)),
-  };
+const saveResponses = async () => {
+  const researcherName = answers.value[1] || "";
+  const projectName = answers.value[2] || "";
+  const branchInfo = answers.value[3] || "";
 
-  existingResponses.value.push(newResponse);
+  if (!researcherName || !projectName || !branchInfo) {
+    alert("❌ Please fill in all researcher details before submitting!");
+    return;
+  }
 
-  const blob = new Blob([JSON.stringify(existingResponses.value, null, 2)], {
-    type: "application/json",
-  });
+  try {
+    const researcherResponse = await fetch("http://localhost:8080/api/researcher", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: researcherName,
+        project_name: projectName,
+        branch_info: branchInfo,
+      }),
+    });
 
-  saveAs(blob, responseFile.value);
+    const researcherResult = await researcherResponse.json();
+    if (!researcherResponse.ok) {
+      console.error("❌ Failed to save researcher data:", researcherResult);
+      alert("Failed to save researcher data: " + researcherResult.error);
+      return;
+    }
+
+    alert("Researcher data saved successfully!");
+
+    const researcherID = researcherResult.researcher.id;
+    if (!researcherID) {
+      console.error("❌ Researcher ID is missing");
+      alert("Failed to retrieve Researcher ID.");
+      return;
+    }
+
+    const formattedAnswers = answers.value;
+
+    const response = await fetch("http://localhost:8080/api/response", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        researcher_id: researcherID,
+        questionnaire_id: 1,
+        answers: formattedAnswers,
+      }),
+    });
+
+    const responseResult = await response.json();
+    if (response.ok) {
+      alert("Response saved successfully!");
+    } else {
+      console.error("❌ Failed to save response:", responseResult);
+      alert("Failed to save response: " + responseResult.error);
+    }
+  } catch (error) {
+    console.error("❌ Error saving data:", error);
+    alert("An error occurred while saving data.");
+  }
 };
 </script>
+
 
 <template>
   <div class="questionnaire">

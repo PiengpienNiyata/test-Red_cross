@@ -35,20 +35,17 @@ func GetSections(c *gin.Context) {
 }
 
 func GetSectionByQuestionnaireID(c *gin.Context) {
-	// Get the questionnaire_id from the URL and convert to integer
 	questionnaireID, err := strconv.Atoi(c.Param("questionnaire_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid questionnaire ID"})
 		return
 	}
 
-	// Query sections based on questionnaire_id
 	var sections []models.Section
 	if err := database.DB.Where("questionnaire_id = ?", questionnaireID).Find(&sections).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Return sections as JSON response
 	c.JSON(http.StatusOK, sections)
 }
