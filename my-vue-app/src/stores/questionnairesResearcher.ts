@@ -91,13 +91,7 @@ export const questionnaireData: Questionnaire[] = [
               "Dysfunction",
               "Ecological and environmental factors"
             ]
-          }
-        ]
-      },
-
-      {
-        name: "การค้นหา originated cell จากกลไกการเกิดโรค",
-        questions: [
+          },
           {
             id: 12,
             type: "radio",
@@ -106,11 +100,10 @@ export const questionnaireData: Questionnaire[] = [
               "Remission and protection (ป้องกันได้ทุก predisposing factor)",
               "Control เป็นปกติ แต่ยังมีเหตุ (root cause) อยู่จึงยังหยุดรักษาไม่ได้",
               "Prevention โรคหายเองแต่งานวิจัยช่วยลดโอกาสการเกิด กลับมาเป็นใหม่ (จากบาง predisposing factor)",
-
             ]
           }
         ]
       }
     ]
   }
-];
+]
