@@ -18,9 +18,11 @@
     <div class="divider"></div>
 
     <div class="sidebar-item">
+      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher3')">
       <img src="@/assets/icon3.png" alt="icon" class="icon">
       <span>รอตรวจสอบ</span>
     </div>
+  </div>
   </div>
 </template>
 
