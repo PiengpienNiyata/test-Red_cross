@@ -88,7 +88,7 @@ const saveResponses = () => {
         </div>
       </div>
 
-      <button type="submit" class="submit-btn">Submit</button>
+      <button type="submit" class="submit-btn">ถัดไป</button>
     </form>
   </div>
 </template>
@@ -191,7 +191,6 @@ const saveResponses = () => {
 }
 
 .submit-btn {
-  margin-top: 190px;
   height: 100%;
   width: 144px;
   background-color: #EB4648;

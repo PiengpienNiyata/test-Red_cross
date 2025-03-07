@@ -93,6 +93,23 @@ export const questionnaireData: Questionnaire[] = [
             ]
           }
         ]
+      },
+
+      {
+        name: "การค้นหา originated cell จากกลไกการเกิดโรค",
+        questions: [
+          {
+            id: 12,
+            type: "radio",
+            question: "โปรดระบุเป้าหมายสุดท้ายของ route ที่ท่านสามารถวิเคราะห์ บน road map ดังนี้",
+            options: [
+              "Remission and protection (ป้องกันได้ทุก predisposing factor)",
+              "Control เป็นปกติ แต่ยังมีเหตุ (root cause) อยู่จึงยังหยุดรักษาไม่ได้",
+              "Prevention โรคหายเองแต่งานวิจัยช่วยลดโอกาสการเกิด กลับมาเป็นใหม่ (จากบาง predisposing factor)",
+
+            ]
+          }
+        ]
       }
     ]
   }
