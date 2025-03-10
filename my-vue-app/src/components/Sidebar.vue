@@ -1,30 +1,56 @@
 <template>
   <div class="sidebar d-flex flex-column">
     <div class="sidebar-item">
-      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher')">
-        <img src="@/assets/icon1.png" alt="icon" class="icon">
-        <span class="text-danger">แบบสอบถาม</span>
+      <div 
+        class="sidebar-item-2" 
+        @click="$router.push('/questionnairesResearcher')"
+        :style="{ color: isActive('/questionnairesResearcher') ? '#EB4648' : '#A4A4A4' }"
+      >
+        <img :src="isActive('/questionnairesResearcher') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
+        <span>แบบสอบถาม</span>
       </div>
     </div>
     <div class="divider"></div>
 
     <div class="sidebar-item">
-      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher2')">
-        <img src="@/assets/icon2.png" alt="icon" class="icon">
+      <div 
+        class="sidebar-item-2" 
+        @click="$router.push('/questionnairesResearcher2')"
+        :style="{ color: isActive('/questionnairesResearcher2') ? '#EB4648' : '#A4A4A4' }"
+      >
+        <img :src="isActive('/questionnairesResearcher2') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
         <span>Explore the<br>precision <br>intervention</span>
       </div>
-
     </div>
     <div class="divider"></div>
 
     <div class="sidebar-item">
-      <div class="sidebar-item-2" @click="$router.push('/questionnairesResearcher3')">
-      <img src="@/assets/icon3.png" alt="icon" class="icon">
-      <span>รอตรวจสอบ</span>
+      <div 
+        class="sidebar-item-2" 
+        @click="$router.push('/questionnairesResearcher3')"
+        :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
+      >
+        <img :src="isActive('/questionnairesResearcher3') ? '/src/assets/icon4.png' : '/src/assets/icon3.png'" alt="icon" class="icon">
+        <span>รอตรวจสอบ</span>
+      </div>
     </div>
   </div>
-  </div>
 </template>
+
+<script>
+export default {
+  computed: {
+    currentRoute() {
+      return this.$route.path;
+    }
+  },
+  methods: {
+    isActive(route) {
+      return this.currentRoute === route;
+    }
+  }
+};
+</script>
 
 <style scoped>
 .sidebar {
@@ -49,7 +75,6 @@
   display: flex;
   align-items: center;
 }
-
 
 .icon {
   width: 40px;

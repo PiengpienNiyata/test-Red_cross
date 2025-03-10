@@ -222,6 +222,8 @@ const isNextDisabled = computed(() => {
 
 .btn-container {
   display: flex;
+  position: absolute;
+  margin-top: 30vh;
   gap: 14px;
 }
 
