@@ -1,73 +1,36 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { questionnaireData } from "@/stores/questionnairesResearcher";
 
-const questionnaire = ref<{ title: string; sections: any[] }>({
-  title: "Loading...",
-  sections: [],
-});
+const questionnaire = ref(questionnaireData[0]);
+
 
 const answers = ref<Record<number, string | string[]>>({});
 const researcherID = ref<number | null>(1);
 const questionnaireID = ref<number>(1);
 
-const loadQuestionnaire = async () => {
-  try {
-    const response = await fetch(
-      "http://localhost:8080/api/sections/questionnaire/1"
-    );
-    if (!response.ok) throw new Error("Failed to fetch sections.");
-
-    const sections = await response.json();
-
-    questionnaire.value = {
-      title: sections.length > 0 ? `${sections[0].section_name}` : "no_title",
-      sections: sections.map((section) => ({
-        ...section,
-        questions: [],
-      })),
-    };
-
-    for (const section of questionnaire.value.sections) {
-      const questionResponse = await fetch(
-        `http://localhost:8080/api/questions/${section.id}`
-      );
-      if (questionResponse.ok) {
-        const questionData = await questionResponse.json();
-
-        Object.assign(section, {
-          questions: questionData.map((q) => ({
-            ...q,
-            choices: q.choices ? JSON.parse(q.choices) : [],
-          })),
-        });
-
-        section.questions.forEach((s) => {
-          if (
-            s.question_type === "checkbox" &&
-            !Array.isArray(answers.value[s.id])
-          ) {
-            answers.value[s.id] = [];
-          }
-        });
-      } else {
-        console.error(`❌ Failed to fetch questions for Section ${section.id}`);
+const initializeAnswers = () => {
+  questionnaire.value.sections.forEach((section) => {
+    section.questions.forEach((q) => {
+      if (q.type === "checkbox" && !Array.isArray(answers.value[q.id])) {
+        answers.value[q.id] = [];
       }
-    }
-  } catch (error) {
-    console.error("❌ Error loading questionnaire:", error);
-  }
+    });
+  });
 };
 
-onMounted(async () => {
-  await loadQuestionnaire();
+onMounted(() => {
+  initializeAnswers();
 });
 
 const saveResponses = async () => {
   const researcherName = answers.value[1] || "";
   const projectName = answers.value[2] || "";
   const branchInfo = answers.value[3] || "";
+  const phoneNumber = answers.value[4] || "";
+  const email = answers.value[5] || "";
 
-  if (!researcherName || !projectName || !branchInfo) {
+  if (!researcherName || !projectName || !branchInfo || !phoneNumber || !email) {
     alert("❌ Please fill in all researcher details before submitting!");
     return;
   }
@@ -80,6 +43,8 @@ const saveResponses = async () => {
         name: researcherName,
         project_name: projectName,
         branch_info: branchInfo,
+        phone_number: phoneNumber,
+        email: email
       }),
     });
 
@@ -128,49 +93,36 @@ const saveResponses = async () => {
 
 <template>
   <div class="questionnaire">
-    <h3 v-if="questionnaire.title !== 'no_title'" class="title">
+    <h3 v-if="questionnaire.title !== 'null'" class="title">
       {{ questionnaire.title }}
     </h3>
 
     <form @submit.prevent="saveResponses" class="form-container">
-      <div
-        v-for="section in questionnaire.sections"
-        :key="section.id"
-        class="section"
-      >
-        <h4 v-if="section.section_name !== 'no_title'" class="section-title">
-          {{ section.section_name }}
+      <div v-for="section in questionnaire.sections" :key="section.name" class="section">
+        <h4 v-if="section.name !== 'null'" class="section-title">
+          {{ section.name }}
         </h4>
 
         <div class="row">
-          <div
-            v-for="q in section.questions ?? []"
-            :key="q.id"
-            :class="{
-              'col-md-6': q.id === 1 || q.id === 2,
+          <div v-for="q in section.questions ?? []" :key="q.id"  :class="{
+              'col-md-6': q.id === 1 || q.id === 2 || q.id === 4 || q.id === 5,
               'col-md-12': q.id === 3,
               'no-margin': q.id === 1 || q.id === 2 || q.id === 3,
               'padding-left': q.id === 1,
               'padding-right': q.id === 2,
-            }"
-            class="question"
-          >
-            <label class="question-label">{{ q.question_text }}</label>
+            }">
+            <label class="question-label">{{ q.question }}</label>
 
             <input
-              v-if="q.question_type === 'text'"
+              v-if="q.type === 'text'"
               v-model="answers[q.id]"
-              :placeholder="q.question_text"
+              :placeholder="q.question"
               type="text"
               class="input-text"
             />
 
-            <div v-else-if="q.question_type === 'radio'" class="radio-group">
-              <div
-                v-for="option in q.choices"
-                :key="option"
-                class="radio-option"
-              >
+            <div v-else-if="q.type === 'radio'" class="radio-group">
+              <div v-for="option in q.options" :key="option" class="radio-option">
                 <input
                   type="radio"
                   :name="'q' + q.id"
@@ -182,15 +134,8 @@ const saveResponses = async () => {
               </div>
             </div>
 
-            <div
-              v-else-if="q.question_type === 'checkbox'"
-              class="checkbox-group"
-            >
-              <div
-                v-for="option in q.choices"
-                :key="option"
-                class="checkbox-option"
-              >
+            <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
+              <div v-for="option in q.options" :key="option" class="checkbox-option">
                 <input
                   type="checkbox"
                   :value="option"

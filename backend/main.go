@@ -9,17 +9,14 @@ import (
 )
 
 func main() {
-	// Connect to Database
 	if err := database.ConnectDatabase(); err != nil {
 		panic("Failed to connect to database")
 	}
 
-	// Setup Gin Router
 	r := gin.Default()
 
-	// 🔥 Enable CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost:8080"}, // Adjust based on frontend URL
+		AllowOrigins:     []string{"*"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -29,5 +26,5 @@ func main() {
 	routes.SetupRoutes(r)
 
 	// Start server
-	r.Run(":8080")
+	r.Run("0.0.0.0:8080")
 }
