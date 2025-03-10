@@ -7,26 +7,37 @@ const emit = defineEmits(["continue"]);
 
 <template>
   <div class="pre-result">
-    <h4>คุณเลือก "ไม่แน่ใจ" ในคำถามล่าสุด</h4>
-    <p v-if="props.lastQuestion">คำถามล่าสุดที่ตอบ: {{ props.lastQuestion }}</p>
+    <p v-if="props.lastQuestion" class="p">
+      หมายเลข match: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
+    </p>
+
+
     <button type="button" class="btn" @click="emit('continue')">ดำเนินการต่อ</button>
   </div>
 </template>
 
-<style >
-.pre-result{
-  
+<style>
+.pre-result {
+  margin-top: 64px;
 }
-.btn{
+
+.p {
+  font-size: 20px;
+  padding: 8px;
+}
+
+.btn {
+  margin-left: 2px;
+  margin-top: 68px;
   height: 100%;
-  width: 144px;
+  width: 188px;
   background-color: #EB4648;
   color: white;
   padding: 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-} 
+}
 
 .btn:hover {
   background-color: #c9302c;
