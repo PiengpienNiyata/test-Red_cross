@@ -271,16 +271,18 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 99, "ไม่แน่ใจ": "preResult" }
                     },
                     //end of precision invention route A
+
                     {
                         id: 2.2, type: "radio", question: "2.2) A cell or cells probable to be responsible the expression of symptom or sign of the irregularities",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.21, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 2.21, type: "radio", question: "(2.2.1) Several expressing cell/s",
+                        id: 2.21, type: "radio", question: "2.2.1) Several expressing cell/s",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
                         next: { "ใช่": 22.210, "ไม่": 2.22, "ไม่แน่ใจ": "preResult" }
                     },
+                    
                     //Route B
                     {
                         id: 2.22, type: "radio", question: "Route B (2.2.2) Solely induce sign of irregularities by a signal cell",
@@ -288,24 +290,26 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 2.221, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 2.221, type: "radio", question: "(2.2.2.1) Originated cell",
+                        id: 2.221, type: "radio", question: "2.2.2.1) Originated cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.222, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 2.222, type: "radio", question: "(2.2.2.2) Match to signal or receptor if expressing",
+                        id: 2.222, type: "radio", question: "2.2.2.2) Match to signal or receptor if expressing",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.223, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 2.223, type: "radio", question: "(2.2.2.1) Intervention",
+                        id: 2.223, type: "radio", question: "2.2.2.1) Intervention",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 2.224, "ไม่แน่ใจ": "preResult" }
                     },
+                    
+                    //** */
                     {
                         id: 2.224, type: "radio", question: "Sustainable normalization the originate cell",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.225, "ไม่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.226, "ไม่": 2.225, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.225, type: "radio", question: "Controller cell",
@@ -319,6 +323,7 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     //end of route B
 
+                    //A2.2.1
                     {
                         id: 22.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-book to category of the mechanism of pathogenesis",
                         options: ["ใช่", "ไม่แน่ใจ"],
@@ -336,18 +341,18 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 2.21025, type: "radio", question: "Identify the originated cell and expression cell each typed** and each stage*",
-                        options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2103, "ไม่": 2.2104, "ไม่แน่ใจ": "preResult" }
+                        options: ["Route G", "Route H", "ไม่แน่ใจ"],
+                        next: { "Route G": 2.2103, "Route H": 2.2104, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2103, type: "radio", question: "Route G Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 2.2104, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2105, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2104, type: "radio", question: "Route H Set Combination of intervention of Another stage* and typed** depended the purposed",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 2.2105, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 2.2105, type: "radio", question: "Set signal intervention",
