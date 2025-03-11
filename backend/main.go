@@ -22,9 +22,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Setup Routes
 	routes.SetupRoutes(r)
 
-	// Start server
 	r.Run("0.0.0.0:8080")
 }

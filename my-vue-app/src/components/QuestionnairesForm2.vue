@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { defineProps, ref, onMounted, computed } from "vue";
+import { defineProps, ref, computed } from "vue";
 import type { Questionnaire2, Question2 } from "@/stores/questionnairesResearcher2";
-import { saveAs } from "file-saver";
+import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
+import { useRouter } from "vue-router";
 import PreResult from "@/components/preResult.vue";
 import FinalResult from "@/components/result.vue";
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
-const answers = ref<Record<number, string | string[]>>({});
+const store = useQuestionnaireStore();
+const router = useRouter();
+
+const answers = ref<Record<number, string | string[]>>({ ...store.answers });
 const questionHistory = ref<Question2[]>([]);
 const currentQuestion = ref<Question2 | null>(props.questionnaire.sections[0].questions[0]);
 const isPreResult = ref(false);
@@ -14,36 +18,9 @@ const isFinalResult = ref(false);
 const lastAnsweredQuestion = ref<Question2 | null>(null);
 const finalRoute = ref<string>("");
 
-const existingResponses = ref([]);
-const responseFile = `${props.questionnaire.title.replace(/\s+/g, "_")}_response.json`;
-
-const loadExistingResponses = async () => {
-  try {
-    const response = await fetch(responseFile);
-    if (!response.ok) throw new Error("Response file not found.");
-    existingResponses.value = await response.json();
-  } catch (error) {
-    console.error("Error loading existing responses:", error);
-    existingResponses.value = [];
-  }
-};
-
-onMounted(loadExistingResponses);
-
-const saveResponses = () => {
-  const newResponse = {
-    title: props.questionnaire.title,
-    responses: JSON.parse(JSON.stringify(answers.value)),
-    route: finalRoute.value
-  };
-
-  existingResponses.value.push(newResponse);
-
-  const blob = new Blob([JSON.stringify(existingResponses.value, null, 2)], {
-    type: "application/json",
-  });
-
-  saveAs(blob, responseFile);
+const saveResponsesToStore = () => {
+  store.setAnswers(answers.value);
+  console.log(answers.value);
 };
 
 const nextQuestion = () => {
@@ -54,6 +31,8 @@ const nextQuestion = () => {
   
   lastAnsweredQuestion.value = currentQuestion.value;
   updateFinalRoute(currentQuestion.value.id);
+  saveResponsesToStore();
+
   const nextId = currentQuestion.value.next?.[selectedAnswer as string];
   if (nextId === "preResult") {
     showPreResult();
@@ -88,20 +67,29 @@ const showFinalResult = () => {
 
 const updateFinalRoute = (questionId: number) => {
   const routeMapping: Record<number, string> = {
-    1: "Route A",
-    2.22: "Route B",
-    2.211021: "Route C",
-    2.211011: "Route D",
-    2.2103: "Route G",
-    2.2104: "Route H",
-    2.2114: "Route E",
-    2.2116: "Route F"
+    11001: "Route A",
+    11002.22: "Route B",
+    11002.211021: "Route C",
+    11002.211011: "Route D",
+    11002.2103: "Route G",
+    11002.2104: "Route H",
+    11002.2114: "Route E",
+    11002.2116: "Route F"
   };
 
   if (routeMapping[questionId]) {
     finalRoute.value = routeMapping[questionId];
   }
 };
+
+const submitFinalResponse = async () => {
+  console.log(finalRoute.value);
+  store.setFinalRoute(finalRoute.value);
+  console.log(store.finalRoute);
+  saveResponsesToStore();
+  router.push("/questionnairesResearcher3");
+};
+
 
 const isNextDisabled = computed(() => {
   return !currentQuestion.value || !answers.value[currentQuestion.value.id];
@@ -113,9 +101,9 @@ const isNextDisabled = computed(() => {
     <h3 v-if="questionnaire.title !== 'null'" class="title">{{ questionnaire.title }}</h3>
 
     <PreResult v-if="isPreResult" :lastQuestion="lastAnsweredQuestion?.question" @continue="showFinalResult" />
-    <FinalResult v-else-if="isFinalResult" :route="finalRoute" @save="saveResponses" />
+    <FinalResult v-else-if="isFinalResult" :route="finalRoute" @save="submitFinalResponse" />
     
-    <form v-else @submit.prevent="saveResponses" class="form-container">
+    <form v-else @submit.prevent="nextQuestion" class="form-container">
       <div v-if="currentQuestion" class="question">
         <label class="question-label" v-text="currentQuestion.question"></label>
 

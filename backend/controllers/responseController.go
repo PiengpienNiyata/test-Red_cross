@@ -16,6 +16,8 @@ func SaveResponse(c *gin.Context) {
 		ResearcherID    uint                   `json:"researcher_id"`
 		QuestionnaireID uint                   `json:"questionnaire_id"`
 		Answers         map[string]interface{} `json:"answers"`
+		Survey          map[string]interface{} `json:"survey"`
+		FinalRoute      string                 `json:"final_route"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -29,10 +31,18 @@ func SaveResponse(c *gin.Context) {
 		return
 	}
 
+	surveyJSON, err := json.Marshal(request.Survey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode survey"})
+		return
+	}
+
 	response := models.Response{
 		ResearcherID:    request.ResearcherID,
 		QuestionnaireID: request.QuestionnaireID,
 		Answers:         string(answersJSON),
+		Survey:          string(surveyJSON),
+		FinalRoute:      request.FinalRoute,
 		SubmittedAt:     time.Now(),
 	}
 
@@ -41,5 +51,9 @@ func SaveResponse(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Response saved", "id": response.ID})
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Response saved",
+		"id":          response.ID,
+		"final_route": response.FinalRoute,
+	})
 }

@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { questionnaireData } from "@/stores/questionnairesResearcher";
-
+const store = useQuestionnaireStore();
 const questionnaire = ref(questionnaireData[0]);
+const router = useRouter();
+const answers = ref<Record<number, string | string[]>>({ ...store.answers });
 
+const saveAnswers = () => {
+  store.setAnswers(answers.value);
+  console.log(answers.value);
+  router.push("/questionnairesResearcher2");
+};
 
-const answers = ref<Record<number, string | string[]>>({});
-const researcherID = ref<number | null>(1);
-const questionnaireID = ref<number>(1);
 
 const initializeAnswers = () => {
   questionnaire.value.sections.forEach((section) => {
@@ -23,71 +29,6 @@ onMounted(() => {
   initializeAnswers();
 });
 
-const saveResponses = async () => {
-  const researcherName = answers.value[1] || "";
-  const projectName = answers.value[2] || "";
-  const branchInfo = answers.value[3] || "";
-  const phoneNumber = answers.value[4] || "";
-  const email = answers.value[5] || "";
-
-  if (!researcherName || !projectName || !branchInfo || !phoneNumber || !email) {
-    alert("❌ Please fill in all researcher details before submitting!");
-    return;
-  }
-
-  try {
-    const researcherResponse = await fetch("http://localhost:8080/api/researcher", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: researcherName,
-        project_name: projectName,
-        branch_info: branchInfo,
-        phone_number: phoneNumber,
-        email: email
-      }),
-    });
-
-    const researcherResult = await researcherResponse.json();
-    if (!researcherResponse.ok) {
-      console.error("❌ Failed to save researcher data:", researcherResult);
-      alert("Failed to save researcher data: " + researcherResult.error);
-      return;
-    }
-
-    alert("Researcher data saved successfully!");
-
-    const researcherID = researcherResult.researcher.id;
-    if (!researcherID) {
-      console.error("❌ Researcher ID is missing");
-      alert("Failed to retrieve Researcher ID.");
-      return;
-    }
-
-    const formattedAnswers = answers.value;
-
-    const response = await fetch("http://localhost:8080/api/response", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        researcher_id: researcherID,
-        questionnaire_id: 1,
-        answers: formattedAnswers,
-      }),
-    });
-
-    const responseResult = await response.json();
-    if (response.ok) {
-      alert("Response saved successfully!");
-    } else {
-      console.error("❌ Failed to save response:", responseResult);
-      alert("Failed to save response: " + responseResult.error);
-    }
-  } catch (error) {
-    console.error("❌ Error saving data:", error);
-    alert("An error occurred while saving data.");
-  }
-};
 </script>
 
 
@@ -97,7 +38,7 @@ const saveResponses = async () => {
       {{ questionnaire.title }}
     </h3>
 
-    <form @submit.prevent="saveResponses" class="form-container">
+    <form @submit.prevent="saveAnswers" class="form-container">
       <div v-for="section in questionnaire.sections" :key="section.name" class="section">
         <h4 v-if="section.name !== 'null'" class="section-title">
           {{ section.name }}
@@ -105,11 +46,11 @@ const saveResponses = async () => {
 
         <div class="row">
           <div v-for="q in section.questions ?? []" :key="q.id"  :class="{
-              'col-md-6': q.id === 1 || q.id === 2 || q.id === 4 || q.id === 5,
-              'col-md-12': q.id === 3,
-              'no-margin': q.id === 1 || q.id === 2 || q.id === 3,
-              'padding-left': q.id === 1,
-              'padding-right': q.id === 2,
+              'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
+              'col-md-12': q.id === 1003,
+              'no-margin': q.id === 1001 || q.id === 1002 || q.id === 1003,
+              'padding-left': q.id === 1001,
+              'padding-right': q.id === 1002,
             }">
             <label class="question-label">{{ q.question }}</label>
 
