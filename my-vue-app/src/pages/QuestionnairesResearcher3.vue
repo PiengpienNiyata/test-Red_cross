@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
 import { questionnaireData } from "@/stores/questionnairesResearcher";
@@ -50,11 +50,12 @@ const secondFormAnswers = computed(
 const finalRoute = store.finalRoute;
 
 const editAnswers = () => {
-  console.log(store.answers);
   store.resetServey();
-  console.log(store.answers);
   router.push("/questionnairesResearcher");
 };
+
+const submissionSuccess = ref(false);
+const submissionError = ref(false);
 
 const submitFinalResponse = async () => {
   try {
@@ -66,12 +67,11 @@ const submitFinalResponse = async () => {
       email: store.answers[1005] || "",
     });
 
-    console.log(store.answers);
     const { name, project_name, branch_info, phone_number, email } =
       store.researcher;
 
     if (!name || !project_name || !branch_info || !phone_number || !email) {
-      alert("❌ Please fill in all researcher details before submitting!");
+      alert("Please fill in all researcher details before submitting!");
       return;
     }
 
@@ -95,14 +95,13 @@ const submitFinalResponse = async () => {
 
       const researcherResult = await researcherResponse.json();
       if (!researcherResponse.ok) {
-        console.error("❌ Failed to save researcher data:", researcherResult);
-        alert("Failed to save researcher data: " + researcherResult.error);
+        console.error("Failed to save researcher data:", researcherResult);
+        submissionError.value = true;
         return;
       }
 
       researcherID = researcherResult.researcher.id;
       store.setResearcherID(researcherID);
-      alert("✅ Researcher data saved successfully!");
     }
 
     const answersData: Record<string, string | string[]> = {};
@@ -131,25 +130,25 @@ const submitFinalResponse = async () => {
 
     const responseResult = await response.json();
     if (response.ok) {
-      alert("✅ Response saved successfully!");
-      router.push("/success");
+      submissionSuccess.value = true;
     } else {
-      console.error("❌ Failed to save response:", responseResult);
-      alert("Failed to save response: " + responseResult.error);
+      console.error("Failed to save response:", responseResult);
+      submissionError.value = true;
     }
   } catch (error) {
-    console.error("❌ Error submitting data:", error);
-    alert("An error occurred while saving data.");
+    console.error("Error submitting data:", error);
+    submissionError.value = true;
   }
 };
 
-onMounted(() => {
-  console.log("Store Object:", store);
-  console.log("Researcher:", store.researcher);
-  console.log("Answers:", store.answers);
-  console.log("Researcher ID:", store.researcherID);
-  console.log("Final Route:", store.finalRoute);
-});
+const startNewSurvey = () => {
+  store.resetStore();
+  router.push("/questionnairesResearcher");
+};
+const goToHome = () => {
+    store.resetStore();
+  router.push("/");
+};
 </script>
 
 <template>
@@ -254,8 +253,28 @@ onMounted(() => {
       >
         บันทึก
       </button>
+
+
+    <div v-if="submissionSuccess" class="modal">
+      <div class="modal-content">
+        <h3>บันทึกข้อมูลสำเร็จ</h3>
+        <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
+        <div class="modal-buttons">
+          <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button>
+          <button @click="startNewSurvey" class="btn btn-primary">ส่งคำตอบเพิ่ม</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="submissionError" class="modal">
+      <div class="modal-content">
+        <h3>เกิดข้อผิดพลาด</h3>
+        <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
+        <button @click="submissionError = false" class="btn btn-primary">ปิด</button>
+      </div>
     </div>
   </div>
+    </div>
 </template>
 <style scoped>
 .questionnaire {
@@ -366,4 +385,54 @@ onMounted(() => {
 .submit-btn:hover {
   background-color: #c9302c;
 }
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.home-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+}
+
+.new-survey-btn {
+  background-color: #f0ad4e;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+}
+
+.close-btn {
+  background-color: #d9534f;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+}
+
 </style>

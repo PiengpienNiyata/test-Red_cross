@@ -3,9 +3,9 @@
     <div class="sidebar-item">
       <div 
         class="sidebar-item-2" 
-        @click="$router.push('/questionnairesResearcher')"
         :style="{ color: isActive('/questionnairesResearcher') ? '#EB4648' : '#A4A4A4' }"
-      >
+      ><!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
+
         <img :src="isActive('/questionnairesResearcher') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
         <span>แบบสอบถาม</span>
       </div>
@@ -15,7 +15,7 @@
     <div class="sidebar-item">
       <div 
         class="sidebar-item-2" 
-        @click="$router.push('/questionnairesResearcher2')"
+        
         :style="{ color: isActive('/questionnairesResearcher2') ? '#EB4648' : '#A4A4A4' }"
       >
         <img :src="isActive('/questionnairesResearcher2') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
@@ -27,7 +27,6 @@
     <div class="sidebar-item">
       <div 
         class="sidebar-item-2" 
-        @click="$router.push('/questionnairesResearcher3')"
         :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
       >
         <img :src="isActive('/questionnairesResearcher3') ? '/src/assets/icon4.png' : '/src/assets/icon3.png'" alt="icon" class="icon">

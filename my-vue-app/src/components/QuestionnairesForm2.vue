@@ -20,7 +20,6 @@ const finalRoute = ref<string>("");
 
 const saveResponsesToStore = () => {
   store.setAnswers(answers.value);
-  console.log(answers.value);
 };
 
 const nextQuestion = () => {
@@ -83,9 +82,7 @@ const updateFinalRoute = (questionId: number) => {
 };
 
 const submitFinalResponse = async () => {
-  console.log(finalRoute.value);
   store.setFinalRoute(finalRoute.value);
-  console.log(store.finalRoute);
   saveResponsesToStore();
   router.push("/questionnairesResearcher3");
 };
