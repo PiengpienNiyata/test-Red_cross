@@ -339,6 +339,7 @@ const goToHome = () => {
 }
 
 .input-text {
+  background-color: white;
   font-size: 18px;
   margin-bottom: 24px;
   width: 100%;
