@@ -8,6 +8,7 @@ import type { Question2 } from "@/stores/questionnairesResearcher2";
 
 const store = useQuestionnaireStore();
 const router = useRouter();
+const questionnaire = ref(questionnaireData[0]);
 
 const getQuestionById = (id: number): Question2 | null => {
   for (const section of questionnaireData[0].sections) {
@@ -156,37 +157,42 @@ const goToHome = () => {
   <div class="final-review">
 
     <div class="questionnaire">
-      <div class="row">
-        <div v-for="q in firstFormAnswers" :key="q.id" :class="{
-          
+  <div v-for="section in questionnaire.sections" :key="section.name" class="section">
+    <h4 v-if="section.name !== 'null'" class="section-title">
+      {{ section.name }}
+    </h4>
+
+    <div class="row">
+      <div v-for="q in firstFormAnswers.filter(question => section.questions.some(sq => sq.id === q.id))"
+        :key="q.id" :class="{
           'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
           'col-md-12': q.id === 1003,
           'no-margin': q.id >= 1001 && q.id <= 1005,
         }">
-        
-          <label class="question-label">{{ q.question }}</label>
+        <label class="question-label">{{ q.question }}</label>
 
-          <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
+        <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
 
-
-          <div v-else-if="q.type === 'radio'" class="radio-group">
-            <div v-for="option in q.options" :key="option" class="radio-option">
-              <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input"
-                disabled />
-              <label class="radio-label">{{ option }}</label>
-            </div>
+        <div v-else-if="q.type === 'radio'" class="radio-group">
+          <div v-for="option in q.options" :key="option" class="radio-option">
+            <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input"
+              disabled />
+            <label class="radio-label">{{ option }}</label>
           </div>
+        </div>
 
-          <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-            <div v-for="option in q.options" :key="option" class="checkbox-option">
-              <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)" class="checkbox-input"
-                disabled />
-              <label class="checkbox-label">{{ option }}</label>
-            </div>
+        <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
+          <div v-for="option in q.options" :key="option" class="checkbox-option">
+            <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)" class="checkbox-input"
+              disabled />
+            <label class="checkbox-label">{{ option }}</label>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
 
     <div class="questionnaire">
       <h3 class="aa">Explore the precision intervention</h3>
