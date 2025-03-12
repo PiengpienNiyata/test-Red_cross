@@ -30,7 +30,7 @@
         :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
       >
         <img :src="isActive('/questionnairesResearcher3') ? '/src/assets/icon4.png' : '/src/assets/icon3.png'" alt="icon" class="icon">
-        <span>รอตรวจสอบ</span>
+        <span>ตรวจสอบข้อมูล</span>
       </div>
     </div>
   </div>

@@ -167,13 +167,11 @@ onMounted(() => {
 
     <div v-if="warningModal" class="modal">
   <div class="modal-content">
-    <h3 v-if="missingQuestions.length > 0">กรุณาตอบทุกคำถามก่อนดำเนินการต่อ</h3>
-    <h3 v-else-if="invalidQuestions.length > 0">กรุณากรอกแบบฟอร์มให้ถูกต้องก่อนดำเนินการต่อ</h3>
+    <h3 v-if="missingQuestions.length > 0" class="noti">กรุณาตอบทุกคำถามก่อนดำเนินการต่อ</h3>
+    <h3 v-else-if="invalidQuestions.length > 0" class="noti">กรุณากรอกแบบฟอร์มให้ถูกต้องก่อนดำเนินการต่อ</h3>
 
     <ul v-if="invalidQuestions.length > 0">
-      <li v-for="qId in invalidQuestions" :key="qId">
-        ❌ คำถามที่ {{ qId }} กรอกไม่ถูกต้อง
-      </li>
+
     </ul>
 
     <button @click="warningModal = false" class="close-btn">ปิด</button>
@@ -236,6 +234,11 @@ onMounted(() => {
   padding-left: 16px !important;
 }
 
+.noti{
+  font-weight: 400;
+  font-size: 20px;
+}
+
 .padding-right {
   padding-right: 16px !important;
 }
@@ -295,7 +298,7 @@ onMounted(() => {
 
 /* ✅ Highlight Missing Fields */
 .error-border {
-  border: 2px solid red !important;
+  border: 2px solid #eb4648 !important;
 }
 
 /* ✅ Modal Styling */
@@ -312,6 +315,7 @@ onMounted(() => {
 }
 
 .modal-content {
+  max-width: 400px;
   background: white;
   padding: 20px;
   border-radius: 8px;
@@ -321,7 +325,7 @@ onMounted(() => {
 .close-btn {
   margin-top: 10px;
   padding: 8px 16px;
-  background: red;
+  background: #eb4648;
   color: white;
   border: none;
   cursor: pointer;
