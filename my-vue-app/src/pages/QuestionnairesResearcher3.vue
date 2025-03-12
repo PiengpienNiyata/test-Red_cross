@@ -202,16 +202,14 @@ const goToHome = () => {
           </div>
         </div>
       </div>
-      <h3 class="h3">
-        Result Roadmap: <p class="final-route">{{ finalRoute }}</p>
-      </h3>
+      <p class="p">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>      
     </div>
 
     <div class="btn-container">
-      <button type="button" class="btn btn-secondary" @click="editAnswers">
+      <button type="button" class="edit-btn" @click="editAnswers">
         แก้ไขข้อมูล
       </button>
-      <button type="button" class="btn btn-primary" @click="submitFinalResponse">
+      <button type="button" class="submit-btn" @click="submitFinalResponse">
         บันทึก
       </button>
 
@@ -259,6 +257,29 @@ const goToHome = () => {
 
 .section {
   border: none;
+}
+
+.p{
+  padding: 8px;
+  margin-top: 24px ;
+  margin-bottom: 24px;
+}
+
+.edit-btn {
+  height: 100%;
+  width: 188px;
+  background-color: white;
+  color: #eb4648;
+  padding: 8px;
+  border: 1px solid #eb4648;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+  margin-right: 16px;
+}
+
+.edit-btn:hover {
+  background-color: #e3e3e3;
 }
 
 .section-title {
@@ -310,6 +331,7 @@ const goToHome = () => {
 }
 
 .question-label {
+  margin-bottom: 4px;
   font-size: 18px;
   display: block;
   padding: 8px;
@@ -349,7 +371,7 @@ const goToHome = () => {
 
 .submit-btn {
   height: 100%;
-  width: 144px;
+  width: 188px;
   background-color: #eb4648;
   color: white;
   padding: 8px;
