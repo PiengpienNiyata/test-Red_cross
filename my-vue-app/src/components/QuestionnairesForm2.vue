@@ -60,8 +60,12 @@ const showPreResult = () => {
 };
 
 const showFinalResult = () => {
-  isPreResult.value = false;
-  isFinalResult.value = true;
+  if (finalRoute.value === "unknown") {
+    router.push("/questionnairesResearcher3");
+  } else {
+    isPreResult.value = false;
+    isFinalResult.value = true;
+  }
 };
 
 const updateFinalRoute = (questionId: number) => {
@@ -73,19 +77,24 @@ const updateFinalRoute = (questionId: number) => {
     11002.2103: "Route G",
     11002.2104: "Route H",
     11002.2114: "Route E",
-    11002.2116: "Route F"
+    11002.2116: "Route F",
   };
 
-  if (routeMapping[questionId]) {
+  const selectedAnswer = answers.value[questionId];
+
+  if (selectedAnswer === "ไม่แน่ใจ") {
+    finalRoute.value = "unknown";
+  } else if (routeMapping[questionId]) {
     finalRoute.value = routeMapping[questionId];
   }
 };
 
 const submitFinalResponse = async () => {
-  store.setFinalRoute(finalRoute.value);
+  store.setFinalRoute(finalRoute.value === "unknown" ? "unknown" : finalRoute.value);
   saveResponsesToStore();
   router.push("/questionnairesResearcher3");
 };
+
 
 
 const isNextDisabled = computed(() => {

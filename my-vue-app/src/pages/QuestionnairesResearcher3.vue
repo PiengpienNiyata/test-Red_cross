@@ -69,8 +69,7 @@ const submitFinalResponse = async () => {
       email: store.answers[1005] || "",
     });
 
-    const { name, project_name, branch_info, phone_number, email } =
-      store.researcher;
+    const { name, project_name, branch_info, phone_number, email } = store.researcher;
 
     if (!name || !project_name || !branch_info || !phone_number || !email) {
       alert("Please fill in all researcher details before submitting!");
@@ -80,20 +79,11 @@ const submitFinalResponse = async () => {
     let researcherID = store.researcherID;
 
     if (!researcherID) {
-      const researcherResponse = await fetch(
-        "http://localhost:8080/api/researcher",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            project_name,
-            branch_info,
-            phone_number,
-            email,
-          }),
-        }
-      );
+      const researcherResponse = await fetch("http://localhost:8080/api/researcher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, project_name, branch_info, phone_number, email }),
+      });
 
       const researcherResult = await researcherResponse.json();
       if (!researcherResponse.ok) {
@@ -126,7 +116,7 @@ const submitFinalResponse = async () => {
         questionnaire_id: 1,
         answers: answersData,
         survey: surveyData,
-        final_route: store.finalRoute,
+        final_route: store.finalRoute === "unknown" ? "unknown" : store.finalRoute,
       }),
     });
 
@@ -142,6 +132,7 @@ const submitFinalResponse = async () => {
     submissionError.value = true;
   }
 };
+
 
 const startNewSurvey = () => {
   store.resetStore();
@@ -161,6 +152,7 @@ const goToHome = () => {
   <div v-for="section in questionnaire.sections" :key="section.name" class="section">
     <h4 v-if="section.name !== 'null'" class="section-title">
       {{ section.name }}
+
     </h4>
 
     <div class="row">
@@ -207,9 +199,10 @@ const goToHome = () => {
           </div>
         </div>
       </div>
-      <p class="p">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>      
+      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>
     </div>
 
+<br>
     <div class="btn-container">
       <button type="button" class="edit-btn" @click="editAnswers">
         แก้ไขข้อมูล
