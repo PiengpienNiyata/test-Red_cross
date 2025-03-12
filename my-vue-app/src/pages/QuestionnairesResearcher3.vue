@@ -146,99 +146,64 @@ const startNewSurvey = () => {
   router.push("/questionnairesResearcher");
 };
 const goToHome = () => {
-    store.resetStore();
+  store.resetStore();
   router.push("/");
 };
 </script>
 
 <template>
+
   <div class="final-review">
-    <h2>ตรวจสอบคำตอบ</h2>
 
     <div class="questionnaire">
-      <h3>แบบสอบถาม</h3>
-
-      <div
-        v-for="q in firstFormAnswers"
-        :key="q.id"
-        :class="{
-          'col-md-5':
-            q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
+      <div class="row">
+        <div v-for="q in firstFormAnswers" :key="q.id" :class="{
+          
+          'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
           'col-md-12': q.id === 1003,
-          'no-margin':
-            q.id === 1001 ||
-            q.id === 1002 ||
-            q.id === 1003 ||
-            q.id === 1004 ||
-            q.id === 1005,
-        }"
-      >
-        <label class="question-label">{{ q.question }}</label>
+          'no-margin': q.id >= 1001 && q.id <= 1005,
+        }">
+        
+          <label class="question-label">{{ q.question }}</label>
 
-        <input
-          v-if="q.type === 'text'"
-          :value="q.answer"
-          type="text"
-          class="input-text"
-          disabled
-        />
+          <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
 
-        <div v-else-if="q.type === 'radio'" class="radio-group">
-          <div v-for="option in q.options" :key="option" class="radio-option">
-            <input
-              type="radio"
-              :name="'q' + q.id"
-              :value="option"
-              :checked="q.answer === option"
-              class="radio-input"
-              disabled
-            />
-            <label class="radio-label">{{ option }}</label>
+
+          <div v-else-if="q.type === 'radio'" class="radio-group">
+            <div v-for="option in q.options" :key="option" class="radio-option">
+              <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input"
+                disabled />
+              <label class="radio-label">{{ option }}</label>
+            </div>
           </div>
-        </div>
 
-        <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-          <div
-            v-for="option in q.options"
-            :key="option"
-            class="checkbox-option"
-          >
-            <input
-              type="checkbox"
-              :value="option"
-              :checked="(q.answer || []).includes(option)"
-              class="checkbox-input"
-              disabled
-            />
-            <label class="checkbox-label">{{ option }}</label>
+          <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
+            <div v-for="option in q.options" :key="option" class="checkbox-option">
+              <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)" class="checkbox-input"
+                disabled />
+              <label class="checkbox-label">{{ option }}</label>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div class="questionnaire">
-      <h3>Explore the precision intervention</h3>
+      <h3 class="aa">Explore the precision intervention</h3>
 
       <div v-for="q in secondFormAnswers" :key="q.id">
         <label class="question-label">{{ q.question }}</label>
 
         <div v-if="q.type === 'radio'" class="radio-group">
           <div v-for="option in q.options" :key="option" class="radio-option">
-            <input
-              type="radio"
-              :name="'q' + q.id"
-              :value="option"
-              :checked="q.answer === option"
-              class="radio-input"
-              disabled
-            />
+            <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input"
+              disabled />
             <label class="radio-label">{{ option }}</label>
           </div>
         </div>
       </div>
-      <h3>
-        Route สุดท้ายที่ได้รับ:
-        <p class="final-route">{{ finalRoute }}</p>
+      <h3 class="h3">
+        Result Roadmap: <p class="final-route">{{ finalRoute }}</p>
       </h3>
     </div>
 
@@ -246,35 +211,31 @@ const goToHome = () => {
       <button type="button" class="btn btn-secondary" @click="editAnswers">
         แก้ไขข้อมูล
       </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        @click="submitFinalResponse"
-      >
+      <button type="button" class="btn btn-primary" @click="submitFinalResponse">
         บันทึก
       </button>
 
 
-    <div v-if="submissionSuccess" class="modal">
-      <div class="modal-content">
-        <h3>บันทึกข้อมูลสำเร็จ</h3>
-        <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
-        <div class="modal-buttons">
-          <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button>
-          <button @click="startNewSurvey" class="btn btn-primary">ส่งคำตอบเพิ่ม</button>
+      <div v-if="submissionSuccess" class="modal">
+        <div class="modal-content">
+          <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
+          <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
+          <div class="modal-buttons">
+            <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button>
+            <button @click="startNewSurvey" class="btn btn-primary">ส่งคำตอบเพิ่ม</button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="submissionError" class="modal">
+        <div class="modal-content">
+          <h3 class="h3">เกิดข้อผิดพลาด</h3>
+          <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
+          <button @click="submissionError = false" class="btn btn-primary">ปิด</button>
         </div>
       </div>
     </div>
-
-    <div v-if="submissionError" class="modal">
-      <div class="modal-content">
-        <h3>เกิดข้อผิดพลาด</h3>
-        <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
-        <button @click="submissionError = false" class="btn btn-primary">ปิด</button>
-      </div>
-    </div>
   </div>
-    </div>
 </template>
 <style scoped>
 .questionnaire {
@@ -307,6 +268,21 @@ const goToHome = () => {
   margin: 0px 0px 24px 0px;
   border: none;
 }
+.aa{
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.h3{  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 24px;}
 
 .question {
   margin: 0 !important;
@@ -434,5 +410,4 @@ const goToHome = () => {
   border: none;
   cursor: pointer;
 }
-
 </style>
