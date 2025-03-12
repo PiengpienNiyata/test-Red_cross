@@ -395,10 +395,12 @@ const goToHome = () => {
 }
 
 .modal-content {
+  max-width: 400px;
   background: white;
   padding: 20px;
   border-radius: 8px;
   text-align: center;
+  align-items: center;
 }
 
 .modal-buttons {
