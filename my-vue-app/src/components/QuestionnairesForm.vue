@@ -168,7 +168,7 @@ onMounted(() => {
     <div v-if="warningModal" class="modal">
   <div class="modal-content">
     <h3 v-if="missingQuestions.length > 0" class="noti">กรุณาตอบทุกคำถามก่อนดำเนินการต่อ</h3>
-    <h3 v-else-if="invalidQuestions.length > 0" class="noti">กรุณากรอกแบบฟอร์มให้ถูกต้องก่อนดำเนินการต่อ</h3>
+    <h3 v-else-if="invalidQuestions.length > 0" class="noti">กรุณากรอกข้อมูลให้ถูกต้อง</h3>
 
     <ul v-if="invalidQuestions.length > 0">
 

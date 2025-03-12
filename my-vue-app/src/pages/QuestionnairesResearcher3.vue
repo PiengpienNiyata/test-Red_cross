@@ -5,7 +5,7 @@ import { useRouter } from "vue-router";
 import { questionnaireData } from "@/stores/questionnairesResearcher";
 import { questionnaireData as questionnaireData2 } from "@/stores/questionnairesResearcher2";
 import type { Question2 } from "@/stores/questionnairesResearcher2";
-
+import { VITE_API_BASE_URL } from "@/stores/config";
 const store = useQuestionnaireStore();
 const router = useRouter();
 
@@ -79,7 +79,7 @@ const submitFinalResponse = async () => {
     let researcherID = store.researcherID;
 
     if (!researcherID) {
-      const researcherResponse = await fetch("http://localhost:8080/api/researcher", {
+      const researcherResponse = await fetch(`${VITE_API_BASE_URL}/api/researcher`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, project_name, branch_info, phone_number, email }),
@@ -108,7 +108,7 @@ const submitFinalResponse = async () => {
       }
     });
 
-    const response = await fetch("http://localhost:8080/api/response", {
+    const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -217,7 +217,7 @@ const goToHome = () => {
           <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
           <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
           <div class="modal-buttons">
-            <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button>
+            <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
             <button @click="startNewSurvey" class="btn btn-primary">ส่งคำตอบเพิ่ม</button>
           </div>
         </div>
