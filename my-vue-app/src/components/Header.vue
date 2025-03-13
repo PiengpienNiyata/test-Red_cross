@@ -27,8 +27,8 @@
 }
 
 .logo {
-  width: 139px;
-  height: 94px;
+  width: 128px !important;
+  height: 94px !important;
 }
 
 </style>
