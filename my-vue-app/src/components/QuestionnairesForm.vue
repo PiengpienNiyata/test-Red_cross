@@ -8,7 +8,7 @@ import { toRefs } from "vue";
 const store = useQuestionnaireStore();
 const questionnaire = ref(questionnaireData[0]);
 const router = useRouter();
-  const { answers } = toRefs(store);
+const { answers } = toRefs(store);
 
 const warningModal = ref(false);
 const missingQuestions = ref<number[]>([]);
@@ -16,12 +16,11 @@ const invalidQuestions = ref<number[]>([]);
 const completeAnswer = ref(true);
 const invalidForm = ref(true);
 
-
 const isFormValid = computed(() => {
   invalidQuestions.value = [];
 
-  return questionnaire.value.sections.every(section =>
-    section.questions.every(q => {
+  return questionnaire.value.sections.every((section) =>
+    section.questions.every((q) => {
       const answer = answers.value[q.id];
 
       if (q.type === "radio" && (answer === undefined || answer === "")) {
@@ -34,7 +33,11 @@ const isFormValid = computed(() => {
         return false;
       }
 
-      if (typeof answer === "string" && answer.trim().length < 3 && q.id < 1006) {
+      if (
+        typeof answer === "string" &&
+        answer.trim().length < 3 &&
+        q.id < 1006
+      ) {
         invalidQuestions.value.push(q.id);
         return false;
       }
@@ -60,28 +63,101 @@ const isFormValid = computed(() => {
   );
 });
 
+const highlightErrors = () => {
+  document.querySelectorAll(".error-border").forEach((el) => el.classList.remove("error-border"));
+
+  [...missingQuestions.value, ...invalidQuestions.value].forEach((id) => {
+    const inputElement =
+      document.querySelector(`input[data-question-id="${id}"]`) ||
+      document.querySelector(`.radio-group[data-question-id="${id}"]`) ||
+      document.querySelector(`.checkbox-group[data-question-id="${id}"]`);
+
+    if (inputElement) {
+      inputElement.classList.add("error-border");
+    }
+  });
+};
+
+
+const scrollToFirstError = () => {
+  const firstErrorId = missingQuestions.value.length > 0
+    ? missingQuestions.value[0]
+    : invalidQuestions.value[0];
+
+  if (!firstErrorId) return;
+
+  const firstErrorElement =
+    document.querySelector(`input[data-question-id="${firstErrorId}"]`) ||
+    document.querySelector(`.radio-group[data-question-id="${firstErrorId}"]`) ||
+    document.querySelector(`.checkbox-group[data-question-id="${firstErrorId}"]`);
+  if (firstErrorElement) {
+    firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+};
+
+
 const validateForm = () => {
+  missingQuestions.value = [];
+  invalidQuestions.value = [];
+
   missingQuestions.value = questionnaire.value.sections
-    .flatMap(section => section.questions)
-    .filter(q => !answers.value[q.id] || (Array.isArray(answers.value[q.id]) && answers.value[q.id].length === 0))
-    .map(q => q.id);
+    .flatMap((section) => section.questions)
+    .filter(
+      (q) =>
+        !answers.value[q.id] ||
+        (Array.isArray(answers.value[q.id]) && answers.value[q.id].length === 0)
+    )
+    .map((q) => q.id);
+
+  invalidQuestions.value = questionnaire.value.sections
+    .flatMap((section) => section.questions)
+    .filter((q) => {
+      const answer = answers.value[q.id];
+
+      if (q.type === "radio" && (answer === undefined || answer === ""))
+        return true;
+      if (!answer || (Array.isArray(answer) && answer.length === 0))
+        return true;
+      if (typeof answer === "string" && answer.trim().length < 3 && q.id < 1006)
+        return true;
+
+      if (q.id === 1005 && typeof answer === "string") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return !emailRegex.test(answer);
+      }
+
+      if (q.id === 1004 && typeof answer === "string") {
+        const phoneRegex = /^\d{8,15}$/;
+        return !phoneRegex.test(answer);
+      }
+
+      return false;
+    })
+    .map((q) => q.id);
 
   completeAnswer.value = missingQuestions.value.length === 0;
   invalidForm.value = invalidQuestions.value.length === 0;
 
   if (!isFormValid.value) {
+    highlightErrors();
+    scrollToFirstError();
     warningModal.value = true;
   } else {
     saveAnswers();
   }
 };
 
+const closeWarningModal = () => {
+  warningModal.value = false;
+  setTimeout(() => {
+    scrollToFirstError();
+  }, 100);
+};
 
 const saveAnswers = () => {
   store.setAnswers(answers.value);
   router.push("/questionnairesResearcher2");
 };
-
 
 const initializeAnswers = () => {
   questionnaire.value.sections.forEach((section) => {
@@ -96,13 +172,10 @@ const initializeAnswers = () => {
   });
 };
 
-
 onMounted(() => {
   initializeAnswers();
 });
-
 </script>
-
 
 <template>
   <div class="questionnaire">
@@ -111,31 +184,57 @@ onMounted(() => {
     </h3>
 
     <form @submit.prevent="validateForm" class="form-container">
-      <div v-for="section in questionnaire.sections" :key="section.name" class="section">
+      <div
+        v-for="section in questionnaire.sections"
+        :key="section.name"
+        class="section"
+      >
         <h4 v-if="section.name !== 'null'" class="section-title">
           {{ section.name }}
         </h4>
 
         <div class="row">
-          <div v-for="q in section.questions ?? []" :key="q.id"  :class="{
-              'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
+          <div
+            v-for="q in section.questions ?? []"
+            :key="q.id"
+            :class="{
+              'col-md-6':
+                q.id === 1001 ||
+                q.id === 1002 ||
+                q.id === 1004 ||
+                q.id === 1005,
               'col-md-12': q.id === 1003,
               'no-margin': q.id === 1001 || q.id === 1002 || q.id === 1003,
               'padding-left': q.id === 1001,
               'padding-right': q.id === 1002,
-            }">
+            }"
+          >
             <label class="question-label">{{ q.question }}</label>
 
             <input
-              v-if="q.type === 'text'"
-              v-model="answers[q.id]"
-              :placeholder="q.question"
-              type="text"
-              class="input-text"
-            />
+  v-if="q.type === 'text'"
+  v-model="answers[q.id]"
+  :placeholder="q.question"
+  type="text"
+  class="input-text"
+  :data-question-id="q.id"
+  :class="{
+    'error-border':
+      missingQuestions.includes(q.id) ||
+      invalidQuestions.includes(q.id),
+  }"
+/>
 
-            <div v-else-if="q.type === 'radio'" class="radio-group">
-              <div v-for="option in q.options" :key="option" class="radio-option">
+            <div
+              v-else-if="q.type === 'radio'"
+              class="radio-group"
+              :data-question-id="q.id"
+            >
+              <div
+                v-for="option in q.options"
+                :key="option"
+                class="radio-option"
+              >
                 <input
                   type="radio"
                   :name="'q' + q.id"
@@ -147,13 +246,18 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-              <div v-for="option in q.options" :key="option" class="checkbox-option">
+            <div v-else-if="q.type === 'checkbox'" class="checkbox-group" :data-question-id="q.id">
+              <div
+                v-for="option in q.options"
+                :key="option"
+                class="checkbox-option"
+              >
                 <input
                   type="checkbox"
                   :value="option"
                   v-model="answers[q.id]"
                   class="checkbox-input"
+                  :data-question-id="q.id"
                 />
                 <label class="checkbox-label">{{ option }}</label>
               </div>
@@ -166,18 +270,19 @@ onMounted(() => {
     </form>
 
     <div v-if="warningModal" class="modal">
-  <div class="modal-content">
-    <h3 v-if="missingQuestions.length > 0" class="noti">กรุณาตอบทุกคำถามก่อนดำเนินการต่อ</h3>
-    <h3 v-else-if="invalidQuestions.length > 0" class="noti">กรุณากรอกข้อมูลให้ถูกต้อง</h3>
+      <div class="modal-content">
+        <h3 v-if="missingQuestions.length > 0" class="noti">
+          กรุณาตอบทุกคำถามก่อนดำเนินการต่อ
+        </h3>
+        <h3 v-else-if="invalidQuestions.length > 0" class="noti">
+          กรุณากรอกข้อมูลให้ถูกต้อง
+        </h3>
 
-    <ul v-if="invalidQuestions.length > 0">
+        <ul v-if="invalidQuestions.length > 0"></ul>
 
-    </ul>
-
-    <button @click="warningModal = false" class="close-btn">ปิด</button>
-  </div>
-</div>
-
+        <button @click="closeWarningModal" class="close-btn">ปิด</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -234,7 +339,7 @@ onMounted(() => {
   padding-left: 16px !important;
 }
 
-.noti{
+.noti {
   font-weight: 400;
   font-size: 20px;
 }
