@@ -51,6 +51,15 @@ const secondFormAnswers = computed(
 
 const finalRoute = store.finalRoute;
 
+const lastAnsweredQuestion = computed(() => {
+  const answeredQuestions = Object.entries(store.answers)
+    .filter(([id, answer]) => Number(id) >= 11001 && answer !== "")
+    .map(([id]) => getQuestionById2(Number(id)));
+
+  return answeredQuestions.length > 0 ? answeredQuestions[answeredQuestions.length - 1] : null;
+});
+
+
 const editAnswers = () => {
   store.resetServey();
   router.push("/questionnairesResearcher");
@@ -201,10 +210,8 @@ const goToHome = () => {
           </div>
         </div>
       </div>
-      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute
-          }}</span></p>
-      <!-- <p class="p" v-if="store.finalRoute == null">หมายเลข match: <span :style="{ color: '#EB4648' }">{{
-        props.lastQuestion }}</span></p> -->
+      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>
+      <p class="p" v-else>หมายเลข match: <span :style="{ color: '#EB4648' }">{{ lastAnsweredQuestion.question }}</span></p>
     </div>
 
     <br>
