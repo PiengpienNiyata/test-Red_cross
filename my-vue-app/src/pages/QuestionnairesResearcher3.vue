@@ -149,40 +149,42 @@ const goToHome = () => {
   <div class="final-review">
 
     <div class="questionnaire">
-  <div v-for="section in questionnaire.sections" :key="section.name" class="section">
-    <h4 v-if="section.name !== 'null'" class="section-title">
-      {{ section.name }}
+      <div v-for="section in questionnaire.sections" :key="section.name" class="section">
+        <h4 v-if="section.name !== 'null'" class="section-title">
+          {{ section.name }}
 
-    </h4>
+        </h4>
 
-    <div class="row">
-      <div v-for="q in firstFormAnswers.filter(q => section.questions.some(sq => sq.id === q.id))" :key="q.id" :class="{
-          'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
-          'col-md-12': q.id === 1003,
-          'no-margin': q.id >= 1001 && q.id <= 1005,
-        }"
-      >
-        <label class="question-label">{{ q.question }}</label>
+        <div class="row">
+          <div v-for="q in firstFormAnswers.filter(q => section.questions.some(sq => sq.id === q.id))" :key="q.id"
+            :class="{
+              'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
+              'col-md-12': q.id === 1003,
+              'no-margin': q.id >= 1001 && q.id <= 1005,
+            }">
+            <label class="question-label">{{ q.question }}</label>
 
-        <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
+            <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
 
-        <div v-else-if="q.type === 'radio'" class="radio-group">
-          <div v-for="option in q.options" :key="option" class="radio-option">
-            <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input" disabled />
-            <label class="radio-label">{{ option }}</label>
-          </div>
-        </div>
+            <div v-else-if="q.type === 'radio'" class="radio-group">
+              <div v-for="option in q.options" :key="option" class="radio-option">
+                <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option"
+                  class="radio-input" disabled />
+                <label class="radio-label">{{ option }}</label>
+              </div>
+            </div>
 
-        <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-          <div v-for="option in q.options" :key="option" class="checkbox-option">
-            <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)" class="checkbox-input" disabled />
-            <label class="checkbox-label">{{ option }}</label>
+            <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
+              <div v-for="option in q.options" :key="option" class="checkbox-option">
+                <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)"
+                  class="checkbox-input" disabled />
+                <label class="checkbox-label">{{ option }}</label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
 
     <div class="questionnaire">
@@ -199,10 +201,13 @@ const goToHome = () => {
           </div>
         </div>
       </div>
-      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>
+      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute
+          }}</span></p>
+      <!-- <p class="p" v-if="store.finalRoute == null">หมายเลข match: <span :style="{ color: '#EB4648' }">{{
+        props.lastQuestion }}</span></p> -->
     </div>
 
-<br>
+    <br>
     <div class="btn-container">
       <button type="button" class="edit-btn" @click="editAnswers">
         แก้ไขข้อมูล
@@ -257,9 +262,9 @@ const goToHome = () => {
   border: none;
 }
 
-.p{
+.p {
   padding: 8px;
-  margin-top: 24px ;
+  margin-top: 24px;
   margin-bottom: 24px;
 }
 
@@ -287,7 +292,8 @@ const goToHome = () => {
   margin: 0px 0px 24px 0px;
   border: none;
 }
-.aa{
+
+.aa {
   margin-top: 10px;
   margin-bottom: 10px;
   padding-top: 8px;
@@ -297,11 +303,13 @@ const goToHome = () => {
   line-height: 24px;
 }
 
-.h3{  padding-top: 8px;
+.h3 {
+  padding-top: 8px;
   padding-bottom: 8px;
   font-size: 20px;
   font-weight: 400;
-  line-height: 24px;}
+  line-height: 24px;
+}
 
 .question {
   margin: 0 !important;

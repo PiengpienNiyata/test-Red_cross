@@ -401,12 +401,11 @@ onMounted(() => {
   background-color: #c9302c;
 }
 
-/* ✅ Highlight Missing Fields */
 .error-border {
   border: 2px solid #eb4648 !important;
+  border-radius: 4px;
 }
 
-/* ✅ Modal Styling */
 .modal {
   position: fixed;
   top: 0;

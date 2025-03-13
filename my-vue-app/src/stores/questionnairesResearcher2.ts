@@ -75,7 +75,7 @@ export const questionnaireData: Questionnaire2[] = [
                     
                     //Route B
                     {
-                        id: 11002.22, type: "radio", question: "Route B (2.2.2) Solely induce sign of irregularities by a signal cell",
+                        id: 11002.22, type: "radio", question: "2.2.2) Solely induce sign of irregularities by a signal cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.221, "ไม่แน่ใจ": "preResult" }
                     },
