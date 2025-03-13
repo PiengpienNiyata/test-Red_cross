@@ -332,6 +332,9 @@ onMounted(() => {
   padding-right: 16px;
 }
 
+.question-container{
+  margin-top: 8px;
+}
 .title {
   font-weight: 400;
   padding: 8px 0px;
