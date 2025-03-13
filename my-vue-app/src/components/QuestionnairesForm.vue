@@ -63,20 +63,42 @@ const isFormValid = computed(() => {
   );
 });
 
+// const highlightErrors = () => {
+//   document
+//     .querySelectorAll(".error-border")
+//     .forEach((el) => el.classList.remove("error-border"));
+
+//   [...missingQuestions.value, ...invalidQuestions.value].forEach((id) => {
+//     const inputElement =
+//       document.querySelector(`input[data-question-id="${id}"]`) ||
+//       document.querySelector(`.radio-group[data-question-id="${id}"]`) ||
+//       document.querySelector(`.checkbox-group[data-question-id="${id}"]`);
+
+//     if (inputElement) {
+//       inputElement.classList.add("error-border");
+//     }
+//   });
+// };
+
 const highlightErrors = () => {
   document
     .querySelectorAll(".error-border")
     .forEach((el) => el.classList.remove("error-border"));
 
   [...missingQuestions.value, ...invalidQuestions.value].forEach((id) => {
-    const inputElement =
-      document.querySelector(`input[data-question-id="${id}"]`) ||
-      document.querySelector(`.radio-group[data-question-id="${id}"]`) ||
-      document.querySelector(`.checkbox-group[data-question-id="${id}"]`);
+    const inputElement = document.querySelector(
+      `input[data-question-id="${id}"]`
+    );
+    const radioGroup = document.querySelector(
+      `.radio-group[data-question-id="${id}"]`
+    );
+    const checkboxGroup = document.querySelector(
+      `.checkbox-group[data-question-id="${id}"]`
+    );
 
-    if (inputElement) {
-      inputElement.classList.add("error-border");
-    }
+    if (inputElement) inputElement.classList.add("error-border"); // Highlight only input box for text
+    if (radioGroup) radioGroup.parentElement.classList.add("error-border"); // Highlight only question block for radio
+    if (checkboxGroup) checkboxGroup.parentElement.classList.add("error-border"); // Highlight only question block for checkbox
   });
 };
 
@@ -213,9 +235,11 @@ onMounted(() => {
               'padding-left': q.id === 1001,
               'padding-right': q.id === 1002,
             }"
+            class="question-container"
           >
             <label class="question-label">{{ q.question }}</label>
 
+            <!-- Text Input -->
             <input
               v-if="q.type === 'text'"
               v-model="answers[q.id]"
@@ -230,10 +254,12 @@ onMounted(() => {
               }"
             />
 
+            <!-- Radio Button Group -->
             <div
               v-else-if="q.type === 'radio'"
               class="radio-group"
               :data-question-id="q.id"
+              
             >
               <div
                 v-for="option in q.options"
@@ -251,10 +277,12 @@ onMounted(() => {
               </div>
             </div>
 
+            <!-- Checkbox Group -->
             <div
               v-else-if="q.type === 'checkbox'"
               class="checkbox-group"
               :data-question-id="q.id"
+              
             >
               <div
                 v-for="option in q.options"
@@ -266,7 +294,6 @@ onMounted(() => {
                   :value="option"
                   v-model="answers[q.id]"
                   class="checkbox-input"
-                  :data-question-id="q.id"
                 />
                 <label class="checkbox-label">{{ option }}</label>
               </div>
@@ -442,5 +469,19 @@ onMounted(() => {
   color: white;
   border: none;
   cursor: pointer;
+}
+
+/* For text inputs: Highlight only the box */
+input.error-border {
+  border: 2px solid #eb4648 !important;
+  border-radius: 4px;
+}
+
+/* For radio and checkbox questions: Highlight the entire question block */
+.radio-group.error-border,
+.checkbox-group.error-border {
+  border: 2px solid #eb4648 !important;
+  padding: 10px;
+  border-radius: 6px;
 }
 </style>
