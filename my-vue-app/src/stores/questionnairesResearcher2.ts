@@ -232,7 +232,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 11002.211023, type: "radio", question: "Identified the originated cell",
                         options: ["ใช่", "ไม่แน่ใจ"],
-                        next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 11002.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
                         id: 11002.2229, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of expression",
@@ -242,10 +242,10 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 11002.22291, type: "radio", question: "Sustainable normalization of the originated cell",
                         options: ["Remission", "Controlling", "ไม่แน่ใจ"],
-                        next: { "Remission": 11002.222910, "Controlling": 11002.222911, "ไม่แน่ใจ": "preResult" }
+                        next: { "Remission": 123, "Controlling": 11002.222911, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.222910, type: "radio", question: "Remission",
+                        id: 123, type: "radio", question: "Remission",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
                     },
@@ -257,10 +257,10 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 11002.22292, type: "radio", question: "Match to any section of the molecular cascade",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 11002.222920, "ไม่": 11002.222921, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 88, "ไม่": 11002.222921, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.222920, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
+                        id: 88, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
                     },
