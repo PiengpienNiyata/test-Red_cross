@@ -257,10 +257,10 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 11002.22292, type: "radio", question: "Match to any section of the molecular cascade",
                         options: ["ใช่", "ไม่", "ไม่แน่ใจ"],
-                        next: { "ใช่": 11002.222920, "ไม่": 11002.222921, "ไม่แน่ใจ": "preResult" }
+                        next: { "ใช่": 88, "ไม่": 11002.222921, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.222920, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
+                        id: 88, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": "finalResult", "ไม่แน่ใจ": "preResult" }
                     },
