@@ -102,7 +102,9 @@ const submitFinalResponse = async () => {
       }
 
       researcherID = researcherResult.researcher.id;
-      store.setResearcherID(researcherID);
+      if (researcherID !== null) {
+  store.setResearcherID(researcherID);
+}
     }
 
     const answersData: Record<string, string | string[]> = {};
@@ -211,7 +213,7 @@ const goToHome = () => {
         </div>
       </div>
       <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>
-      <p class="p" v-else>หมายเลข match: <span :style="{ color: '#EB4648' }">{{ lastAnsweredQuestion.question }}</span></p>
+      <p class="p" v-else>หมายเลข match: <span :style="{ color: '#EB4648' }">{{ lastAnsweredQuestion?.question }}</span></p>
     </div>
 
     <br>

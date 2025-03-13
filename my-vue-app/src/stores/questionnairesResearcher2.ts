@@ -16,6 +16,7 @@ export interface Question2 {
     question: string;
     options?: string[];
     next?: Record<string, number | "preResult" | "finalResult">;
+    answer?: string | string[];
 }
 
 export const questionnaireData: Questionnaire2[] = [

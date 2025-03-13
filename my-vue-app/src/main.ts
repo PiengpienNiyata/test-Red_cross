@@ -2,6 +2,8 @@ import { createApp } from 'vue'
 import './assets/main.css'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
+// @ts-ignore
 import BootstrapVue3 from 'bootstrap-vue-3';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import App from './App.vue'
