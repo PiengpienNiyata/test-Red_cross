@@ -51,7 +51,7 @@ const isFormValid = computed(() => {
       }
 
       if (q.id === 1004 && typeof answer === "string") {
-        const phoneRegex = /^\d{8,15}$/;
+        const phoneRegex = /^(?:02|05)\d{7,8}$|^(0[689])\d{8}$/;
         if (!phoneRegex.test(answer)) {
           invalidQuestions.value.push(q.id);
           return false;
@@ -64,7 +64,9 @@ const isFormValid = computed(() => {
 });
 
 const highlightErrors = () => {
-  document.querySelectorAll(".error-border").forEach((el) => el.classList.remove("error-border"));
+  document
+    .querySelectorAll(".error-border")
+    .forEach((el) => el.classList.remove("error-border"));
 
   [...missingQuestions.value, ...invalidQuestions.value].forEach((id) => {
     const inputElement =
@@ -78,23 +80,26 @@ const highlightErrors = () => {
   });
 };
 
-
 const scrollToFirstError = () => {
-  const firstErrorId = missingQuestions.value.length > 0
-    ? missingQuestions.value[0]
-    : invalidQuestions.value[0];
+  const firstErrorId =
+    missingQuestions.value.length > 0
+      ? missingQuestions.value[0]
+      : invalidQuestions.value[0];
 
   if (!firstErrorId) return;
 
   const firstErrorElement =
     document.querySelector(`input[data-question-id="${firstErrorId}"]`) ||
-    document.querySelector(`.radio-group[data-question-id="${firstErrorId}"]`) ||
-    document.querySelector(`.checkbox-group[data-question-id="${firstErrorId}"]`);
+    document.querySelector(
+      `.radio-group[data-question-id="${firstErrorId}"]`
+    ) ||
+    document.querySelector(
+      `.checkbox-group[data-question-id="${firstErrorId}"]`
+    );
   if (firstErrorElement) {
     firstErrorElement.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 };
-
 
 const validateForm = () => {
   missingQuestions.value = [];
@@ -127,7 +132,7 @@ const validateForm = () => {
       }
 
       if (q.id === 1004 && typeof answer === "string") {
-        const phoneRegex = /^\d{8,15}$/;
+        const phoneRegex = /^(?:02|05)\d{7,8}$|^(0[689])\d{8}$/;
         return !phoneRegex.test(answer);
       }
 
@@ -212,18 +217,18 @@ onMounted(() => {
             <label class="question-label">{{ q.question }}</label>
 
             <input
-  v-if="q.type === 'text'"
-  v-model="answers[q.id]"
-  :placeholder="q.question"
-  type="text"
-  class="input-text"
-  :data-question-id="q.id"
-  :class="{
-    'error-border':
-      missingQuestions.includes(q.id) ||
-      invalidQuestions.includes(q.id),
-  }"
-/>
+              v-if="q.type === 'text'"
+              v-model="answers[q.id]"
+              :placeholder="q.question"
+              type="text"
+              class="input-text"
+              :data-question-id="q.id"
+              :class="{
+                'error-border':
+                  missingQuestions.includes(q.id) ||
+                  invalidQuestions.includes(q.id),
+              }"
+            />
 
             <div
               v-else-if="q.type === 'radio'"
@@ -246,7 +251,11 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-else-if="q.type === 'checkbox'" class="checkbox-group" :data-question-id="q.id">
+            <div
+              v-else-if="q.type === 'checkbox'"
+              class="checkbox-group"
+              :data-question-id="q.id"
+            >
               <div
                 v-for="option in q.options"
                 :key="option"
