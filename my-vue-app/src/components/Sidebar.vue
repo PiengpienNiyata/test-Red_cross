@@ -6,8 +6,8 @@
         :style="{ color: isActive('/questionnairesResearcher') ? '#EB4648' : '#A4A4A4' }"
       ><!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
 
-        <img :src="isActive('/questionnairesResearcher') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
-        <span>แบบสอบถาม</span>
+      <img :src="isActive('/questionnairesResearcher') ? icon1 : icon2" alt="icon" class="icon" />
+      <span>แบบสอบถาม</span>
       </div>
     </div>
     <div class="divider"></div>
@@ -18,8 +18,8 @@
         
         :style="{ color: isActive('/questionnairesResearcher2') ? '#EB4648' : '#A4A4A4' }"
       >
-        <img :src="isActive('/questionnairesResearcher2') ? '/src/assets/icon1.png' : '/src/assets/icon2.png'" alt="icon" class="icon">
-        <span>Explore the<br>precision <br>intervention</span>
+      <img :src="isActive('/questionnairesResearcher2') ? icon1 : icon2" alt="icon" class="icon" />
+      <span>Explore the<br>precision <br>intervention</span>
       </div>
     </div>
     <div class="divider"></div>
@@ -29,13 +29,18 @@
         class="sidebar-item-2" 
         :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
       >
-        <img :src="isActive('/questionnairesResearcher3') ? '/src/assets/icon4.png' : '/src/assets/icon3.png'" alt="icon" class="icon">
-        <span>ตรวจสอบข้อมูล</span>
+      <img :src="isActive('/questionnairesResearcher3') ? icon4 : icon3" alt="icon" class="icon" />
+      <span>ตรวจสอบข้อมูล</span>
       </div>
     </div>
   </div>
 </template>
-
+<script setup>
+import icon1 from '@/assets/icon1.png';
+import icon2 from '@/assets/icon2.png';
+import icon3 from '@/assets/icon3.png';
+import icon4 from '@/assets/icon4.png';
+</script>
 <script>
 export default {
   computed: {
