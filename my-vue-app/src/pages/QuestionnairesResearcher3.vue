@@ -56,9 +56,10 @@ const lastAnsweredQuestion = computed(() => {
     .filter(([id, answer]) => Number(id) >= 11001 && answer !== "")
     .map(([id]) => getQuestionById2(Number(id)));
 
-  return answeredQuestions.length > 0 ? answeredQuestions[answeredQuestions.length - 1] : null;
+  return answeredQuestions.length > 0
+    ? answeredQuestions[answeredQuestions.length - 1]
+    : null;
 });
-
 
 const editAnswers = () => {
   store.resetServey();
@@ -78,7 +79,8 @@ const submitFinalResponse = async () => {
       email: store.answers[1005] || "",
     });
 
-    const { name, project_name, branch_info, phone_number, email } = store.researcher;
+    const { name, project_name, branch_info, phone_number, email } =
+      store.researcher;
 
     if (!name || !project_name || !branch_info || !phone_number || !email) {
       alert("Please fill in all researcher details before submitting!");
@@ -88,11 +90,20 @@ const submitFinalResponse = async () => {
     let researcherID = store.researcherID;
 
     if (!researcherID) {
-      const researcherResponse = await fetch(`${VITE_API_BASE_URL}/api/researcher`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, project_name, branch_info, phone_number, email }),
-      });
+      const researcherResponse = await fetch(
+        `${VITE_API_BASE_URL}/api/researcher`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            project_name,
+            branch_info,
+            phone_number,
+            email,
+          }),
+        }
+      );
 
       const researcherResult = await researcherResponse.json();
       if (!researcherResponse.ok) {
@@ -103,8 +114,8 @@ const submitFinalResponse = async () => {
 
       researcherID = researcherResult.researcher.id;
       if (researcherID !== null) {
-  store.setResearcherID(researcherID);
-}
+        store.setResearcherID(researcherID);
+      }
     }
 
     const answersData: Record<string, string | string[]> = {};
@@ -127,7 +138,8 @@ const submitFinalResponse = async () => {
         questionnaire_id: 1,
         answers: answersData,
         survey: surveyData,
-        final_route: store.finalRoute === "unknown" ? "unknown" : store.finalRoute,
+        final_route:
+          store.finalRoute === "unknown" ? "unknown" : store.finalRoute,
       }),
     });
 
@@ -144,7 +156,6 @@ const submitFinalResponse = async () => {
   }
 };
 
-
 const startNewSurvey = () => {
   store.resetStore();
   router.push("/questionnairesResearcher");
@@ -156,39 +167,74 @@ const goToHome = () => {
 </script>
 
 <template>
-
   <div class="final-review">
-
     <div class="questionnaire">
-      <div v-for="section in questionnaire.sections" :key="section.name" class="section">
+      <div
+        v-for="section in questionnaire.sections"
+        :key="section.name"
+        class="section"
+      >
         <h4 v-if="section.name !== 'null'" class="section-title">
           {{ section.name }}
-
         </h4>
 
         <div class="row">
-          <div v-for="q in firstFormAnswers.filter(q => section.questions.some(sq => sq.id === q.id))" :key="q.id"
+          <div
+            v-for="q in firstFormAnswers.filter((q) =>
+              section.questions.some((sq) => sq.id === q.id)
+            )"
+            :key="q.id"
             :class="{
-              'col-md-6': q.id === 1001 || q.id === 1002 || q.id === 1004 || q.id === 1005,
+              'col-md-6':
+                q.id === 1001 ||
+                q.id === 1002 ||
+                q.id === 1004 ||
+                q.id === 1005,
               'col-md-12': q.id === 1003,
               'no-margin': q.id >= 1001 && q.id <= 1005,
-            }">
+            }"
+          >
             <label class="question-label">{{ q.question }}</label>
 
-            <input v-if="q.type === 'text'" :value="q.answer" type="text" class="input-text" disabled />
+            <input
+              v-if="q.type === 'text'"
+              :value="q.answer"
+              type="text"
+              class="input-text"
+              disabled
+            />
 
             <div v-else-if="q.type === 'radio'" class="radio-group">
-              <div v-for="option in q.options" :key="option" class="radio-option">
-                <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option"
-                  class="radio-input" disabled />
+              <div
+                v-for="option in q.options"
+                :key="option"
+                class="radio-option"
+              >
+                <input
+                  type="radio"
+                  :name="'q' + q.id"
+                  :value="option"
+                  :checked="q.answer === option"
+                  class="radio-input"
+                  disabled
+                />
                 <label class="radio-label">{{ option }}</label>
               </div>
             </div>
 
             <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-              <div v-for="option in q.options" :key="option" class="checkbox-option">
-                <input type="checkbox" :value="option" :checked="(q.answer || []).includes(option)"
-                  class="checkbox-input" disabled />
+              <div
+                v-for="option in q.options"
+                :key="option"
+                class="checkbox-option"
+              >
+                <input
+                  type="checkbox"
+                  :value="option"
+                  :checked="(q.answer || []).includes(option)"
+                  class="checkbox-input"
+                  disabled
+                />
                 <label class="checkbox-label">{{ option }}</label>
               </div>
             </div>
@@ -196,7 +242,6 @@ const goToHome = () => {
         </div>
       </div>
     </div>
-
 
     <div class="questionnaire">
       <h3 class="aa">Explore the precision intervention</h3>
@@ -206,17 +251,37 @@ const goToHome = () => {
 
         <div v-if="q.type === 'radio'" class="radio-group">
           <div v-for="option in q.options" :key="option" class="radio-option">
-            <input type="radio" :name="'q' + q.id" :value="option" :checked="q.answer === option" class="radio-input"
-              disabled />
+            <input
+              type="radio"
+              :name="'q' + q.id"
+              :value="option"
+              :checked="q.answer === option"
+              class="radio-input"
+              disabled
+            />
             <label class="radio-label">{{ option }}</label>
           </div>
         </div>
       </div>
-      <p class="p" v-if="store.finalRoute !== null">Result Road Map: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span></p>
-      <p class="p" v-else>หมายเลข match: <span :style="{ color: '#EB4648' }">{{ lastAnsweredQuestion?.question }}</span></p>
+      <p
+        class="p"
+        v-if="store.finalRoute && store.finalRoute.includes('Route')"
+      >
+        Result Road Map:
+        <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span>
+      </p>
+      <p class="p" v-else-if="store.finalRoute">
+        Suggestion: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span>
+      </p>
+      <p class="p" v-else>
+        หมายเลข match:
+        <span :style="{ color: '#EB4648' }">{{
+          lastAnsweredQuestion?.question
+        }}</span>
+      </p>
     </div>
 
-    <br>
+    <br />
     <div class="btn-container">
       <button type="button" class="edit-btn" @click="editAnswers">
         แก้ไขข้อมูล
@@ -225,14 +290,15 @@ const goToHome = () => {
         บันทึก
       </button>
 
-
       <div v-if="submissionSuccess" class="modal">
         <div class="modal-content">
           <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
           <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
           <div class="modal-buttons">
             <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
-            <button @click="startNewSurvey" class="btn btn-primary">ส่งคำตอบเพิ่ม</button>
+            <button @click="startNewSurvey" class="btn btn-primary">
+              ส่งคำตอบเพิ่ม
+            </button>
           </div>
         </div>
       </div>
@@ -241,7 +307,9 @@ const goToHome = () => {
         <div class="modal-content">
           <h3 class="h3">เกิดข้อผิดพลาด</h3>
           <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
-          <button @click="submissionError = false" class="btn btn-primary">ปิด</button>
+          <button @click="submissionError = false" class="btn btn-primary">
+            ปิด
+          </button>
         </div>
       </div>
     </div>
@@ -427,7 +495,7 @@ const goToHome = () => {
 }
 
 .home-btn {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 10px 15px;
   border: none;
