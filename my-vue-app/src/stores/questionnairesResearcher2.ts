@@ -131,16 +131,16 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 11002.21025, type: "radio", question: "Identify the originated cell and expression cell each typed** and each stage*",
-                        options: ["Route G", "Route H", "ไม่แน่ใจ"],
-                        next: { "Route G": 11002.2103, "Route H": 11002.2104, "ไม่แน่ใจ": "preResult" }
+                        options: ["Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed", "Set Combination of intervention of Another stage* and typed** depended the purposed", "ไม่แน่ใจ"],
+                        next: { "Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed": 11002.2103, "Set Combination of intervention of Another stage* and typed** depended the purposed": 11002.2104, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.2103, type: "radio", question: "Route G Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
+                        id: 11002.2103, type: "radio", question: "Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.2105, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.2104, type: "radio", question: "Route H Set Combination of intervention of Another stage* and typed** depended the purposed",
+                        id: 11002.2104, type: "radio", question: "Set Combination of intervention of Another stage* and typed** depended the purposed",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.2105, "ไม่แน่ใจ": "preResult" }
                     },
@@ -175,7 +175,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 11002.2114, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.2114, type: "radio", question: "Route E Combination of intervention of originated cell and expressing cell of a stage* cascade",
+                        id: 11002.2114, type: "radio", question: "Combination of intervention of originated cell and expressing cell of a stage* cascade",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.2229, "ไม่แน่ใจ": "preResult" }
                     },
@@ -185,7 +185,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 11002.2116, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.2116, type: "radio", question: "Route F Combination of intervention of originated cell and expressing cell of another stage 2 cascade",
+                        id: 11002.2116, type: "radio", question: "Combination of intervention of originated cell and expressing cell of another stage 2 cascade",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.2229, "ไม่แน่ใจ": "preResult" }
                     },
@@ -195,7 +195,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 11002.211021, "ไม่": 11002.211011, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.211011, type: "radio", question: "Route D Deductive Hypothesis for separable",
+                        id: 11002.211011, type: "radio", question: "Deductive Hypothesis for separable",
                         options: ["(B 1.1) Molecular nomenclatures-1", "(B 1.2) Molecular nomenclatures-2"],
                         next: { "(B 1.1) Molecular nomenclatures-1": 11002.211012, "(B 1.2) Molecular nomenclatures-2": 11002.211014 }
                     },
@@ -220,7 +220,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "ใช่": 11002.2229, "ไม่แน่ใจ": "preResult" }
                     },
                     {
-                        id: 11002.211021, type: "radio", question: "Route C Existing diagnosis",
+                        id: 11002.211021, type: "radio", question: "Existing diagnosis",
                         options: ["ใช่", "ไม่แน่ใจ"],
                         next: { "ใช่": 11002.211022, "ไม่แน่ใจ": "preResult" }
                     },
