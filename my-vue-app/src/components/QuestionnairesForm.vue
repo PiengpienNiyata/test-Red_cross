@@ -97,8 +97,12 @@ const highlightErrors = () => {
     );
 
     if (inputElement) inputElement.classList.add("error-border"); // Highlight only input box for text
-    if (radioGroup) radioGroup.parentElement.classList.add("error-border"); // Highlight only question block for radio
-    if (checkboxGroup) checkboxGroup.parentElement.classList.add("error-border"); // Highlight only question block for checkbox
+    if (radioGroup && radioGroup.parentElement) {
+  radioGroup.parentElement.classList.add("error-border");
+}
+if (checkboxGroup && checkboxGroup.parentElement) {
+  checkboxGroup.parentElement.classList.add("error-border");
+}
   });
 };
 

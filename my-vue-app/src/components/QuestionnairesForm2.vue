@@ -78,6 +78,8 @@ const updateFinalRoute = (questionId: number) => {
     11002.2104: "Route H",
     11002.2114: "Route E",
     11002.2116: "Route F",
+    11002.222921: "Match to Predisposing factor and prevention of predispose factor",
+    88:"Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
   };
 
   const selectedAnswer = answers.value[questionId];

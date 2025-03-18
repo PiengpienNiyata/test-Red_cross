@@ -38,13 +38,18 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.finalRoute = null;
     },
     resetServey() {
-        Object.keys(this.answers).forEach((key) => {
-            if (Number(key) >= 11001) {
-              delete this.answers[key];
-            }
-          });        this.researcherID = null;
-        this.finalRoute = null;
-      },
+      Object.keys(this.answers).forEach((key) => {
+        const numericKey = Number(key); // Convert key to number
+        if (numericKey >= 11001) {
+          delete this.answers[numericKey as keyof typeof this.answers];
+        }
+      });
+    
+      this.researcherID = null;
+      this.finalRoute = null;
+    }
+    
+    
     
   },
 });
