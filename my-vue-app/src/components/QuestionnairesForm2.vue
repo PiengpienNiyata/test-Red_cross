@@ -127,10 +127,10 @@ const isNextDisabled = computed(() => {
 
       <div class="btn-container">
         <button type="button" class="back-btn" @click="prevQuestion" :disabled="questionHistory.length === 0">
-          กลับ
+          Back
         </button>
         <button type="button" class="next-btn" @click="nextQuestion" :disabled="isNextDisabled">
-          ถัดไป
+          Next
         </button>
       </div>
     </form>

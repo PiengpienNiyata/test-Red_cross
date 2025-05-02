@@ -7,7 +7,7 @@
       ><!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
 
       <img :src="isActive('/questionnairesResearcher') ? icon1 : icon2" alt="icon" class="icon" />
-      <span>แบบสอบถาม</span>
+      <span>Questionnaire</span>
       </div>
     </div>
     <div class="divider"></div>
@@ -30,7 +30,7 @@
         :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
       >
       <img :src="isActive('/questionnairesResearcher3') ? icon4 : icon3" alt="icon" class="icon" />
-      <span>ตรวจสอบข้อมูล</span>
+      <span>Verify information</span>
       </div>
     </div>
   </div>
