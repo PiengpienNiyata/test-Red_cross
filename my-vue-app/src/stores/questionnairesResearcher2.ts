@@ -27,19 +27,71 @@ export const questionnaireData: Questionnaire2[] = [
                 name: "null",
                 questions: [
                     {
-                        id: 11001, type: "radio", question: "1) Assessment of initiated intervention for a certain disease of more than (selected) pilot 30 subjects",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002, "Uncertain": "preResult" }
+                        id: 100, type: "radio", question: "Have studying disease",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 101, "No": 104, "Uncertain": "preResult" }
                     },
                     {
+                        id: 101, type: "radio", question: "Have staging",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 102, "No": 104, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 102, type: "radio", question: "Have typing",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 103, "No": 104, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 103, type: "radio", question: "Disease assessment without remission studying result",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 109, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 104, type: "radio", question: "Assessment of initiated intervention for a certain disease of more than (selected) pilot 30 subjects",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 105, "No": 103, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 105, type: "radio", question: "Presumptive intervention evidence of remission at 80% of the case from independent institute",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 106, "No": 103, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 106, type: "radio", question: "Remnant of sign or symptom",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 107, "No": 108, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 107, type: "radio", question: "Symptomatic treatment",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 109, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 108, type: "radio", question: "Draw the molecular cascade of the disease to identify the originating cell which being confirmed by cross checking with the molecular data of the initiated intervention",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 110, "Uncertain": "preResult" }
+                    },
+                    //109 อยู่ล่างๆ
+                    {
+                        id: 110, type: "radio", question: "Identify the source of signal that induces the disease development",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 111, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 111, type: "radio", question: "Do not require research question before conduct the traditional research to confirm the rate of remission",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": "finalResult", "Uncertain": "preResult" }
+                    },
+
+                    /* {
                         id: 11002, type: "radio", question: "2) Effectiveness of the intervention reach 80% within the primary endpoint time",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.1, "No": 11002.2, "Uncertain": "preResult" }
+                        next: { "Yes": 11002.1, "No": -, "Uncertain": "preResult" }
                     },
                     {
                         id: 11002.1, type: "radio", question: "2.1) Remission when cause of the irregularity no longer exists",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.11, "No": 11002.2, "Uncertain": "preResult" }
+                        next: { "Yes": 11002.11, "No": -, "Uncertain": "preResult" }
                     },
                     {
                         id: 11002.11, type: "radio", question: "2.1.1) Precision to the originated cell for a selective group pilot",
@@ -61,217 +113,256 @@ export const questionnaireData: Questionnaire2[] = [
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": 11099, "Uncertain": "preResult" }
                     },
-                    //end of precision invention route A
+                    //end of precision invention route A */
 
                     {
-                        id: 11002.2, type: "radio", question: "2.2) A cell or cells probable to be responsible the expression of symptom or sign of the irregularities",
+                        id: 109, type: "radio", question: "2.2) A cell or cells probable to be responsible the expression of symptom or sign of the irregularities",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.21, "Uncertain": "preResult" }
+                        next: { "Yes": 112, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.21, type: "radio", question: "2.2.1) Several expressing cell/s",
+                        id: 112, type: "radio", question: "2.2.1) Several expressing cell/s",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 110022.210, "No": 11002.22, "Uncertain": "preResult" }
+                        next: { "Yes": 113, "No": 1121, "Uncertain": "preResult" }
                     },
                     
                     //Route B
                     {
-                        id: 11002.22, type: "radio", question: "2.2.2) Solely induce sign of irregularities by a signal cell",
+                        id: 1121, type: "radio", question: "2.2.2) Solely induce sign of irregularities by a signal cell",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.221, "Uncertain": "preResult" }
+                        next: { "Yes": 1122, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.221, type: "radio", question: "2.2.2.1) Originated cell",
+                        id: 1122, type: "radio", question: "2.2.2.1) Originated cell",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.222, "Uncertain": "preResult" }
+                        next: { "Yes": 1123, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.222, type: "radio", question: "2.2.2.2) Match to signal or receptor if expressing",
+                        id: 1123, type: "radio", question: "2.2.2.2) Match to signal or receptor if expressing",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.223, "Uncertain": "preResult" }
+                        next: { "Yes": 1124, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.223, type: "radio", question: "2.2.2.1) Intervention",
+                        id: 1124, type: "radio", question: "Establish research question",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.224, "Uncertain": "preResult" }
+                        next: { "Yes": 1125, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 1125, type: "radio", question: "2.2.2.1) Intervention",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 1126, "Uncertain": "preResult" }
                     },
                     
-                    //** */
                     {
-                        id: 11002.224, type: "radio", question: "Sustainable normalization the originate cell",
+                        id: 1126, type: "radio", question: "Sustainable normalization the originate cell",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.226, "No": 11002.225, "Uncertain": "preResult" }
+                        next: { "Yes": 1128, "No": 1127, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.225, type: "radio", question: "Controller cell",
+                        id: 1127, type: "radio", question: "Control",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.226, type: "radio", question: "(2.2.2.2) Remission",
+                        id: 1128, type: "radio", question: "(2.2.2.2) Remission",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11099, "Uncertain": "preResult" }
+                        next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     //end of route B
 
                     //A2.2.1
                     {
-                        id: 110022.210, type: "radio", question: "(A) Match to existing clinical diagnosis in the E-book to category of the mechanism of pathogenesis",
+                        id: 113, type: "radio", question: "(A) Evidence of sharing the molecular pathway",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2101, "Uncertain": "preResult" }
+                        next: { "Yes": 200, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2101, type: "radio", question: "Type**",
+                        id: 200, type: "radio", question: "(A 2.2.1) District molecular triggers Type**",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.2102, "No": 11002.2110, "Uncertain": "preResult" }
+                        next: { "Yes": 210, "No": 220, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2102, type: "radio", question: "Draw cascade",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.21025, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.21025, type: "radio", question: "Identify the originated cell and expression cell each typed** and each stage*",
-                        options: ["Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed", "Set Combination of intervention of Another stage* and typed** depended the purposed", "Uncertain"],
-                        next: { "Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed": 11002.2103, "Set Combination of intervention of Another stage* and typed** depended the purposed": 11002.2104, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2103, type: "radio", question: "Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2105, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2104, type: "radio", question: "Set Combination of intervention of Another stage* and typed** depended the purposed",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2105, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2105, type: "radio", question: "Set signal intervention",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2106, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2106, type: "radio", question: "80% of the amount a sign or symptom of a type** is clear in a set of time frame that meet satisfaction (expectation)",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11099, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2110, type: "radio", question: "(A 2.2.1) Stage*",
+                        id: 210, type: "radio", question: "Intervention evidence 80% subsidence of a particular sign",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.2111, "No": 11002.21101, "Uncertain": "preResult" }
+                        next: { "Yes": 211, "No": 212, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2111, type: "radio", question: "Draw cascade",
+                        id: 211, type: "radio", question: "Set Combination of intervention of originated cell and a stage* and designed typed** depended to the purposed",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2112, "Uncertain": "preResult" }
+                        next: { "Yes": 213, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2112, type: "radio", question: "Identified the originated cell and expression cell",
-                        options: ["Stage 1", "Stage 2"],
-                        next: { "Stage 1": 11002.2113, "Stage 2": 11002.2115, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2113, type: "radio", question: "Stage 1*",
+                        id: 212, type: "radio", question: "Set intervention study according to standard therapy of single active agent",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2114, "Uncertain": "preResult" }
+                        next: { "Yes": 213, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2114, type: "radio", question: "Combination of intervention of originated cell and expressing cell of a stage* cascade",
+                        id: 213, type: "radio", question: "80% subsidence of any type of lesions with in primary end point time frame leading to identify the originating cell",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2229, "Uncertain": "preResult" }
+                        next: { "Yes": 214, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2115, type: "radio", question: "Stage 2*",
+                        id: 214, type: "radio", question: "Draw clinico-molecular cascade",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2116, "Uncertain": "preResult" }
+                        next: { "Yes": 215, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.2116, type: "radio", question: "Combination of intervention of originated cell and expressing cell of another stage 2 cascade",
+                        id: 215, type: "radio", question: "Identify originating cell",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2229, "Uncertain": "preResult" }
+                        next: { "Yes": 500, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.21101, type: "radio", question: "(B) Evidently explainable of obvious contrast in irregularity natural courses",
+                        id: 220, type: "radio", question: "(A 2.2.1) Stage*",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.211021, "No": 11002.211011, "Uncertain": "preResult" }
+                        next: { "Yes": 2201, "No": 230, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.211011, type: "radio", question: "Deductive Hypothesis for separable",
-                        options: ["(B 1.1) Molecular nomenclatures-1", "(B 1.2) Molecular nomenclatures-2"],
-                        next: { "(B 1.1) Molecular nomenclatures-1": 11002.211012, "(B 1.2) Molecular nomenclatures-2": 11002.211014 }
+                        id: 2201, type: "radio", question: "Identified the originated cell and expression cell",
+                        options: ["Stage 1 ", "Stage 2"],
+                        next: { "Stage 1": 221, "Stage 2": 222 }
                     },
                     {
-                        id: 11002.211012, type: "radio", question: "Draw molecular cascade - 1",
+                        id: 223, type: "radio", question: "Combination of intervention of originated cell and expressing cell of a stage* cascade",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.211013, "Uncertain": "preResult" }
+                        next: { "Yes": 225, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.211013, type: "radio", question: "Identify the originated cell",
+                        id: 224, type: "radio", question: "Combination of intervention of originated cell and expressing cell of another stage 2 cascade",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2229, "Uncertain": "preResult" }
+                        next: { "Yes": 225, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.211014, type: "radio", question: "Draw molecular cascade - 2",
+                        id: 225, type: "radio", question: "Draw clinico-molecular cascade",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.211015, "Uncertain": "preResult" }
+                        next: { "Yes": 226, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.211015, type: "radio", question: "Identify the originated cell",
+                        id: 226, type: "radio", question: "Identify originating cell",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2229, "Uncertain": "preResult" }
+                        next: { "Yes": 500, "Uncertain": "preResult" }
                     },
+                //จบรูท E/F
+
                     {
-                        id: 11002.211021, type: "radio", question: "Existing diagnosis",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.211022, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.211022, type: "radio", question: "Draw cascade",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.211023, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.211023, type: "radio", question: "Identified the originated cell",
-                        options: ["Yes", "Uncertain"],
-                        next: { "Yes": 11002.2229, "Uncertain": "preResult" }
-                    },
-                    {
-                        id: 11002.2229, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of expression",
+                        id: 230, type: "radio", question: "Evidently explainable of obvious contrast in irregularity natural courses",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 11002.22291, "No": 11002.22292, "Uncertain": "preResult" }
+                        next: { "Yes": 240, "No": 250, "Uncertain": "preResult" }
+                    },
+                    //รูท C
+                    {
+                        id: 240, type: "radio", question: "Existing diagnosis",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 241, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.22291, type: "radio", question: "Sustainable normalization of the originated cell",
-                        options: ["Remission", "Controlling", "Uncertain"],
-                        next: { "Remission": 123, "Controlling": 11002.222911, "Uncertain": "preResult" }
+                        id: 241, type: "radio", question: "Not able to draw cascade",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 242, "Uncertain": "preResult" }
                     },
                     {
-                        id: 123, type: "radio", question: "Remission",
+                        id: 242, type: "radio", question: "Not able to Identified the originated cell",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 243, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 243, type: "radio", question: "Symptomatic treatment",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": "finalResult", "Uncertain": "preResult" }
+                    },
+
+                    //รูทD
+                    {
+                        id: 250, type: "radio", question: "Deductive Hypothesis for separable",
+                        options: ["Molecular nomenclatures-1", "Molecular nomenclatures-2"],
+                        next: { "Molecular nomenclatures-1": 251, "Molecular nomenclatures-2": 252 }
+                    },
+                    {
+                        id: 251, type: "radio", question: "Molecular nomenclatures-1",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 253, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 252, type: "radio", question: "Molecular nomenclatures-2",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 254, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 253, type: "radio", question: "Draw molecular cascade - 1",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 255, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 254, type: "radio", question: "Draw molecular cascade - 2",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 255, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 255, type: "radio", question: "Identify the originated cell",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 500, "Uncertain": "preResult" }
+                    },
+                    
+
+                    
+
+
+                    {
+                        id: 500, type: "radio", question: "Establish research questions",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 502, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 501, type: "radio", question: "Intervention study",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 502, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 502, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of expression",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 510, "No": 520, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 510, type: "radio", question: "Sustainable normalization of the originated cell",
+                        options: ["Yes", "No", "Uncertain"],
+                        next: { "Yes": 511, "No": 512, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 511, type: "radio", question: "True remission",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.222911, type: "radio", question: "Controlling",
+                        id: 512, type: "radio", question: "Root cause is existing",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 513, "No": 514, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 513, type: "radio", question: "Controlling",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.22292, type: "radio", question: "Match to any section of the molecular cascade",
+                        id: 514, type: "radio", question: "Probable a symptomatic interaction",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": "finalResult", "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 520, type: "radio", question: "Match to any section of the molecular cascade",
                         options: ["Yes", "No", "Uncertain"],
-                        next: { "Yes": 88, "No": 11002.222921, "Uncertain": "preResult" }
+                        next: { "Yes": 521, "No": 522, "Uncertain": "preResult" }
                     },
                     {
-                        id: 88, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
+                        id: 521, type: "radio", question: "Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     {
-                        id: 11002.222921, type: "radio", question: "Match to Predisposing factor and prevention of predispose factor",
+                        id: 522, type: "radio", question: "Match to Predisposing factor and prevention of predispose factor",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": "finalResult", "Uncertain": "preResult" }
+                        next: { "Yes": 523, "Uncertain": "preResult" }
                     },
                     {
-                        id: 11099, type: "radio", question: "80% Remission within primary end point time frame",
+                        id: 523, type: "radio", question: "Prevention of predispose factor",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     }
