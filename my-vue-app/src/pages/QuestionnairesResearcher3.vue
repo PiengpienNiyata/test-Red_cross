@@ -41,7 +41,7 @@ const firstFormAnswers = computed(
 const secondFormAnswers = computed(
   () =>
     Object.entries(store.answers)
-      .filter(([id]) => Number(id) >= 11001)
+      .filter(([id]) => (Number(id) < 600 || Number(id) > 1100))
       .map(([id, answer]) => {
         const question = getQuestionById2(Number(id));
         return question ? { ...question, answer } : null;
@@ -53,7 +53,7 @@ const finalRoute = store.finalRoute;
 
 const lastAnsweredQuestion = computed(() => {
   const answeredQuestions = Object.entries(store.answers)
-    .filter(([id, answer]) => Number(id) >= 11001 && answer !== "")
+    .filter(([id, answer]) => Number(id) < 600 && answer !== "")
     .map(([id]) => getQuestionById2(Number(id)));
 
   return answeredQuestions.length > 0

@@ -138,7 +138,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "Yes": 1123, "Uncertain": "preResult" }
                     },
                     {
-                        id: 1123, type: "radio", question: "2.2.2.2) Match to signal or receptor if expressing",
+                        id: 1123, type: "radio", question: "2.2.2.2) Match to signal or receptor the group of clinical or clinical histopathogenesis",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": 1124, "Uncertain": "preResult" }
                     },
@@ -148,7 +148,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "Yes": 1125, "Uncertain": "preResult" }
                     },
                     {
-                        id: 1125, type: "radio", question: "2.2.2.1) Intervention",
+                        id: 1125, type: "radio", question: "2.2.2.1) Intervention studying",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": 1126, "Uncertain": "preResult" }
                     },
@@ -218,8 +218,18 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 2201, type: "radio", question: "Identified the originated cell and expression cell",
-                        options: ["Stage 1 ", "Stage 2"],
+                        options: ["Stage 1", "Stage 2"],
                         next: { "Stage 1": 221, "Stage 2": 222 }
+                    },
+                    {
+                        id: 221, type: "radio", question: "Stage 1",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 223, "Uncertain": "preResult" }
+                    },
+                    {
+                        id: 222, type: "radio", question: "Stage 2",
+                        options: ["Yes", "Uncertain"],
+                        next: { "Yes": 224, "Uncertain": "preResult" }
                     },
                     {
                         id: 223, type: "radio", question: "Combination of intervention of originated cell and expressing cell of a stage* cascade",
@@ -244,7 +254,7 @@ export const questionnaireData: Questionnaire2[] = [
                 //จบรูท E/F
 
                     {
-                        id: 230, type: "radio", question: "Evidently explainable of obvious contrast in irregularity natural courses",
+                        id: 230, type: "radio", question: "Evidently explainable of obvious contrast in irregularity natural courses / or typing with no evidence that they are not the same pathway",
                         options: ["Yes", "No", "Uncertain"],
                         next: { "Yes": 240, "No": 250, "Uncertain": "preResult" }
                     },
@@ -309,7 +319,7 @@ export const questionnaireData: Questionnaire2[] = [
                     {
                         id: 500, type: "radio", question: "Establish research questions",
                         options: ["Yes", "Uncertain"],
-                        next: { "Yes": 502, "Uncertain": "preResult" }
+                        next: { "Yes": 501, "Uncertain": "preResult" }
                     },
                     {
                         id: 501, type: "radio", question: "Intervention study",
@@ -317,7 +327,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "Yes": 502, "Uncertain": "preResult" }
                     },
                     {
-                        id: 502, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of expression",
+                        id: 502, type: "radio", question: "(2.2.2.2) Match the intervention to signal or receptor of group of the molecular of disease development mechanism",
                         options: ["Yes", "No", "Uncertain"],
                         next: { "Yes": 510, "No": 520, "Uncertain": "preResult" }
                     },
@@ -333,7 +343,7 @@ export const questionnaireData: Questionnaire2[] = [
                     },
                     {
                         id: 512, type: "radio", question: "Root cause is existing",
-                        options: ["Yes", "Uncertain"],
+                        options: ["Yes", "No", "Uncertain"],
                         next: { "Yes": 513, "No": 514, "Uncertain": "preResult" }
                     },
                     {
@@ -357,7 +367,7 @@ export const questionnaireData: Questionnaire2[] = [
                         next: { "Yes": "finalResult", "Uncertain": "preResult" }
                     },
                     {
-                        id: 522, type: "radio", question: "Match to Predisposing factor and prevention of predispose factor",
+                        id: 522, type: "radio", question: "Match to Predisposing factor",
                         options: ["Yes", "Uncertain"],
                         next: { "Yes": 523, "Uncertain": "preResult" }
                     },

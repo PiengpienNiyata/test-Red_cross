@@ -1,15 +1,23 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from "vue";
+// import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 
-const props = defineProps<{ route: string }>();
+const props = defineProps<{ route: string, lastQuestion?: string }>();
+// const store = useQuestionnaireStore();
+
 const emit = defineEmits(["save"]);
 </script>
 
 <template>
-  <div class="final-result" >
-    <p class="p" v-if="props.route.includes('Route')">Result Road Map: <span :style="{ color: '#EB4648' }">{{ props.route }}</span></p>
-    <p class="p" v-else>Suggestion: <span :style="{ color: '#EB4648' }">{{ props.route }}</span></p>
-    <button class="btn" @click="emit('save') ">บันทึกผลลัพธ์</button>
+  <div class="final-result">
+    <p class="p" v-if="props.route.includes('Route')">
+      Result Road Map:
+      <span :style="{ color: '#EB4648' }">{{ props.route }}</span>
+    </p>
+    <p class="p" v-else>
+      Suggestion: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
+    </p>
+    <button class="btn" @click="emit('save')">บันทึกผลลัพธ์</button>
   </div>
 </template>
 
@@ -28,7 +36,7 @@ const emit = defineEmits(["save"]);
   margin-top: 68px;
   height: 100%;
   width: 188px;
-  background-color: #EB4648;
+  background-color: #eb4648;
   color: white;
   padding: 8px;
   border: none;

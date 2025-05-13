@@ -39,8 +39,8 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {
-        const numericKey = Number(key); // Convert key to number
-        if (numericKey >= 11001) {
+        const numericKey = Number(key);
+        if (numericKey < 600 || numericKey > 1100) {
           delete this.answers[numericKey as keyof typeof this.answers];
         }
       });

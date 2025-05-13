@@ -70,23 +70,24 @@ const showFinalResult = () => {
 
 const updateFinalRoute = (questionId: number) => {
   const routeMapping: Record<number, string> = {
-    11001: "Route A",
-    11002.22: "Route B",
-    11002.211021: "Route C",
-    11002.211011: "Route D",
-    11002.2103: "Route G",
-    11002.2104: "Route H",
-    11002.2114: "Route E",
-    11002.2116: "Route F",
-    11002.222921: "Match to Predisposing factor and prevention of predispose factor",
-    88:"Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
+    104: "Route A",
+    1121: "Route B",
+    240: "Route C",
+    250: "Route D",
+    211: "Route G",
+    212: "Route H",
+    221: "Route E",
+    222: "Route F",
+    // 11002.222921: "Match to Predisposing factor and prevention of predispose factor",
+    // 88:"Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
   };
 
   const selectedAnswer = answers.value[questionId];
 
-  if (selectedAnswer === "ไม่แน่ใจ") {
-    finalRoute.value = "unknown";
-  } else if (routeMapping[questionId]) {
+  // if (selectedAnswer === "ไม่แน่ใจ") {
+  //   finalRoute.value = "unknown";
+  // } else 
+  if (routeMapping[questionId]) {
     finalRoute.value = routeMapping[questionId];
   }
 };
@@ -109,7 +110,7 @@ const isNextDisabled = computed(() => {
     <h3 v-if="questionnaire.title !== 'null'" class="title">{{ questionnaire.title }}</h3>
 
     <PreResult v-if="isPreResult" :lastQuestion="lastAnsweredQuestion?.question" @continue="showFinalResult" />
-    <FinalResult v-else-if="isFinalResult" :route="finalRoute" @save="submitFinalResponse" />
+    <FinalResult v-else-if="isFinalResult" :route="finalRoute" :lastQuestion="lastAnsweredQuestion?.question" @save="submitFinalResponse" />
     
     <form v-else @submit.prevent="nextQuestion" class="form-container">
       <div v-if="currentQuestion" class="question">
