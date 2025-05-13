@@ -7,7 +7,7 @@
       ><!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
 
       <img :src="isActive('/questionnairesResearcher') ? icon1 : icon2" alt="icon" class="icon" />
-      <span>Questionnaire</span>
+      <span style="text-align: center;">Questionnaire</span>
       </div>
     </div>
     <div class="divider"></div>
@@ -19,7 +19,7 @@
         :style="{ color: isActive('/questionnairesResearcher2') ? '#EB4648' : '#A4A4A4' }"
       >
       <img :src="isActive('/questionnairesResearcher2') ? icon1 : icon2" alt="icon" class="icon" />
-      <span>Explore the<br>precision <br>intervention</span>
+      <span style="text-align: center;">Explore the<br>precision <br>intervention</span>
       </div>
     </div>
     <div class="divider"></div>
@@ -30,7 +30,7 @@
         :style="{ color: isActive('/questionnairesResearcher3') ? '#EB4648' : '#A4A4A4' }"
       >
       <img :src="isActive('/questionnairesResearcher3') ? icon4 : icon3" alt="icon" class="icon" />
-      <span>Verify information</span>
+      <span style="display: inline-block; width: 80px; text-align: center;">Verify information</span>
       </div>
     </div>
   </div>
@@ -69,16 +69,19 @@ export default {
   cursor: pointer;
   max-height: 100px;
   display: flex;
-  align-items: center;
+  width: 200px;
   padding: 8px;
+  justify-content: space-evenly;
 }
 
 .sidebar-item-2 {
+  max-width: 160px;
   cursor: pointer;
   max-height: 100px;
   display: flex;
   align-items: center;
 }
+
 
 .icon {
   width: 40px;
