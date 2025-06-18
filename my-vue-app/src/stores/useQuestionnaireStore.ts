@@ -42,7 +42,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
         const numericKey = Number(key);
         if (numericKey < 600 || numericKey > 1100) {
           delete this.answers[numericKey as keyof typeof this.answers];
-        }
+        }   
       });
     
       this.researcherID = null;
