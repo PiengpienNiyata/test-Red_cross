@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps, ref, computed } from "vue";
-import type { Questionnaire2, Question2 } from "@/stores/questionnairesResearcher2";
+import type { Questionnaire2, Question2 } from "@/stores/questionnairesResearcher3";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
 import PreResult from "@/components/preResult.vue";
@@ -70,14 +70,14 @@ const showFinalResult = () => {
 
 const updateFinalRoute = (questionId: number) => {
   const routeMapping: Record<number, string> = {
-    104: "Route A",
-    1121: "Route B",
-    240: "Route C",
-    250: "Route D",
-    211: "Route G",
-    212: "Route H",
-    221: "Route E",
-    222: "Route F",
+    201: "Route A",
+    241: "Route B",
+    303: "Route C",
+    304: "Route D",
+    239: "Route G",
+    238: "Route H",
+    234: "Route E",
+    235: "Route F",
     // 11002.222921: "Match to Predisposing factor and prevention of predispose factor",
     // 88:"Match to Symptomatic treatment for the molecular cascade reacted to clinical sign or a symptom",
   };
@@ -88,6 +88,8 @@ const updateFinalRoute = (questionId: number) => {
   //   finalRoute.value = "unknown";
   // } else 
   if (routeMapping[questionId]) {
+    console.log("Selected answer:", selectedAnswer);
+    console.log("Final route mapping now:", routeMapping[questionId]);
     finalRoute.value = routeMapping[questionId];
   }
 };

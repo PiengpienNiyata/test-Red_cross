@@ -3,8 +3,8 @@ import { computed, onMounted, ref } from "vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
 import { questionnaireData } from "@/stores/questionnairesResearcher";
-import { questionnaireData as questionnaireData2 } from "@/stores/questionnairesResearcher2";
-import type { Question2 } from "@/stores/questionnairesResearcher2";
+import { questionnaireData as questionnaireData2 } from "@/stores/questionnairesResearcher3";
+import type { Question2 } from "@/stores/questionnairesResearcher3";
 import { VITE_API_BASE_URL } from "@/stores/config";
 const store = useQuestionnaireStore();
 const router = useRouter();
@@ -41,7 +41,7 @@ const firstFormAnswers = computed(
 const secondFormAnswers = computed(
   () =>
     Object.entries(store.answers)
-      .filter(([id]) => (Number(id) < 600 || Number(id) > 1100))
+      .filter(([id]) => Number(id) < 600 || Number(id) > 1100)
       .map(([id, answer]) => {
         const question = getQuestionById2(Number(id));
         return question ? { ...question, answer } : null;
@@ -280,7 +280,38 @@ const goToHome = () => {
         }}</span>
       </p>
     </div>
-
+    <div class="questionnaire">
+      <h1 class="aa mb-0">Final draft (Mock up for now)</h1>
+      <div>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempora in
+        expedita beatae hic dolorem totam, iusto, sed excepturi ratione sequi
+        labore odio molestias quo rem animi modi magni voluptate maxime quasi
+        itaque nisi nam amet recusandae. Et ut esse commodi provident optio modi
+        totam, temporibus quasi assumenda nostrum deserunt? Labore, placeat
+        eaque. Sequi nobis sed in illo tempore, eveniet ea ut earum quos
+        temporibus non deserunt omnis quibusdam perferendis, ullam facere eaque,
+        quo quidem similique dolore soluta nisi? Laudantium, ipsam neque ipsum a
+        voluptas perferendis cumque velit saepe voluptates esse sapiente
+        possimus reprehenderit voluptatibus, autem quis natus dolores incidunt
+        molestias pariatur provident quae blanditiis quo! Consequatur nemo animi
+        alias, ut, suscipit fuga facilis dolore dolorum totam natus doloribus
+        magnam nostrum labore fugiat odio optio repudiandae quia commodi esse,
+        provident vitae itaque minus. Porro, ad a? Nemo facilis optio ratione
+        nesciunt cum excepturi molestias mollitia quis deleniti, repellendus
+        obcaecati? Aperiam sint impedit velit quaerat labore autem alias ipsum
+        et ex, quas corrupti ullam totam commodi veniam. Nemo esse nulla hic
+        architecto labore fugit amet sequi animi voluptatibus blanditiis, dolor
+        mollitia saepe autem sunt quam vel repellendus tempora? Itaque dicta nam
+        in consectetur officia quis blanditiis architecto quidem repellendus
+        inventore, id dignissimos eveniet, vel facere magni ad? Omnis vero,
+        labore doloremque nemo enim perferendis earum accusamus repudiandae
+        recusandae inventore nobis velit alias nesciunt voluptatem unde
+        excepturi quis sequi magnam. Ea minus, voluptatem quam temporibus iste
+        eveniet corrupti vitae rerum ad alias quibusdam maiores accusantium
+        nesciunt praesentium soluta ullam culpa omnis laboriosam quo repellendus
+        illum! Neque, inventore corrupti.
+      </div>
+    </div>
     <br />
     <div class="btn-container">
       <button type="button" class="edit-btn" @click="editAnswers">
