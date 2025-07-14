@@ -2,7 +2,7 @@
 
 <script setup lang="ts">
 import QuestionnairesForm from "@/components/QuestionnairesForm2.vue";
-import { questionnaireData } from "@/stores/questionnairesResearcher3";
+import { questionnaireData } from "@/stores/questionnaires2";
 
 const questionnairesResearcher = questionnaireData[0];
 </script>

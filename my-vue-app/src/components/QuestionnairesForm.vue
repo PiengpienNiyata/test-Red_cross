@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
-import { questionnaireData } from "@/stores/questionnairesResearcher";
+import { questionnaireData } from "@/stores/questionnaires1";
 import { toRefs } from "vue";
 
 const store = useQuestionnaireStore();
@@ -36,7 +36,7 @@ const isFormValid = computed(() => {
       if (
         typeof answer === "string" &&
         answer.trim().length < 3 &&
-        q.id < 1006
+        q.id < 1014
       ) {
         invalidQuestions.value.push(q.id);
         return false;
@@ -98,11 +98,11 @@ const highlightErrors = () => {
 
     if (inputElement) inputElement.classList.add("error-border"); // Highlight only input box for text
     if (radioGroup && radioGroup.parentElement) {
-  radioGroup.parentElement.classList.add("error-border");
-}
-if (checkboxGroup && checkboxGroup.parentElement) {
-  checkboxGroup.parentElement.classList.add("error-border");
-}
+      radioGroup.parentElement.classList.add("error-border");
+    }
+    if (checkboxGroup && checkboxGroup.parentElement) {
+      checkboxGroup.parentElement.classList.add("error-border");
+    }
   });
 };
 
@@ -152,7 +152,7 @@ const validateForm = () => {
       if (typeof answer === "string" && answer.trim().length < 3 && q.id < 1006)
         return true;
 
-      if (q.id === 1005 && typeof answer === "string") {
+      if (q.id === 1002 && typeof answer === "string") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return !emailRegex.test(answer);
       }
@@ -232,12 +232,13 @@ onMounted(() => {
               'col-md-6':
                 q.id === 1001 ||
                 q.id === 1002 ||
+                q.id === 1003 ||
                 q.id === 1004 ||
                 q.id === 1005,
-              'col-md-12': q.id === 1003,
+              'col-md-12': q.id === 1003 || q.id === 1006 || q.id === 1007,
               'no-margin': q.id === 1001 || q.id === 1002 || q.id === 1003,
-              'padding-left': q.id === 1001,
-              'padding-right': q.id === 1002,
+              'padding-left': q.id === 1001 || q.id === 1004,
+              'padding-right': q.id === 1002 || q.id === 1005,
             }"
             class="question-container"
           >
@@ -263,7 +264,6 @@ onMounted(() => {
               v-else-if="q.type === 'radio'"
               class="radio-group"
               :data-question-id="q.id"
-              
             >
               <div
                 v-for="option in q.options"
@@ -286,7 +286,6 @@ onMounted(() => {
               v-else-if="q.type === 'checkbox'"
               class="checkbox-group"
               :data-question-id="q.id"
-              
             >
               <div
                 v-for="option in q.options"
@@ -302,6 +301,24 @@ onMounted(() => {
                 <label class="checkbox-label">{{ option }}</label>
               </div>
             </div>
+
+            <!-- text area Input -->
+            <textarea
+              v-else-if="q.type === 'textarea'"
+              v-model="answers[q.id]"
+              :placeholder="q.question"
+              class="input-textarea"
+              :data-question-id="q.id"
+              :class="{
+                'error-border':
+                  missingQuestions.includes(q.id) ||
+                  invalidQuestions.includes(q.id),
+                'padding-left': q.id === 1011 || q.id === 1012|| q.id === 1013,
+
+              }"
+            ></textarea>
+
+            <!-- File submit input -->
           </div>
         </div>
       </div>
@@ -332,7 +349,7 @@ onMounted(() => {
   padding-right: 16px;
 }
 
-.question-container{
+.question-container {
   margin-top: 8px;
 }
 .title {
@@ -405,6 +422,20 @@ onMounted(() => {
   padding: 8px;
   border: 1px solid #a4a4a4;
   border-radius: 4px;
+}
+
+.input-textarea {
+  font-size: 18px;
+  margin-bottom: 24px;
+  width: 100%;
+  min-height: 96px;
+  padding: 8px;
+  border: 1px solid #a4a4a4;
+  border-radius: 4px;
+  resize: none;
+
+  /* This is the magic property */
+  field-sizing: content;
 }
 
 .radio-group,

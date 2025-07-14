@@ -10,4 +10,7 @@ type Response struct {
 	Survey          string    `json:"survey" gorm:"type:jsonb"`
 	FinalRoute      string    `json:"final_route"`
 	SubmittedAt     time.Time `json:"submitted_at" gorm:"autoCreateTime"`
+	DiseaseName     string    `json:"disease_name"`
+	Intervention    string    `json:"intervention"`
+	ResearchContext string    `json:"research_context" gorm:"type:jsonb"`
 }

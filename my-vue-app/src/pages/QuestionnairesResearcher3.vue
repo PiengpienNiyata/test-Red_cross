@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
-import { questionnaireData } from "@/stores/questionnairesResearcher";
-import { questionnaireData as questionnaireData2 } from "@/stores/questionnairesResearcher3";
-import type { Question2 } from "@/stores/questionnairesResearcher3";
+import { questionnaireData as questionnaireData1 } from "@/stores/questionnaires1";
+import { questionnaireData as questionnaireData2 } from "@/stores/questionnaires2";
+import type { Question2 } from "@/stores/questionnaires2";
 import { VITE_API_BASE_URL } from "@/stores/config";
+import ConfidentialForm from "@/components/ConfidentialForm.vue";
+import { storeToRefs } from "pinia";
+
 const store = useQuestionnaireStore();
 const router = useRouter();
 
-const questionnaire = ref(questionnaireData[0]);
-
 const getQuestionById = (id: number): Question2 | null => {
-  for (const section of questionnaireData[0].sections) {
-    const foundQuestion = section.questions.find((q) => q.id === id);
+  for (const section of questionnaireData1[0].sections) {
+    const questions = (section as any).questions || [];
+    const foundQuestion = questions.find((q: any) => q.id === id);
     if (foundQuestion) return foundQuestion;
   }
   return null;
@@ -41,7 +43,9 @@ const firstFormAnswers = computed(
 const secondFormAnswers = computed(
   () =>
     Object.entries(store.answers)
-      .filter(([id]) => Number(id) < 600 || Number(id) > 1100)
+      .filter(
+        ([id]) => (Number(id) < 600 || Number(id) > 1100) && Number(id) < 1001
+      )
       .map(([id, answer]) => {
         const question = getQuestionById2(Number(id));
         return question ? { ...question, answer } : null;
@@ -49,21 +53,32 @@ const secondFormAnswers = computed(
       .filter((q) => q !== null) as Question2[]
 );
 
-const finalRoute = store.finalRoute;
-
-const lastAnsweredQuestion = computed(() => {
-  const answeredQuestions = Object.entries(store.answers)
-    .filter(([id, answer]) => Number(id) < 600 && answer !== "")
-    .map(([id]) => getQuestionById2(Number(id)));
-
-  return answeredQuestions.length > 0
-    ? answeredQuestions[answeredQuestions.length - 1]
-    : null;
-});
+// const finalRoute = store.finalRoute;
+const { suggestedRoutes } = storeToRefs(store);
 
 const editAnswers = () => {
   store.resetServey();
   router.push("/questionnairesResearcher");
+};
+
+const formatCheckboxAnswer = (answer: any): string => {
+  if (!answer || !Array.isArray(answer.main)) return "";
+
+  const formattedParts = answer.main.map((mainOpt: string) => {
+    const mainLabel = mainOpt.split("||")[0];
+    const subAnswer = answer.subs?.[mainLabel];
+
+    if (subAnswer && subAnswer.length > 0) {
+      const subAnswerString = Array.isArray(subAnswer)
+        ? subAnswer.join(", ")
+        : subAnswer;
+      return `${mainLabel} (${subAnswerString})`;
+    }
+
+    return mainLabel;
+  });
+
+  return formattedParts.join(", ");
 };
 
 const submissionSuccess = ref(false);
@@ -71,85 +86,120 @@ const submissionError = ref(false);
 
 const submitFinalResponse = async () => {
   try {
-    store.setResearcher({
-      name: store.answers[1001] || "",
-      project_name: store.answers[1002] || "",
-      branch_info: store.answers[1003] || "",
-      phone_number: store.answers[1004] || "",
-      email: store.answers[1005] || "",
-    });
-
+    // --- Step 1: Validate Researcher Info ---
+    store.processResearcherInfo(store.answers as Record<string, string>);
     const { name, project_name, branch_info, phone_number, email } =
       store.researcher;
-
     if (!name || !project_name || !branch_info || !phone_number || !email) {
       alert("Please fill in all researcher details before submitting!");
       return;
     }
 
+    // --- Step 2: Create Researcher Record (if needed) ---
     let researcherID = store.researcherID;
-
     if (!researcherID) {
       const researcherResponse = await fetch(
         `${VITE_API_BASE_URL}/api/researcher`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            project_name,
-            branch_info,
-            phone_number,
-            email,
-          }),
+          body: JSON.stringify(store.researcher),
         }
       );
-
       const researcherResult = await researcherResponse.json();
-      if (!researcherResponse.ok) {
-        console.error("Failed to save researcher data:", researcherResult);
-        submissionError.value = true;
-        return;
-      }
-
+      if (!researcherResponse.ok) throw new Error("Failed to save researcher");
       researcherID = researcherResult.researcher.id;
-      if (researcherID !== null) {
-        store.setResearcherID(researcherID);
-      }
+      store.setResearcherID(researcherID!);
     }
 
-    const answersData: Record<string, string | string[]> = {};
-    const surveyData: Record<string, string | string[]> = {};
+    // --- Step 3: Separate Answers into Different Payloads ---
+    const fileAnswersToUpload: { questionId: string; file: File }[] = [];
+    const otherAnswers: Record<string, any> = {};
+    const researchContext: Record<string, any> = {
+      research_questions: {},
+      molecular_signaling: {},
+    };
 
     Object.entries(store.answers).forEach(([id, value]) => {
-      const numericId = Number(id);
-      if (numericId >= 1001 && numericId <= 1014) {
-        answersData[id] = value;
-      } else if (numericId >= 11001) {
-        surveyData[id] = value;
+      // Find and separate file objects for later upload
+      if (value && typeof value === "object") {
+        if (value.files instanceof FileList) {
+          Array.from(value.files).forEach((file: any) =>
+            fileAnswersToUpload.push({ questionId: id, file })
+          );
+        } else if (value.fileData) {
+          Object.values(value.fileData).forEach((fileInfo: any) => {
+            Array.from(fileInfo.files).forEach((file: any) =>
+              fileAnswersToUpload.push({ questionId: id, file })
+            );
+          });
+        }
+      }
+
+      // Separate out the research context answers
+      if (Number(id) >= 1008 && Number(id) <= 1010) {
+        const keyMap: Record<string, string> = {
+          "1008": "principle",
+          "1009": "factual_statement",
+          "1010": "implication",
+        };
+        researchContext.research_questions[keyMap[id]] = value;
+      } else if (Number(id) >= 1011 && Number(id) <= 1013) {
+        const keyMap: Record<string, string> = {
+          "1011": "principle",
+          "1012": "factual_statement",
+          "1013": "implication",
+        };
+        researchContext.molecular_signaling[keyMap[id]] = value;
+      } else {
+        // Everything else is a "regular" answer
+        otherAnswers[id] = value;
       }
     });
 
+    // --- Step 4: Create the Main Response Record ---
     const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         researcher_id: researcherID,
         questionnaire_id: 1,
-        answers: answersData,
-        survey: surveyData,
-        final_route:
-          store.finalRoute === "unknown" ? "unknown" : store.finalRoute,
+        answers: otherAnswers,
+        final_route: suggestedRoutes.value.join(", ") || "unknown",
+        disease_name: store.answers[1006] || "",
+        intervention: store.answers[1007] || "",
+        research_context: researchContext,
       }),
     });
 
     const responseResult = await response.json();
-    if (response.ok) {
-      submissionSuccess.value = true;
-    } else {
-      console.error("Failed to save response:", responseResult);
-      submissionError.value = true;
+    if (!response.ok) throw new Error("Failed to save response");
+    const responseID = responseResult.id;
+
+    // --- Step 5: Upload All Files ---
+    if (fileAnswersToUpload.length > 0) {
+      const uploadPromises = fileAnswersToUpload.map(({ questionId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("response_id", String(responseID));
+        formData.append("question_id", questionId);
+
+        return fetch(`${VITE_API_BASE_URL}/api/response/file`, {
+          method: "POST",
+          body: formData,
+        });
+      });
+
+      // Wait for all file uploads to complete
+      const uploadResults = await Promise.all(uploadPromises);
+      const failedUpload = uploadResults.find((res) => !res.ok);
+      if (failedUpload) {
+        throw new Error(`Failed to upload file: ${await failedUpload.text()}`);
+      }
     }
+
+    // --- Step 6: Show Success ---
+    submissionSuccess.value = true;
   } catch (error) {
     console.error("Error submitting data:", error);
     submissionError.value = true;
@@ -160,9 +210,9 @@ const startNewSurvey = () => {
   store.resetStore();
   router.push("/questionnairesResearcher");
 };
-const goToHome = () => {
-  store.resetStore();
-  router.push("/");
+
+const createObjectURL = (file: File) => {
+  return URL.createObjectURL(file);
 };
 </script>
 
@@ -170,32 +220,26 @@ const goToHome = () => {
   <div class="final-review">
     <div class="questionnaire">
       <div
-        v-for="section in questionnaire.sections"
+        v-for="section in questionnaireData1[0].sections"
         :key="section.name"
         class="section"
       >
         <h4 v-if="section.name !== 'null'" class="section-title">
           {{ section.name }}
         </h4>
-
         <div class="row">
           <div
-            v-for="q in firstFormAnswers.filter((q) =>
-              section.questions.some((sq) => sq.id === q.id)
+            v-for="q in firstFormAnswers.filter(
+              (fq) =>
+                (section as any).questions?.some((sq: any) => sq.id === fq.id)
             )"
             :key="q.id"
             :class="{
-              'col-md-6':
-                q.id === 1001 ||
-                q.id === 1002 ||
-                q.id === 1004 ||
-                q.id === 1005,
+              'col-md-6': [1001, 1002, 1004, 1005].includes(q.id),
               'col-md-12': q.id === 1003,
-              'no-margin': q.id >= 1001 && q.id <= 1005,
             }"
           >
             <label class="question-label">{{ q.question }}</label>
-
             <input
               v-if="q.type === 'text'"
               :value="q.answer"
@@ -203,41 +247,14 @@ const goToHome = () => {
               class="input-text"
               disabled
             />
-
-            <div v-else-if="q.type === 'radio'" class="radio-group">
-              <div
-                v-for="option in q.options"
-                :key="option"
-                class="radio-option"
-              >
-                <input
-                  type="radio"
-                  :name="'q' + q.id"
-                  :value="option"
-                  :checked="q.answer === option"
-                  class="radio-input"
-                  disabled
-                />
-                <label class="radio-label">{{ option }}</label>
-              </div>
-            </div>
-
-            <div v-else-if="q.type === 'checkbox'" class="checkbox-group">
-              <div
-                v-for="option in q.options"
-                :key="option"
-                class="checkbox-option"
-              >
-                <input
-                  type="checkbox"
-                  :value="option"
-                  :checked="(q.answer || []).includes(option)"
-                  class="checkbox-input"
-                  disabled
-                />
-                <label class="checkbox-label">{{ option }}</label>
-              </div>
-            </div>
+            <textarea
+              v-if="q.type === 'textarea'"
+              :value="q.answer"
+              class="input-text"
+              disabled
+              rows="3"
+              style="field-sizing: content"
+            ></textarea>
           </div>
         </div>
       </div>
@@ -245,72 +262,137 @@ const goToHome = () => {
 
     <div class="questionnaire">
       <h3 class="aa">Explore the precision intervention</h3>
-
-      <div v-for="q in secondFormAnswers" :key="q.id">
+      <div v-for="q in secondFormAnswers" :key="q.id" class="answer-block">
         <label class="question-label">{{ q.question }}</label>
 
-        <div v-if="q.type === 'radio'" class="radio-group">
-          <div v-for="option in q.options" :key="option" class="radio-option">
-            <input
-              type="radio"
-              :name="'q' + q.id"
-              :value="option"
-              :checked="q.answer === option"
-              class="radio-input"
-              disabled
-            />
-            <label class="radio-label">{{ option }}</label>
+        <p v-if="typeof q.answer === 'string'" class="answer-text">
+          <span style="color: red">Your answer : </span
+          >{{ q.answer.split("||")[0] }}
+        </p>
+        <p v-else-if="Array.isArray(q.answer)" class="answer-text">
+          <span style="color: red">Your answer : </span
+          >{{ q.answer.join(", ") }}
+        </p>
+        <div v-else-if="typeof q.answer === 'object' && q.answer !== null">
+          <div
+            v-if="
+              typeof q.answer === 'object' &&
+              q.answer !== null &&
+              'selectedOption' in q.answer
+            "
+          >
+            <p class="answer-text">
+              <span style="color: red">Your answer : </span>
+              {{ (q.answer as any).selectedOption.split("||")[0] }}
+              <span
+                v-for="(subAnswer, key) in (q.answer as any).subs"
+                :key="key"
+              >
+                (
+                {{
+                  Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
+                }}
+                )
+              </span>
+            </p>
+
+            <!-- <div v-if="(q.answer as any).subs" class="sub-answer-block"> -->
+
+            <!-- </div> -->
+
+            <div v-if="(q.answer as any).fileData" class="sub-answer-block">
+              <strong>Attached Files:</strong>
+              <ul>
+                <li
+                  v-for="(fileInfo, key) in (q.answer as any).fileData"
+                  :key="key"
+                >
+                  <!-- {{ key }}: -->
+                  <span
+                    v-for="file in Array.from(fileInfo.files as FileList)"
+                    :key="file.name"
+                    style="margin-left: 8px"
+                  >
+                    <a
+                      :href="createObjectURL(file)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ file.name }}
+                    </a>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div
+            v-else-if="
+              typeof q.answer === 'object' &&
+              q.answer !== null &&
+              'main' in q.answer
+            "
+          >
+            <p class="answer-text">
+              <span style="color: red">Your answer : </span
+              >{{ formatCheckboxAnswer(q.answer) }}
+            </p>
+          </div>
+
+          <div
+            v-else-if="
+              typeof q.answer === 'object' &&
+              q.answer !== null &&
+              'files' in q.answer
+            "
+          >
+            <ul>
+              <li
+                v-for="file in Array.from((q.answer as any).files as FileList)"
+                :key="file.name"
+              >
+                <a
+                  :href="createObjectURL(file)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {{ file.name }}
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </div>
-      <p
-        class="p"
-        v-if="store.finalRoute && store.finalRoute.includes('Route')"
-      >
-        Result Road Map:
-        <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span>
-      </p>
-      <p class="p" v-else-if="store.finalRoute">
-        Suggestion: <span :style="{ color: '#EB4648' }">{{ finalRoute }}</span>
-      </p>
-      <p class="p" v-else>
-        หมายเลข match:
-        <span :style="{ color: '#EB4648' }">{{
-          lastAnsweredQuestion?.question
-        }}</span>
+
+      <p class="p" v-if="suggestedRoutes.length > 0">
+        Road Map Suggestion:
+        <span class="final-route-text">{{ suggestedRoutes.join(", ") }}</span>
       </p>
     </div>
+
     <div class="questionnaire">
-      <h1 class="aa mb-0">Final draft (Mock up for now)</h1>
-      <div>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempora in
-        expedita beatae hic dolorem totam, iusto, sed excepturi ratione sequi
-        labore odio molestias quo rem animi modi magni voluptate maxime quasi
-        itaque nisi nam amet recusandae. Et ut esse commodi provident optio modi
-        totam, temporibus quasi assumenda nostrum deserunt? Labore, placeat
-        eaque. Sequi nobis sed in illo tempore, eveniet ea ut earum quos
-        temporibus non deserunt omnis quibusdam perferendis, ullam facere eaque,
-        quo quidem similique dolore soluta nisi? Laudantium, ipsam neque ipsum a
-        voluptas perferendis cumque velit saepe voluptates esse sapiente
-        possimus reprehenderit voluptatibus, autem quis natus dolores incidunt
-        molestias pariatur provident quae blanditiis quo! Consequatur nemo animi
-        alias, ut, suscipit fuga facilis dolore dolorum totam natus doloribus
-        magnam nostrum labore fugiat odio optio repudiandae quia commodi esse,
-        provident vitae itaque minus. Porro, ad a? Nemo facilis optio ratione
-        nesciunt cum excepturi molestias mollitia quis deleniti, repellendus
-        obcaecati? Aperiam sint impedit velit quaerat labore autem alias ipsum
-        et ex, quas corrupti ullam totam commodi veniam. Nemo esse nulla hic
-        architecto labore fugit amet sequi animi voluptatibus blanditiis, dolor
-        mollitia saepe autem sunt quam vel repellendus tempora? Itaque dicta nam
-        in consectetur officia quis blanditiis architecto quidem repellendus
-        inventore, id dignissimos eveniet, vel facere magni ad? Omnis vero,
-        labore doloremque nemo enim perferendis earum accusamus repudiandae
-        recusandae inventore nobis velit alias nesciunt voluptatem unde
-        excepturi quis sequi magnam. Ea minus, voluptatem quam temporibus iste
-        eveniet corrupti vitae rerum ad alias quibusdam maiores accusantium
-        nesciunt praesentium soluta ullam culpa omnis laboriosam quo repellendus
-        illum! Neque, inventore corrupti.
-      </div>
+      <h1 class="aa" style="padding-top: 0px; margin-top: 0px">
+        Step 1 : Choose the legitimated route to explore for the originating
+        cell
+      </h1>
+      <li v-if="store.answers[102] === 'No'">
+        Based on A2 : Availability of remission result at the rate of 80%, your
+        answer is "No", it supports the dicision
+        <span class="color: red;">not to pursue route A</span>
+      </li>
+      <li v-else>
+        Based on A2 : Availability of remission result at the rate of 80%, your
+        answer is "Yes", it supports the dicision
+        <span class="color: red;">to pursue route A</span>
+      </li>
+    </div>
+    <br style="padding-bottom: 0px" />
+    <h1 class="aa" style="margin-left: 15px; padding-top: 0px; margin-top: 0px">
+      Step 6 : Confirm confidentiality level
+    </h1>
+
+    <div style="margin-left: 30px">
+      <ConfidentialForm />
     </div>
     <br />
     <div class="btn-container">
@@ -547,5 +629,47 @@ const goToHome = () => {
   padding: 10px 15px;
   border: none;
   cursor: pointer;
+}
+
+.final-review {
+  padding-bottom: 50px;
+}
+.questionnaire {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
+}
+.answer-block {
+  margin-bottom: 24px;
+}
+.question-label {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+.answer-text,
+.answer-block ul {
+  font-size: 16px;
+  color: #555;
+  margin-left: 16px;
+}
+.sub-answer-block {
+  margin-left: 32px;
+  margin-top: 10px;
+  padding-left: 15px;
+  border-left: 2px solid #f0f0f0;
+}
+.final-route-text {
+  color: #eb4648;
+  font-weight: bold;
+}
+/* Other styles remain the same */
+.aa {
+  font-size: 20px;
+  font-weight: 400;
+}
+.btn-container {
+  padding: 16px;
 }
 </style>
