@@ -12,15 +12,15 @@ import (
 )
 
 func SaveResponse(c *gin.Context) {
-	// 1. Updated request struct to include the new fields
 	var request struct {
-		ResearcherID    uint                   `json:"researcher_id"`
-		QuestionnaireID uint                   `json:"questionnaire_id"`
-		Answers         map[string]interface{} `json:"answers"`
-		FinalRoute      string                 `json:"final_route"`
-		DiseaseName     string                 `json:"disease_name"`
-		Intervention    string                 `json:"intervention"`
-		ResearchContext map[string]interface{} `json:"research_context"`
+		ResearcherID         uint                   `json:"researcher_id"`
+		QuestionnaireID      uint                   `json:"questionnaire_id"`
+		Answers              map[string]interface{} `json:"answers"`
+		FinalRoute           string                 `json:"final_route"`
+		DiseaseName          string                 `json:"disease_name"`
+		Intervention         string                 `json:"intervention"`
+		ResearchContext      map[string]interface{} `json:"research_context"`
+		ConfidentialityLevel string                 `json:"confidentiality_level"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -28,7 +28,6 @@ func SaveResponse(c *gin.Context) {
 		return
 	}
 
-	// Marshal the map-based answers and context into JSON strings for the DB
 	answersJSON, err := json.Marshal(request.Answers)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to encode answers"})
@@ -41,20 +40,21 @@ func SaveResponse(c *gin.Context) {
 		return
 	}
 
-	// 2. Create the response model, now including the new fields
 	response := models.Response{
-		ResearcherID:    request.ResearcherID,
-		QuestionnaireID: request.QuestionnaireID,
-		Answers:         string(answersJSON),
-		FinalRoute:      request.FinalRoute,
-		SubmittedAt:     time.Now(),
-		DiseaseName:     request.DiseaseName,
-		Intervention:    request.Intervention,
-		ResearchContext: string(researchContextJSON),
+		ResearcherID:         request.ResearcherID,
+		QuestionnaireID:      request.QuestionnaireID,
+		Answers:              answersJSON,
+		ResearchContext:      researchContextJSON,
+		Survey:               nil,
+		FinalRoute:           request.FinalRoute,
+		SubmittedAt:          time.Now(),
+		DiseaseName:          request.DiseaseName,
+		Intervention:         request.Intervention,
+		ConfidentialityLevel: request.ConfidentialityLevel,
 	}
 
 	if err := database.DB.Create(&response).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save response"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save response", "details": err.Error()})
 		return
 	}
 

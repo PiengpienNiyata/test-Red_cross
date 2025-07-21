@@ -27,8 +27,6 @@ export const questionnaireData: Questionnaire[] = [
           { id: 1003, type: "text", question: "Branch and Research Group Information" },
           { id: 1004, type: "text", question: "Phone Number" },
           { id: 1005, type: "text", question: "Email Address" },
-          // { id: 1001, type: "text", question: "Name" },
-          // { id: 1002, type: "text", question: "Email Address" },
           { id: 1006, type: "text", question: "Chosen Disease Name" },
           { id: 1007, type: "text", question: "Chosen intervention" },
         ]

@@ -11,7 +11,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       chosen_disease: "",
       chosen_intervention: "",
     },
-    // Using `any` to allow for more flexible answer structures (files, nested objects)
     answers: {} as Record<number, any>, 
     researcherID: null as number | null,
     // finalRoute: null as string | null,
@@ -30,10 +29,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
         setSuggestedRoutes(routes: string[]) {
       this.suggestedRoutes = routes;
     },
-    /**
-     * Processes answers from the first questionnaire to populate researcher info.
-     * @param answersObject The answers object, typically from Questionnaire 1.
-     */
+    
     processResearcherInfo(answersObject: Record<number, string>) {
       this.researcher.name = answersObject[1001] || "";
       this.researcher.project_name = answersObject[1002] || "";
@@ -44,7 +40,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.researcher.chosen_intervention = answersObject[1007] || "";
     },
     resetStore() {
-      // Reset logic as before
       this.researcher = {
         name: "",
         project_name: "",
@@ -61,7 +56,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
 
     },
     resetServey() {
-      // Reset logic as before
       Object.keys(this.answers).forEach((key) => {
         const numericKey = Number(key);
         if (numericKey < 600 || numericKey > 1100) {

@@ -5,13 +5,12 @@ import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
 import PreResult from "@/components/preResult.vue";
 import FinalResult from "@/components/result.vue";
-import GlossaryModal from "./GlossaryModal.vue"; // Make sure the path is correct
+import GlossaryModal from "./GlossaryModal.vue";
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
 const store = useQuestionnaireStore();
 const router = useRouter();
 
-// --- STATE MANAGEMENT ---
 const answers = ref<Record<number, any>>({ ...store.answers });
 const inlineInputAnswers = ref<Record<string, string>>({});
 const questionHistory = ref<Question2[]>([]);
@@ -51,21 +50,77 @@ const contradictionText = {
   researchQuestionBody: `Can systematic mapping of molecular responses to the standard treatment across all clinical variants identify both the shared core pathway and the subtype-specific triggers that, once targeted, will convert each variant from active disease to durable remission? Answering this question will clarify whether a unified therapeutic strategy plus subtype-tailored add-ons can achieve true remission across the full spectrum of what is currently grouped under a single disease name.`,
 };
 
+const preambleData: Record<number, { term: string; definition: string }[]> = {
+  104: [
+    {
+      term: "Molecular Types of the Disease",
+      definition:
+        "Distinct clusters of disease characteristics that share common molecular origins—driven by the same originating cell and signal—but are further influenced by additional distinct signals.",
+    },
+  ],
+  201: [
+    {
+      term: "Molecular Stages of the Disease",
+      definition:
+        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
+    },
+  ],
+  201.5: [
+    {
+      term: "Molecular Stages of the Disease",
+      definition:
+        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
+    },
+  ],
+  204: [
+    {
+      term: "Remission",
+      definition:
+        "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently. True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease. The unstable remission is defined as the status in which the occurrence of the true remission being happened while the source of causative signal persisted.",
+    },
+  ],
+  206: [
+    {
+      term: "Molecular Clinico-pathological Cascade (Molecular Cascade)",
+      definition:
+        "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.",
+    },
+    {
+      term: "Autocrine",
+      definition:
+        "A cell signaling mechanism where a cell secretes a molecule that binds to receptors on the same cell, leading to a response within that cell.",
+    },
+    {
+      term: "Paracrine",
+      definition:
+        "A cell signaling mechanism where a cell signals to neighboring cells.",
+    },
+    {
+      term: "Endocrine",
+      definition:
+        "A cell signaling mechanism where a cell signals to distant cells, such as through the bloodstream.",
+    },
+  ],
+};
+
+const currentPreamble = computed(() => {
+  if (!currentQuestion.value) return null;
+  return preambleData[currentQuestion.value.id] || null;
+});
+
 const handleCloseContradictionPreamble = () => {
   if (pendingQuestion.value) {
     hasSeenContradictionPreamble.value = true;
     showContradictionPreamble.value = false;
 
-    // Perform the stored navigation to question 203
     questionHistory.value.push(currentQuestion.value!);
     currentQuestion.value = pendingQuestion.value;
     inlineInputAnswers.value = {};
 
-    pendingQuestion.value = null; // Clear the pending state
+    pendingQuestion.value = null;
   }
 };
 
-// --- HELPER FUNCTIONS ---
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 const hasSubOptions = (option: string) => option.includes("||sub");
 const hasFileInput = (option: string) => option.includes("||files");
@@ -77,7 +132,13 @@ const showFinalResult = () => {
   isFinalResult.value = true;
 };
 
-// --- CORE LOGIC ---
+const finalDisplayRoute = computed(() => {
+  if (suggestedRoutes.value.includes("Route C")) {
+    return "Route C";
+  }
+  return suggestedRoutes.value.join(", ");
+});
+
 const saveResponsesToStore = () => {
   store.setAnswers(answers.value);
 };
@@ -85,46 +146,63 @@ const saveResponsesToStore = () => {
 const constructAnswerForInlineInputs = () => {
   if (!currentQuestion.value) return;
 
-  const mainAnswer = answers.value[currentQuestion.value.id];
-  if (typeof mainAnswer !== "string" || !mainAnswer.includes("___")) return;
+  const answerObject = answers.value[currentQuestion.value.id];
+  if (!answerObject) return;
 
-  // Find the index of the selected option to build the correct key
-  const optionIndex = currentQuestion.value.options?.findIndex(
-    (opt) => opt === mainAnswer
-  );
-
-  // Safety check in case the option isn't found
-  if (optionIndex === undefined || optionIndex === -1) return;
-
-  const parts = parseOptionForInline(mainAnswer);
-  let finalAnswer = parts[0];
-  for (let i = 0; i < parts.length - 1; i++) {
-    // Construct the same unique key that the v-model uses
-    const key = `${currentQuestion.value.id}-${optionIndex}-${i}`;
-    // Find the text you typed, or use an empty string if blank
-    const inlineValue = inlineInputAnswers.value[key] || "";
-    finalAnswer += inlineValue + parts[i + 1];
+  let baseString: string;
+  if (typeof answerObject === "object" && answerObject.selectedOption) {
+    baseString = answerObject.selectedOption;
+  } else if (typeof answerObject === "string") {
+    baseString = answerObject;
+  } else {
+    return;
   }
 
-  // Save the newly constructed answer to the store
-  answers.value[currentQuestion.value.id] = finalAnswer;
+  if (!baseString.includes("___")) return;
+
+  const optionIndex = currentQuestion.value.options?.findIndex(
+    (opt) => opt === baseString
+  );
+  if (optionIndex === undefined || optionIndex === -1) return;
+
+  const parts = parseOptionForInline(baseString);
+  let finalConstructedString = parts[0];
+  for (let i = 0; i < parts.length - 1; i++) {
+    const key = `${currentQuestion.value.id}-${optionIndex}-${i}`;
+    const inlineValue = inlineInputAnswers.value[key] || "";
+    finalConstructedString += inlineValue + parts[i + 1];
+  }
+
+  if (typeof answerObject === "object" && answerObject.selectedOption) {
+    answerObject.selectedOption = finalConstructedString;
+  } else {
+    answers.value[currentQuestion.value.id] = finalConstructedString;
+  }
 };
 
 const nextQuestion = () => {
-  if (!currentQuestion.value) return;
+  if (!currentQuestion.value) {
+    console.error("LOG: No current question found.");
+    return;
+  }
 
-  // This part stays the same
+  const qId = currentQuestion.value.id;
+
   constructAnswerForInlineInputs();
-  const currentAnswer = answers.value[currentQuestion.value.id];
+
+  const currentAnswer = answers.value[qId];
+
   if (
     currentAnswer === undefined ||
     currentAnswer === null ||
     currentAnswer === ""
-  )
+  ) {
+    console.warn("LOG: No answer provided, halting navigation.");
     return;
+  }
 
   lastAnsweredQuestion.value = currentQuestion.value;
-  updateSuggestedRoutes(currentQuestion.value.id);
+  updateSuggestedRoutes(qId);
   saveResponsesToStore();
 
   let nextId: number | string | undefined;
@@ -145,23 +223,15 @@ const nextQuestion = () => {
         key = String(currentAnswer);
       }
 
-      // --- UPDATED LOGIC ---
-      // First, try for a direct match (for normal options)
       nextId = nextLogic[key];
 
-      // If no direct match is found, check for a prefix match (for options with "___")
       if (nextId === undefined && typeof key === "string") {
         for (const nextKey in nextLogic) {
-          // Check if the key in our data file contains "___"
           if (nextKey.includes("___")) {
-            console.log(
-              `Checking prefix match for key: ${nextKey} against current answer: ${key}`
-            );
-            // Check if the user's answer starts with the part of the key before the "___"
             const prefix = nextKey.split("___")[0];
             if (key.startsWith(prefix)) {
               nextId = nextLogic[nextKey];
-              break; // Found our match, no need to look further
+              break;
             }
           }
         }
@@ -169,7 +239,6 @@ const nextQuestion = () => {
     }
   }
 
-  // This part for navigating to the next page stays the same
   if (nextId === "preResult") {
     showPreResult();
   } else if (nextId === "finalResult") {
@@ -181,11 +250,10 @@ const nextQuestion = () => {
     const nextQ = allQuestions.find((q) => q.id === nextId);
     if (nextQ) {
       if (nextQ.id === 203 && !hasSeenContradictionPreamble.value) {
-        pendingQuestion.value = nextQ; // Store the target question
-        showContradictionPreamble.value = true; // Show the preamble
-        return; // Halt navigation until user closes preamble
+        pendingQuestion.value = nextQ;
+        showContradictionPreamble.value = true;
+        return;
       }
-
       questionHistory.value.push(currentQuestion.value);
       currentQuestion.value = nextQ;
       inlineInputAnswers.value = {};
@@ -193,46 +261,31 @@ const nextQuestion = () => {
   }
 };
 
-// const prevQuestion = () => {
-//   if (questionHistory.value.length > 0) {
-//     currentQuestion.value = questionHistory.value.pop() || null;
-//     isPreResult.value = false;
-//     isFinalResult.value = false;
-//   }
-// };
-// REPLACE your existing prevQuestion function with this one
-
 const prevQuestion = () => {
   if (questionHistory.value.length > 0) {
-    // --- UPDATED LOGIC ---
-
-    // 1. Identify the destination question BEFORE navigating.
-    // The destination is the last question in the history array.
     const destinationQuestion =
       questionHistory.value[questionHistory.value.length - 1];
 
-    // 2. Check if the question we are ARRIVING at is one that sets a route.
     if (destinationQuestion) {
       const routeToRemove = getRouteForQuestion(
         destinationQuestion.id,
         answers.value[destinationQuestion.id]
       );
 
-      // 3. If it is, remove that route from our list.
       if (routeToRemove) {
         suggestedRoutes.value = suggestedRoutes.value.filter(
           (r) => r !== routeToRemove
         );
         console.log(
-          `Arrived at ${destinationQuestion.id}. Removed ${routeToRemove}. Suggested Routes: [${suggestedRoutes.value.join(
+          `Arrived at ${
+            destinationQuestion.id
+          }. Removed ${routeToRemove}. Suggested Routes: [${suggestedRoutes.value.join(
             ", "
           )}]`
         );
       }
     }
-    // --- End of updated logic ---
 
-    // 4. Now, perform the original navigation logic.
     currentQuestion.value = questionHistory.value.pop() || null;
     isPreResult.value = false;
     isFinalResult.value = false;
@@ -300,10 +353,10 @@ const handleFileChange = (
   if (optionKey) {
     const existingAnswer = answers.value[questionId];
     answers.value[questionId] = {
-      selectedOption: radioSelection.value, // The currently selected radio string
+      selectedOption: radioSelection.value,
       fileData: {
-        ...(typeof existingAnswer === "object" && existingAnswer?.fileData), // Preserve other files if any
-        [optionKey]: fileData, // Add the new file
+        ...(typeof existingAnswer === "object" && existingAnswer?.fileData),
+        [optionKey]: fileData,
       },
     };
   } else {
@@ -311,7 +364,6 @@ const handleFileChange = (
   }
 };
 
-// Add this new helper function
 const getRouteForQuestion = (
   questionId: number,
   answer: any
@@ -333,11 +385,7 @@ const getRouteForQuestion = (
     case 201:
       if (answerKey.startsWith("Yes, both staging and typing. ref :")) {
         route = "Route H";
-      } 
-      // else if (answerKey === "Yes, staging only.") {
-      //   route = "Route E/F";
-      // }
-       else if (answerKey.startsWith("Yes, typing only.")) {
+      } else if (answerKey.startsWith("Yes, typing only.")) {
         route = "Route G";
       } else if (answerKey === "No") {
         route = "Route B";
@@ -350,11 +398,6 @@ const getRouteForQuestion = (
         route = "Route F";
       }
       break;
-    // case 104:
-    //   if (answerKey === "No") {
-    //     route = "Route C/D";
-    //   }
-    //   break;
     case 203:
       if (answerKey.startsWith("Yes (Please define the contradiction :")) {
         route = "Route C";
@@ -369,7 +412,6 @@ const getRouteForQuestion = (
 const updateSuggestedRoutes = (questionId: number) => {
   const routeToAdd = getRouteForQuestion(questionId, answers.value[questionId]);
 
-  // If a route is found and it's not already in our list, add it.
   if (routeToAdd && !suggestedRoutes.value.includes(routeToAdd)) {
     suggestedRoutes.value.push(routeToAdd);
     console.log(
@@ -440,14 +482,10 @@ const updateSuggestedRoutes = (questionId: number) => {
 // };
 
 const submitFinalResponse = async () => {
-  // Assumes you've updated your Pinia store with a 'setSuggestedRoutes' action
   store.setSuggestedRoutes(suggestedRoutes.value);
   saveResponsesToStore();
   router.push("/questionnairesResearcher3");
 };
-
-// --- COMPUTED & WATCHERS ---
-// REPLACE the existing isNextDisabled computed property with this new version
 
 const isNextDisabled = computed(() => {
   if (!currentQuestion.value) return true;
@@ -455,37 +493,30 @@ const isNextDisabled = computed(() => {
   const q = currentQuestion.value;
   const answer = answers.value[q.id];
 
-  // Rule 1: Basic check
   if (answer === undefined || answer === null || answer === "") {
     return true;
   }
 
-  // Rule 2: For options with required inline "___" inputs (CORRECTED LOGIC)
   if (typeof answer === "string" && answer.includes("___")) {
     const placeholderCount = (answer.match(/___/g) || []).length;
 
-    // Find the index of the selected option to build the correct key
     const optionIndex = q.options?.findIndex((opt) => opt === answer);
 
-    // If we can't find the option, something is wrong, so disable.
     if (optionIndex === undefined || optionIndex === -1) return true;
 
     let filledCount = 0;
     for (let i = 0; i < placeholderCount; i++) {
-      // Construct the same unique key that the v-model uses
       const key = `${q.id}-${optionIndex}-${i}`;
       const inlineAnswer = inlineInputAnswers.value[key];
       if (inlineAnswer && inlineAnswer.trim() !== "") {
         filledCount++;
       }
     }
-    // If not all blanks are filled, disable the button.
     if (filledCount < placeholderCount) {
       return true;
     }
   }
 
-  // Rule 3: For radio options requiring a file
   if (
     typeof answer === "string" &&
     q.type === "radio" &&
@@ -494,7 +525,6 @@ const isNextDisabled = computed(() => {
     return true;
   }
 
-  // Rule 4: For complex answer objects
   if (typeof answer === "object" && answer !== null) {
     if (answer.main) {
       if (answer.main.length === 0) return true;
@@ -507,6 +537,19 @@ const isNextDisabled = computed(() => {
       }
     }
     if (answer.selectedOption) {
+      const selectedOpt = answer.selectedOption;
+
+      if (selectedOpt.includes("___")) {
+        const placeholderCount = (selectedOpt.match(/___/g) || []).length;
+        const optionIndex = q.options?.findIndex((opt) => opt === selectedOpt);
+        if (optionIndex === undefined || optionIndex === -1) return true;
+        let filledCount = 0;
+        for (let i = 0; i < placeholderCount; i++) {
+          const key = `${q.id}-${optionIndex}-${i}`;
+          if (inlineInputAnswers.value[key]?.trim()) filledCount++;
+        }
+        if (filledCount < placeholderCount) return true;
+      }
       if (hasFileInput(answer.selectedOption)) {
         const mainLabel = getCleanOptionLabel(answer.selectedOption);
         const fileData = answer.fileData?.[mainLabel];
@@ -520,16 +563,13 @@ const isNextDisabled = computed(() => {
     }
   }
 
-  // Rule 5: For simple checkbox questions
   if (Array.isArray(answer) && answer.length === 0) {
     return true;
   }
 
-  // If all checks pass, the button is enabled.
   return false;
 });
 
-// Watcher to clear sub-option/file answers if the parent option is deselected
 watch(
   () =>
     currentQuestion.value ? answers.value[currentQuestion.value.id] : null,
@@ -542,7 +582,6 @@ watch(
       if (oldOpt && typeof oldOpt === "string") {
         const cleanOldOpt = getCleanOptionLabel(oldOpt);
 
-        // If a sub-option was deselected, clear its data
         if (hasSubOptions(oldOpt) || hasFileInput(oldOpt)) {
           if (
             answers.value[currentQuestion.value!.id] &&
@@ -557,18 +596,14 @@ watch(
   { deep: true }
 );
 
-// --- Add this new watcher ---
 watch(
   currentQuestion,
   (newQuestion) => {
     if (newQuestion && newQuestion.type === "checkbox") {
-      // If it's a new checkbox question, initialize its answer
       if (!answers.value[newQuestion.id]) {
         if (newQuestion.subOptions) {
-          // Use object structure for questions with sub-options
           answers.value[newQuestion.id] = { main: [], subs: {} };
         } else {
-          // Use simple array for standard checkboxes
           answers.value[newQuestion.id] = [];
         }
       }
@@ -592,12 +627,10 @@ watch(
     if (!subOptionsType) return;
 
     const addedOptions = newSelection.filter(
-      // Add the type annotation here
       (opt: string) => !(oldSelection || []).includes(opt)
     );
 
     addedOptions.forEach((optionString: string) => {
-      // And add it here
       const optionLabel = getCleanOptionLabel(optionString);
 
       if (subOptionsType[optionLabel] === "checkbox") {
@@ -610,7 +643,6 @@ watch(
 );
 
 watch(radioSelection, (newSelection) => {
-  // Guard clauses to ensure we only run when needed
   if (
     !currentQuestion.value ||
     currentQuestion.value.type !== "radio" ||
@@ -625,10 +657,8 @@ watch(radioSelection, (newSelection) => {
 
   const optionLabel = getCleanOptionLabel(newSelection as string);
 
-  // If the sub-options are checkboxes, we need to prepare their answer array
   if (subOptionsType[optionLabel] === "checkbox") {
     const answer = answers.value[id];
-    // If the array doesn't already exist in the '.subs' object, create it
     if (answer && answer.subs && !answer.subs[optionLabel]) {
       answer.subs[optionLabel] = [];
     }
@@ -667,7 +697,7 @@ watch(radioSelection, (newSelection) => {
     />
     <FinalResult
       v-else-if="isFinalResult"
-      :route="suggestedRoutes.join(', ')"
+      :route="finalDisplayRoute"
       :lastQuestion="lastAnsweredQuestion?.question"
       @save="submitFinalResponse"
     />
@@ -678,11 +708,6 @@ watch(radioSelection, (newSelection) => {
       class="form-container"
     >
       <div class="question">
-        <!-- <div v-if="currentQuestion.id === 203" class="preamble-inline">
-          <h4>{{ contradictionText.title }}</h4>
-          <p>{{ contradictionText.body }}</p>
-        </div> -->
-
         <div v-if="currentQuestion.id === 203" class="preamble-inline">
           <div class="preamble-icon">
             <svg
@@ -702,6 +727,33 @@ watch(radioSelection, (newSelection) => {
             {{ contradictionText.body }}
           </div>
         </div>
+
+        <div v-if="currentPreamble" class="preamble-inline">
+          <div class="preamble-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+              />
+            </svg>
+          </div>
+          <div class="preamble-text-group">
+            <div
+              v-for="item in currentPreamble"
+              :key="item.term"
+              class="preamble-item"
+            >
+              <strong>{{ item.term }}:</strong>
+              {{ item.definition }}
+            </div>
+          </div>
+        </div>
+
         <label class="question-label">{{ currentQuestion.question }}</label>
 
         <input
@@ -717,6 +769,7 @@ watch(radioSelection, (newSelection) => {
             @change="handleFileChange($event, currentQuestion.id)"
             class="input-file"
             accept=".pdf,.png,.jpeg,.jpg"
+            style="margin-left: 50px"
           />
           <div
             v-if="
@@ -740,27 +793,39 @@ watch(radioSelection, (newSelection) => {
                 v-model="radioSelection"
                 class="radio-input"
               />
+
               <label
                 v-if="option.includes('___')"
                 class="radio-label inline-input-label"
               >
                 <span
-                  v-for="(part, index) in parseOptionForInline(option)"
+                  v-for="(part, index) in parseOptionForInline(
+                    getCleanOptionLabel(option)
+                  )"
                   :key="index"
                 >
                   {{ part }}
                   <input
-                    v-if="index < parseOptionForInline(option).length - 1"
+                    v-if="
+                      index <
+                      parseOptionForInline(getCleanOptionLabel(option)).length -
+                        1
+                    "
                     type="text"
                     v-model="
                       inlineInputAnswers[
                         `${currentQuestion.id}-${optionIndex}-${index}`
                       ]
                     "
-                    :disabled="answers[currentQuestion.id] !== option"
+                    :disabled="radioSelection !== option"
                     class="inline-input"
                     @click.stop
                   />
+                  <!-- style="
+                      min-width: 300px;
+                      max-width: 50%;
+                      field-sizing: content;
+                    " -->
                 </span>
               </label>
               <label v-else class="radio-label">{{
@@ -836,6 +901,7 @@ watch(radioSelection, (newSelection) => {
                       getCleanOptionLabel(option)
                     )
                   "
+                  style="margin-left: 30px"
                   class="input-file-conditional"
                   accept=".pdf,.png,.jpeg,.jpg"
                 />
@@ -953,7 +1019,7 @@ watch(radioSelection, (newSelection) => {
         @click="openGlossaryModal"
         style="color: #eb4648; cursor: pointer"
       >
-        Show glossary
+        Show all glossary
       </a>
       <GlossaryModal
         :isVisible="isGlossaryVisible"

@@ -32,7 +32,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "Availability of the molecular mechanism of the treatment",
             options: [
-              "Yes (Please submit Ani-IL-8, Inhibit TLR-2)||files",
+              "Yes (Please define the molecular mechanism : ___ and Attach your evidence.)||files",
               "Not available yet",
               "No",
             ],
@@ -50,10 +50,10 @@ export const questionnaireData: Questionnaire2[] = [
               "Uncertain",
             ],
             next: {
-              "Yes (Attach your data with molecular evidence.)||files":
-                103,
-              No: 103,
-              Uncertain: "preResult",
+              // "Yes (Attach your data with molecular evidence.)||files":
+              //   103,
+              all: 103,
+              // Uncertain: "preResult",
             },
           },
           {
@@ -101,7 +101,7 @@ export const questionnaireData: Questionnaire2[] = [
             id: 201,
             type: "radio",
             question:
-              "Are there any staging and/or typing classification of the disease? (see glossary Molecular stages of disease and B-1 explanations.)",
+              "Are there any staging and/or typing classification of the disease?",
             options: [
               "Yes, both staging and typing. ref : ___",
               "Yes, staging only.",
@@ -114,7 +114,7 @@ export const questionnaireData: Questionnaire2[] = [
               "Yes, staging only.": 201.5,
               "Yes, typing only. (Please define the typing : ___)": 202,
               No: 202,
-              Uncertain: "preResult",
+              Uncertain: 202,
             },
           },
           {
@@ -152,7 +152,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "Availability of the criteria of remission (molecular and/or clinical)",
             options: [
-              "Yes (Please define the contradiction : ___)",
+              "Yes (Please define the criteria : ___)",
               "No",
               "Impossible to achieve remission",
             ],
@@ -164,7 +164,7 @@ export const questionnaireData: Questionnaire2[] = [
             id: 205,
             type: "radio",
             question:
-              "Availability of timing of the natural end point time frame for the studying disease.",
+              "Availability of timing of the natural end point time frame for the studying disease",
             options: ["Yes (Please define : ___)", "Not able to define"],
             next: {
               all: 206,
@@ -176,21 +176,21 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "Availability of molecular mechanism of the disease development?",
             options: [
-              "Yes, complete IL-1, LTB-4, TRL-2, IL-8||sub",
-              "Not complete||sub",
+              "Yes, complete ___ ||sub",
+              "Not complete ___ ||sub",
               "No",
             ],
             subOptionsType: {
-              "Yes, complete IL-1, LTB-4, TRL-2, IL-8": "checkbox",
-              "Not complete": "checkbox",
+              "Yes, complete ___ ": "checkbox",
+              "Not complete ___ ": "checkbox",
             },
             subOptions: {
-              "Yes, complete IL-1, LTB-4, TRL-2, IL-8": [
+              "Yes, complete ___ ": [
                 "Autocrine elaborate signal, receptor and transduction",
                 "Paracrine list of cell signal involved initial signal and, seal segment signals",
                 "Endrocrime naming",
               ],
-              "Not complete": ["Autocrine", "Paracrine", "Endrocrime"],
+              "Not complete ___ ": ["Autocrine", "Paracrine", "Endrocrime"],
             },
 
             next: {

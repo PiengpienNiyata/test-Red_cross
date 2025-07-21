@@ -11,13 +11,13 @@ const emit = defineEmits(["save"]);
 <template>
   <div class="final-result">
     <p class="p" v-if="props.route.includes('Route')">
-      Result Road Map:
+      Road Map Suggestions :
       <span :style="{ color: '#EB4648' }">{{ props.route }}</span>
     </p>
     <p class="p" v-else>
       Suggestion: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
     </p>
-    <button class="btn" @click="emit('save')">บันทึกผลลัพธ์</button>
+    <button class="btn" @click="emit('save')">Show summary</button>
   </div>
 </template>
 

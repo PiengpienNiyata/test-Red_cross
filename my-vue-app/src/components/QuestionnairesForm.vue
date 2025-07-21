@@ -96,7 +96,7 @@ const highlightErrors = () => {
       `.checkbox-group[data-question-id="${id}"]`
     );
 
-    if (inputElement) inputElement.classList.add("error-border"); // Highlight only input box for text
+    if (inputElement) inputElement.classList.add("error-border");
     if (radioGroup && radioGroup.parentElement) {
       radioGroup.parentElement.classList.add("error-border");
     }

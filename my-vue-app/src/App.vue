@@ -21,7 +21,7 @@
 <script>
 import Sidebar from "@/components/Sidebar.vue";
 import Header from "@/components/Header.vue";
-import "@/assets/main.css"; // Global styles
+import "@/assets/main.css";
 
 export default {
   components: {

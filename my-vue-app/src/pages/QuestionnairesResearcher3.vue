@@ -53,8 +53,14 @@ const secondFormAnswers = computed(
       .filter((q) => q !== null) as Question2[]
 );
 
-// const finalRoute = store.finalRoute;
-const { suggestedRoutes } = storeToRefs(store);
+const { answers, suggestedRoutes } = storeToRefs(store);
+
+const finalDisplayRoute = computed(() => {
+  if (suggestedRoutes.value.includes("Route C")) {
+    return "Route C";
+  }
+  return suggestedRoutes.value.join(", ");
+});
 
 const editAnswers = () => {
   store.resetServey();
@@ -84,9 +90,11 @@ const formatCheckboxAnswer = (answer: any): string => {
 const submissionSuccess = ref(false);
 const submissionError = ref(false);
 
+
+
+
 const submitFinalResponse = async () => {
   try {
-    // --- Step 1: Validate Researcher Info ---
     store.processResearcherInfo(store.answers as Record<string, string>);
     const { name, project_name, branch_info, phone_number, email } =
       store.researcher;
@@ -95,7 +103,6 @@ const submitFinalResponse = async () => {
       return;
     }
 
-    // --- Step 2: Create Researcher Record (if needed) ---
     let researcherID = store.researcherID;
     if (!researcherID) {
       const researcherResponse = await fetch(
@@ -112,7 +119,6 @@ const submitFinalResponse = async () => {
       store.setResearcherID(researcherID!);
     }
 
-    // --- Step 3: Separate Answers into Different Payloads ---
     const fileAnswersToUpload: { questionId: string; file: File }[] = [];
     const otherAnswers: Record<string, any> = {};
     const researchContext: Record<string, any> = {
@@ -120,8 +126,9 @@ const submitFinalResponse = async () => {
       molecular_signaling: {},
     };
 
+    let confidentialityLevel = "";
+
     Object.entries(store.answers).forEach(([id, value]) => {
-      // Find and separate file objects for later upload
       if (value && typeof value === "object") {
         if (value.files instanceof FileList) {
           Array.from(value.files).forEach((file: any) =>
@@ -136,7 +143,6 @@ const submitFinalResponse = async () => {
         }
       }
 
-      // Separate out the research context answers
       if (Number(id) >= 1008 && Number(id) <= 1010) {
         const keyMap: Record<string, string> = {
           "1008": "principle",
@@ -151,13 +157,17 @@ const submitFinalResponse = async () => {
           "1013": "implication",
         };
         researchContext.molecular_signaling[keyMap[id]] = value;
+      } else if (Number(id) === 3001) {
+        if (value && value.selectedOption && value.subs) {
+          const mainAnswer = value.selectedOption;
+          const subAnswer = value.subs[mainAnswer];
+          confidentialityLevel = `${mainAnswer} (Level: ${subAnswer})`;
+        }
       } else {
-        // Everything else is a "regular" answer
         otherAnswers[id] = value;
       }
     });
 
-    // --- Step 4: Create the Main Response Record ---
     const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -169,6 +179,7 @@ const submitFinalResponse = async () => {
         disease_name: store.answers[1006] || "",
         intervention: store.answers[1007] || "",
         research_context: researchContext,
+        confidentiality_level: confidentialityLevel,
       }),
     });
 
@@ -176,7 +187,6 @@ const submitFinalResponse = async () => {
     if (!response.ok) throw new Error("Failed to save response");
     const responseID = responseResult.id;
 
-    // --- Step 5: Upload All Files ---
     if (fileAnswersToUpload.length > 0) {
       const uploadPromises = fileAnswersToUpload.map(({ questionId, file }) => {
         const formData = new FormData();
@@ -190,7 +200,6 @@ const submitFinalResponse = async () => {
         });
       });
 
-      // Wait for all file uploads to complete
       const uploadResults = await Promise.all(uploadPromises);
       const failedUpload = uploadResults.find((res) => !res.ok);
       if (failedUpload) {
@@ -198,13 +207,15 @@ const submitFinalResponse = async () => {
       }
     }
 
-    // --- Step 6: Show Success ---
     submissionSuccess.value = true;
   } catch (error) {
     console.error("Error submitting data:", error);
     submissionError.value = true;
   }
 };
+
+
+
 
 const startNewSurvey = () => {
   store.resetStore();
@@ -214,6 +225,303 @@ const startNewSurvey = () => {
 const createObjectURL = (file: File) => {
   return URL.createObjectURL(file);
 };
+
+const summaryStep2 = computed(() => {
+  const answer201 = answers.value[201];
+  const answer202 = answers.value[202];
+
+  const q201 = getQuestionById2(201);
+  const q202 = getQuestionById2(202);
+
+  if (!answer201 || !answer202 || !q201 || !q202) {
+    return null;
+  }
+
+  let stagingTypingDesc = "";
+  if (typeof answer201 === "string") {
+    if (answer201.startsWith("Yes, both staging and typing")) {
+      const ref = answer201.split("ref : ")[1] || "not specified";
+      stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+    } else if (answer201 === "Yes, staging only.") {
+      const answer201_5 = answers.value[201.5] || "details not provided";
+      stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+    } else if (answer201.startsWith("Yes, typing only.")) {
+      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+      stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
+    } else if (answer201 === "No") {
+      stagingTypingDesc = "that there are no staging or typing classifications";
+    } else if (answer201 === "Uncertain") {
+      stagingTypingDesc =
+        "that it is uncertain if staging or typing classifications exist";
+    }
+  }
+
+  let criteriaDesc = "";
+  if (typeof answer202 === "string") {
+    if (answer202.startsWith("Yes")) {
+      const criteriaText =
+        answer202.split(": ")[1]?.slice(0, -1) || "not provided";
+      criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
+    } else {
+      criteriaDesc = "you do not have defined diagnostic criteria";
+    }
+  }
+
+  return `From your response to question 202 - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question 201 - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
+});
+
+const summaryStep3 = computed(() => {
+  const answer101 = answers.value[101];
+  const q101 = getQuestionById2(101);
+
+  if (!answer101 || !q101) {
+    return null;
+  }
+
+  const diseaseName = `<span class="dynamic-text">${
+    answers.value[1006] || "the disease"
+  }</span>`;
+  let mechanismText = `<span class="dynamic-text">undefined</span>`;
+
+  let finalAnswerString = "";
+  if (typeof answer101 === "object" && answer101.selectedOption) {
+    finalAnswerString = answer101.selectedOption;
+  } else if (typeof answer101 === "string") {
+    finalAnswerString = answer101;
+  }
+
+  if (finalAnswerString.startsWith("Yes")) {
+    const match = finalAnswerString.match(/mechanism : (.*) and Attach/);
+    const extractedText = match ? match[1] : "";
+
+    if (extractedText && extractedText.trim() !== "") {
+      mechanismText = `<em>${extractedText}</em>`;
+    }
+  }
+
+  return `From your response to question 101 - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
+});
+
+const summaryStep4 = computed(() => {
+  const answer201 = answers.value[201];
+  const answer202 = answers.value[202];
+
+  if (!answer201 || !answer202) {
+    return null;
+  }
+
+  const diseaseName = `<span class="dynamic-text">${
+    answers.value[1006] || "the disease"
+  }</span>`;
+
+  let stagingTypingDesc = "";
+  if (typeof answer201 === "string") {
+    if (answer201.startsWith("Yes, both staging and typing")) {
+      const ref = answer201.split("ref : ")[1] || "not specified";
+      stagingTypingDesc = `implying that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+    } else if (answer201 === "Yes, staging only.") {
+      const answer201_5 = answers.value[201.5] || "details not provided";
+      stagingTypingDesc = `implying that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+    } else if (answer201.startsWith("Yes, typing only.")) {
+      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+      stagingTypingDesc = `implying that there is typing only, defined as: "<em>${typing}</em>"`;
+    } else {
+      stagingTypingDesc = `implying that there are no staging or typing classifications`;
+    }
+  }
+
+  let criteriaDesc = "";
+  if (typeof answer202 === "string") {
+    if (answer202.startsWith("Yes")) {
+      criteriaDesc = `implying that you have defined criteria`;
+    } else {
+      criteriaDesc = `implying that you do not have defined diagnostic criteria`;
+    }
+  }
+
+  const probableInducers = ["N/A", "N/A", "N/A"];
+  const n = probableInducers.length;
+  const inducedResult = `<span class="dynamic-text">N/A</span>`;
+
+  const inducersList = probableInducers.map((item) => `<br>• ${item}`).join("");
+
+  return `By comparing molecular data associated with cell types involved in different stages and types (${stagingTypingDesc}) against molecules involved across all cell types listed in diagnostic criteria (${criteriaDesc}), it is inferred that the <strong>${n}</strong> probable initial inducers of ${diseaseName} are: ${inducersList}<br> All of these are capable of inducing ${inducedResult}.`;
+});
+
+const summaryStep5 = computed(() => {
+  const answer103 = answers.value[103];
+  const q103 = getQuestionById2(103);
+
+  if (!answer103 || !q103) {
+    return null;
+  }
+
+  const diseaseName = `<span class="dynamic-text">${
+    answers.value[1006] || "the disease"
+  }</span>`;
+  let title = "";
+  let body = "";
+
+  if (answer103 === "More than 80% efficiency") {
+    title = "Remission-Oriented Research Question";
+    body = `Given your response to question 103 ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
+  } else {
+    title = "Exploratory Pre-Remission Research Question";
+    body = `Based on your response to question 103 ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
+  }
+
+  return `<strong>${title}:</strong> ${body}`;
+});
+
+const summaryParagraphs = computed(() => {
+  const paragraphs: { text: string }[] = [];
+  const diseaseName = `<span class="dynamic-text">${
+    store.answers[1006] || "the disease"
+  }</span>`;
+
+  const buildDecisionSentence = (
+    text: string,
+    words: string,
+    route: string
+  ) => {
+    const styledText = text.replace(
+      words,
+      `<span class="decision-words">${words}</span>`
+    );
+    return `<span class="decision-sentence">${styledText.replace(
+      route,
+      `<span class="route-name">${route}</span>`
+    )}</span>`;
+  };
+
+  const answer102 = store.answers[102];
+  if (answer102) {
+    const q102_text = getQuestionById2(102)?.question || "";
+    if (answer102.selectedOption?.startsWith("Yes")) {
+      paragraphs.push({
+        text: `Based on your response to question 102 - "<em>${q102_text}</em>", your assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence(
+          "This supports the decision to pursue Route A.",
+          "to pursue",
+          "Route A"
+        )}`,
+      });
+    } else {
+      paragraphs.push({
+        text: `Based on your response to question 102 - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence(
+          "This supports the decision not to pursue Route A.",
+          "not to pursue",
+          "Route A"
+        )}`,
+      });
+    }
+  }
+
+  const answer201 = store.answers[201];
+  if (answer201) {
+    const q201_text = getQuestionById2(201)?.question || "";
+    if (answer201 === "No") {
+      paragraphs.push({
+        text: `From your response to question 201 - "<em>${q201_text}</em>", you've indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence(
+          "This observation justifies choosing Route B.",
+          "justifies choosing",
+          "Route B"
+        )}`,
+      });
+    } else if (typeof answer201 === "string" && answer201.startsWith("Yes")) {
+      paragraphs.push({
+        text: `From your response to question 201 - "<em>${q201_text}</em>", your acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence(
+          "This contradicts the core assumption of Route B, justifying the decision not to pursue this route.",
+          "not to pursue this route",
+          "Route B"
+        )}`,
+      });
+    }
+  }
+
+  const answer203 = store.answers[203];
+  if (answer203) {
+    const q203_text = getQuestionById2(203)?.question || "";
+    if (typeof answer203 === "string" && answer203.startsWith("Yes")) {
+      paragraphs.push({
+        text: `By identifying a contradiction within the diagnostic criteria (question 203 - "<em>${q203_text}</em>"), you suggest that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence(
+          "This critical insight directs the investigation towards Route C.",
+          "directs the investigation towards",
+          "Route C"
+        )}`,
+      });
+    } else if (answer203 === "No") {
+      paragraphs.push({
+        text: `Your response to question 203 - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence(
+          "This allows for the exploration of its pathway via Route D.",
+          "allows for the exploration of its pathway via",
+          "Route D"
+        )}`,
+      });
+    }
+  }
+
+  if (answer201 === "Yes, staging only.") {
+    const answer201_5 = store.answers[201.5];
+    if (answer201_5 === "Have 2 stages") {
+      paragraphs.push({
+        text: `Your identification of two distinct stages (question 201.5) provides a clear framework for comparative analysis. ${buildDecisionSentence(
+          "This supports pursuing Route E to investigate the molecular transition between stages.",
+          "supports pursuing",
+          "Route E"
+        )}`,
+      });
+    } else if (answer201_5 === "Have more than 2 stages") {
+      paragraphs.push({
+        text: `The presence of more than two stages (question 201.5) suggests a complex, multi-step progression. ${buildDecisionSentence(
+          "This complexity warrants the detailed analysis provided by Route F.",
+          "warrants the detailed analysis provided by",
+          "Route F"
+        )}`,
+      });
+    }
+  } else if (
+    typeof answer201 === "string" &&
+    answer201.startsWith("Yes, typing only")
+  ) {
+    paragraphs.push({
+      text: `By specifying that ${diseaseName} has typing but not staging (question 201), the investigation is focused on the molecular differences between subtypes. ${buildDecisionSentence(
+        "This makes Route G the logical next step.",
+        "makes Route G the logical next step",
+        "Route G"
+      )}`,
+    });
+  } else if (
+    typeof answer201 === "string" &&
+    answer201.startsWith("Yes, both")
+  ) {
+    paragraphs.push({
+      text: `Your confirmation of both staging and typing for ${diseaseName} (question 201) points to a complex pathogenesis. ${buildDecisionSentence(
+        "This supports Route H as the most appropriate and comprehensive approach.",
+        "supports Route H as the most appropriate",
+        "Route H"
+      )}`,
+    });
+  }
+
+  return paragraphs;
+});
+
+const isConfidentialFormComplete = computed(() => {
+  const confidentialAnswer = answers.value[3001];
+  if (
+    !confidentialAnswer ||
+    typeof confidentialAnswer !== "object" ||
+    !confidentialAnswer.selectedOption
+  ) {
+    return false;
+  }
+  const mainSelection = confidentialAnswer.selectedOption;
+  const subAnswer = confidentialAnswer.subs?.[mainSelection];
+  if (subAnswer === null || subAnswer === undefined || subAnswer === "") {
+    return false;
+  }
+  return true;
+});
 </script>
 
 <template>
@@ -296,10 +604,6 @@ const createObjectURL = (file: File) => {
               </span>
             </p>
 
-            <!-- <div v-if="(q.answer as any).subs" class="sub-answer-block"> -->
-
-            <!-- </div> -->
-
             <div v-if="(q.answer as any).fileData" class="sub-answer-block">
               <strong>Attached Files:</strong>
               <ul>
@@ -307,7 +611,6 @@ const createObjectURL = (file: File) => {
                   v-for="(fileInfo, key) in (q.answer as any).fileData"
                   :key="key"
                 >
-                  <!-- {{ key }}: -->
                   <span
                     v-for="file in Array.from(fileInfo.files as FileList)"
                     :key="file.name"
@@ -366,63 +669,244 @@ const createObjectURL = (file: File) => {
 
       <p class="p" v-if="suggestedRoutes.length > 0">
         Road Map Suggestion:
-        <span class="final-route-text">{{ suggestedRoutes.join(", ") }}</span>
+        <span class="final-route-text">{{ finalDisplayRoute }}</span>
       </p>
     </div>
-
     <div class="questionnaire">
-      <h1 class="aa" style="padding-top: 0px; margin-top: 0px">
+      <h2 style="margin-bottom: 20px">Step of extrapolation</h2>
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
         Step 1 : Choose the legitimated route to explore for the originating
         cell
       </h1>
-      <li v-if="store.answers[102] === 'No'">
-        Based on A2 : Availability of remission result at the rate of 80%, your
-        answer is "No", it supports the dicision
-        <span class="color: red;">not to pursue route A</span>
-      </li>
-      <li v-else>
-        Based on A2 : Availability of remission result at the rate of 80%, your
-        answer is "Yes", it supports the dicision
-        <span class="color: red;">to pursue route A</span>
-      </li>
-    </div>
-    <br style="padding-bottom: 0px" />
-    <h1 class="aa" style="margin-left: 15px; padding-top: 0px; margin-top: 0px">
-      Step 6 : Confirm confidentiality level
-    </h1>
+      <!-- <h1 class="aa" style="padding-top: 0px; margin-top: 0px">
+        Step 1 : Choose the legitimated route to explore for the originating
+        cell
+      </h1> -->
 
-    <div style="margin-left: 30px">
-      <ConfidentialForm />
-    </div>
-    <br />
-    <div class="btn-container">
-      <button type="button" class="edit-btn" @click="editAnswers">
-        แก้ไขข้อมูล
-      </button>
-      <button type="button" class="submit-btn" @click="submitFinalResponse">
-        บันทึก
-      </button>
+      <div style="margin-left: 30px; margin-right: 30px">
+        <div
+          v-for="(p, index) in summaryParagraphs"
+          :key="index"
+          class="summary-item"
+        >
+          <span class="summary-bullet">•</span>
+          <div v-if="p.text" class="summary-text-content">
+            <span v-html="p.text"></span>
+          </div>
+          <div v-else class="summary-text-content">
+            <span class="dynamic-text">
+              (Answer questions 201 and 202 to generate this section.)
+            </span>
+          </div>
+        </div>
+      </div>
+      <br style="padding-bottom: 0px" />
 
-      <div v-if="submissionSuccess" class="modal">
-        <div class="modal-content">
-          <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
-          <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
-          <div class="modal-buttons">
-            <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
-            <button @click="startNewSurvey" class="btn btn-primary">
-              ส่งคำตอบเพิ่ม
-            </button>
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
+        Step 2 : Identify the originating cell
+      </h1>
+
+      <div style="margin-left: 30px; margin-right: 30px">
+        <div class="summary-item">
+          <span class="summary-bullet">•</span>
+          <!-- <div v-if="summaryStep2" class="summary-text-content">
+            <span v-html="summaryStep2"></span>
+          </div>
+          <div v-else class="summary-text-content">
+            <span class="dynamic-text">
+              (Answer questions 201 and 202 to generate this section.)
+            </span>
+          </div> -->
+          <div class="summary-text-content">
+            <span style="color: red"
+              >N/A (Insufficient data. <br />Need : originating cell type
+              identifier)</span
+            >
+          </div>
+        </div>
+      </div>
+      <!-- <br style="padding-bottom: 0px" /> -->
+
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
+        Step 3 : Mechanism of the disease development
+      </h1>
+
+      <div style="margin-left: 30px; margin-right: 30px">
+        <div class="summary-item">
+          <span class="summary-bullet">•</span>
+          <div v-if="summaryStep3" class="summary-text-content">
+            <span v-html="summaryStep3"></span>
+          </div>
+          <div v-else class="summary-text-content">
+            <span class="dynamic-text">
+              (Answer questions 101 to generate this section.)
+            </span>
           </div>
         </div>
       </div>
 
-      <div v-if="submissionError" class="modal">
-        <div class="modal-content">
-          <h3 class="h3">เกิดข้อผิดพลาด</h3>
-          <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
-          <button @click="submissionError = false" class="btn btn-primary">
-            ปิด
-          </button>
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
+        Step 4 : Identify the initial signal
+      </h1>
+
+      <div style="margin-left: 30px; margin-right: 30px">
+        <div class="summary-item">
+          <span class="summary-bullet">•</span>
+          <!-- <div v-if="summaryStep4" class="summary-text-content">
+            <span v-html="summaryStep4"></span>
+          </div>
+          <div v-else class="summary-text-content">
+            <span class="dynamic-text">
+              (Answer questions 201 and 202 to generate this section.)
+            </span>
+          </div> -->
+          <div class="summary-text-content">
+            <span style="color: red"
+              >N/A (Insufficient data. <br />Need : proable initial inducers and
+              what they're induce.)</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
+        Step 5 : Establish remission therapy question
+      </h1>
+
+      <div style="margin-left: 30px; margin-right: 30px">
+        <div class="summary-item">
+          <span class="summary-bullet">•</span>
+          <div v-if="summaryStep5" class="summary-text-content">
+            <span v-html="summaryStep5"></span>
+          </div>
+          <div v-else class="summary-text-content">
+            <span class="dynamic-text">
+              (Answer questions 103 to generate this section.)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <h1
+        class="aa"
+        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+      >
+        Step 6 : Confirm confidentiality level
+      </h1>
+
+      <div style="margin-left: 30px; margin-right: 30px">
+        <ConfidentialForm />
+      </div>
+      <br />
+
+      <div class="btn-container">
+        <div v-if="suggestedRoutes.includes('Route C')" class="preamble-inline">
+          <div class="preamble-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+              />
+            </svg>
+          </div>
+          <div class="preamble-text-group">
+            <div>
+              <strong>Contradiction Warning: Re-evaluation Required</strong>
+              <p>
+                Your responses have identified a significant contradiction
+                within the diagnostic criteria or natural history of the
+                disease. This is a critical finding, as it challenges the
+                assumption that the condition is a single, uniform entity.
+              </p>
+              <p>
+                This suggests that what is currently defined as one disease may,
+                in fact, represent a heterogeneous syndrome—a collection of
+                distinct pathological processes that converge on similar
+                clinical signs. Proceeding with the current data is inadvisable,
+                as it could lead to confounding results and a failure to
+                identify the true originating cell type(s).
+              </p>
+              <strong>Recommended Action:</strong>
+              <ul>
+                <li>
+                  <strong>Further Research:</strong> Conduct additional
+                  preclinical or clinical research to gather data that clarifies
+                  the diagnostic criteria and resolves the observed
+                  contradiction.
+                </li>
+                <li>
+                  <strong>Re-evaluate Inputs:</strong> Carefully review the
+                  answers provided in this questionnaire to ensure they are
+                  based on a consistent and robust set of evidence.
+                </li>
+              </ul>
+              <p style="margin-bottom: 0;">
+                Resolution of this contradiction is a prerequisite for
+                legitimately exploring the originating cell and pursuing a
+                high-precision therapeutic strategy.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="edit-btn" @click="editAnswers">
+          Edit answer
+        </button>
+        <button
+          v-if="!suggestedRoutes.includes('Route C')"
+          type="button"
+          class="submit-btn"
+          @click="submitFinalResponse"
+          :disabled="!isConfidentialFormComplete"
+        >
+          Save
+        </button>
+
+        <button v-else type="button" class="submit-btn" @click="startNewSurvey">
+          Reset form
+        </button>
+
+        <div v-if="submissionSuccess" class="modal">
+          <div class="modal-content">
+            <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
+            <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
+            <div class="modal-buttons">
+              <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
+              <button @click="startNewSurvey" class="btn btn-primary">
+                ส่งคำตอบเพิ่ม
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="submissionError" class="modal">
+          <div class="modal-content">
+            <h3 class="h3">เกิดข้อผิดพลาด</h3>
+            <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
+            <button @click="submissionError = false" class="btn btn-primary">
+              ปิด
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -580,6 +1064,12 @@ const createObjectURL = (file: File) => {
   background-color: #c9302c;
 }
 
+.submit-btn:disabled {
+  background-color: #cccccc;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -671,5 +1161,156 @@ const createObjectURL = (file: File) => {
 }
 .btn-container {
   padding: 16px;
+}
+/* Add these styles to your <style scoped> block */
+
+.summary-item {
+  display: flex; /* Aligns bullet and text */
+  gap: 8px;
+  padding-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.summary-bullet {
+  font-weight: bold;
+  color: #eb4648;
+}
+
+/* Class for dynamic text like the disease name */
+.dynamic-text {
+  color: #555;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* Class for the entire decision sentence */
+.decision-sentence {
+  color: #555;
+  display: block; /* Puts it on its own line */
+  margin-top: 4px;
+}
+
+/* Class for the route name itself */
+/* .route-name {
+  color: #d84315;
+  font-weight: bold;
+} */
+
+/* Class for positive decision words */
+.decision-words-positive {
+  color: #28a745; /* Green */
+  font-weight: bold;
+}
+
+/* Class for negative decision words */
+.decision-words-negative {
+  color: #d84315; /* Red */
+  font-weight: bold;
+}
+/* Styles for the dynamic summary paragraphs */
+.summary-item {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.summary-bullet {
+  font-weight: bold;
+  color: #eb4648;
+}
+
+/* Dynamic text like the disease name */
+.dynamic-text {
+  color: #555;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* The entire decision sentence */
+.decision-sentence {
+  color: #555; /* Gray color */
+  display: block;
+  margin-top: 4px;
+}
+
+/* The route name itself */
+.route-name {
+  color: #d84315; /* Red */
+  font-weight: bold;
+}
+
+/* The decision words (e.g., "not to pursue", "justifies choosing") */
+.decision-words {
+  color: #d84315; /* Red */
+  font-weight: bold;
+}
+</style>
+
+<style>
+/* These are now global styles that can affect v-html content */
+
+.summary-item {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.summary-bullet {
+  font-weight: bold;
+  color: #eb4648;
+}
+
+/* Dynamic text like the disease name */
+.dynamic-text {
+  color: #555;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* The entire decision sentence will be gray */
+.decision-sentence {
+  color: #555;
+  display: block;
+  margin-top: 4px;
+}
+
+/* The route name itself will be red */
+.route-name {
+  color: #d84315;
+  font-weight: bold;
+}
+
+/* The decision words will be red */
+.decision-words {
+  color: #d84315;
+  font-weight: bold;
+}
+.preamble-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background-color: #fbe9e7; /* Light pink/red background */
+  color: #5d4037; /* Darker text for readability */
+  border: 1px solid #ffab91; /* Reddish border */
+  border-radius: 8px;
+  padding: 16px;
+  margin: 0 8px 1.5rem 8px;
+}
+
+.preamble-icon {
+  /* margin-top: 2px; */
+  flex-shrink: 0;
+  color: #d84315; /* Red icon color */
+}
+
+.preamble-text {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.preamble-text strong {
+  font-weight: 600;
 }
 </style>

@@ -8,6 +8,6 @@ type UploadedFile struct {
 	QuestionID string    `json:"question_id"`
 	FileName   string    `json:"file_name"`
 	MimeType   string    `json:"mime_type"`
-	FileData   []byte    `json:"-" gorm:"type:bytea"` // file_data is stored as byte array
+	FileData   []byte    `json:"-" gorm:"type:bytea"`
 	UploadedAt time.Time `json:"uploaded_at" gorm:"autoCreateTime"`
 }

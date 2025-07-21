@@ -10,8 +10,6 @@ const { answers } = toRefs(store);
 
 const question = ref<Question2>(questionnaireData[0].sections[0].questions[0]);
 
-// --- NEW HELPER FUNCTION ---
-// This now checks the subOptions data directly, instead of looking for "||sub"
 const hasSubOptions = (option: string): boolean => {
   if (!question.value.subOptions) return false;
   return Object.prototype.hasOwnProperty.call(
@@ -20,7 +18,6 @@ const hasSubOptions = (option: string): boolean => {
   );
 };
 
-// --- WATCHER AND STATE MANAGEMENT ---
 const initialSelection = answers.value[3001]?.selectedOption || null;
 const localSelection = ref(initialSelection);
 
@@ -30,7 +27,6 @@ watch(localSelection, (newValue) => {
     return;
   }
 
-  // Use the new helper function here
   if (hasSubOptions(newValue)) {
     answers.value[3001] = {
       selectedOption: newValue,
@@ -51,7 +47,7 @@ watch(localSelection, (newValue) => {
       select the appropriate confidentiality level in the next section.
     </p>
 
-    <table style="width: 100%; border-collapse: collapse; margin-top: 15px">
+    <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
       <thead>
         <tr style="background: #ffdddd">
           <th
