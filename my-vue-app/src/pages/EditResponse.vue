@@ -35,8 +35,41 @@ onMounted(async () => {
 
     let combinedAnswers = { ...submissionData.answers };
 
+    // if (submissionData.research_context) {
+    //   console.log(submissionData.researcher_data);
+    //   const { research_questions, molecular_signaling } =
+    //     submissionData.research_context;
+    //   if (research_questions) {
+    //     combinedAnswers[1008] = research_questions.principle || "";
+    //     combinedAnswers[1009] = research_questions.factual_statement || "";
+    //     combinedAnswers[1010] = research_questions.implication || "";
+    //   }
+    //   if (molecular_signaling) {
+    //     combinedAnswers[1011] = molecular_signaling.principle || "";
+    //     combinedAnswers[1012] = molecular_signaling.factual_statement || "";
+    //     combinedAnswers[1013] = molecular_signaling.implication || "";
+    //   }
+    // }
+    if (submissionData.researcher_data) {
+      const rd = submissionData.researcher_data;
+      console.log(submissionData.researcher_data);
+      console.log(submissionData.researcher_data.project_name);
+      console.log(rd.project_name);
+
+      combinedAnswers[1001] = rd.name || "";
+
+      combinedAnswers[1002] = rd.project_name || "";
+      console.log(combinedAnswers[1002]);
+
+      combinedAnswers[1003] = rd.branch_info || "";
+      combinedAnswers[1004] = rd.phone_number || "";
+      combinedAnswers[1005] = rd.email || "";
+    }
+    combinedAnswers[1006] = submissionData.disease_name || "";
+    combinedAnswers[1007] = submissionData.intervention || "";
+
+    // 2. Re-populate the research_context answers (IDs 1008-1013)
     if (submissionData.research_context) {
-      // console.log(submissionData.research_context);
       const { research_questions, molecular_signaling } =
         submissionData.research_context;
       if (research_questions) {
@@ -86,7 +119,7 @@ onMounted(async () => {
 
     // console.log(submissionData);
     store.setResearcherID(submissionData.researcher_data.id);
-    console.log(submissionData);
+    // console.log(submissionData);
 
     store.researcher = submissionData.research_data;
     store.setCurrentTokenAndVersion(
@@ -96,10 +129,9 @@ onMounted(async () => {
     store.setAnswers(combinedAnswers);
 
     if (submissionData.final_route) {
-      const routes = submissionData.final_route.split(', ');
+      const routes = submissionData.final_route.split(", ");
       store.setSuggestedRoutes(routes);
     }
-
 
     router.push("/questionnairesResearcher3");
   } catch (error) {

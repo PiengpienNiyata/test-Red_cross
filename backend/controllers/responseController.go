@@ -10,6 +10,8 @@ import (
 	"backend/database"
 	"backend/models"
 
+	"backend/services"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,6 +49,8 @@ func SaveResponse(c *gin.Context) {
 		ConfidentialityLevel string                 `json:"confidentiality_level"`
 		Token                *string                `json:"token"`
 		Version              *int                   `json:"version"`
+		ResearcherName       string                 `json:"researcher_name"`
+		ResearcherEmail      string                 `json:"researcher_email"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -112,6 +116,14 @@ func SaveResponse(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save response", "details": err.Error()})
 		return
 	}
+
+	// go services.SendSubmissionNotification(
+	// 	request.ResearcherName,
+	// 	"jirawansong99@gmail.com", // Using your test email for now
+	// 	response.DiseaseName,      // Using disease name as project name
+	// 	response.Token,
+	// 	response.Version,
+	// )
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "Response saved",
@@ -190,4 +202,34 @@ func GetLatestResponseByToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, combinedResult)
+}
+
+// Add this new function to responseController.go
+func FinalizeSubmission(c *gin.Context) {
+	responseID := c.Param("id")
+	var response models.Response
+	var researcher models.ResearcherData
+
+	// Find the response record
+	if err := database.DB.First(&response, responseID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Response not found"})
+		return
+	}
+
+	// Find the associated researcher to get their name and email
+	if err := database.DB.First(&researcher, response.ResearcherID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Associated researcher not found"})
+		return
+	}
+
+	// Send the notification emails in the background
+	go services.SendSubmissionNotification(
+		researcher.Name,
+		"jirawansong99@gmail.com", // Using your test email for now
+		response.DiseaseName,
+		response.Token,
+		response.Version,
+	)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Submission finalized and notifications sent."})
 }

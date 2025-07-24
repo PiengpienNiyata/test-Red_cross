@@ -30,9 +30,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     setResearcherID(id: number) {
       this.researcherID = id;
     },
-    // setFinalRoute(route: string) {
-    //   this.finalRoute = route;
-    // },
+
     setSuggestedRoutes(routes: string[]) {
       this.suggestedRoutes = routes;
     },

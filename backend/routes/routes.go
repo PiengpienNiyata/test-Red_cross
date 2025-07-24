@@ -23,5 +23,7 @@ func SetupRoutes(router *gin.Engine) {
 
 		api.GET("/file/:id", controllers.GetFileByID)
 
+		api.POST("/response/:id/finalize", controllers.FinalizeSubmission)
+
 	}
 }

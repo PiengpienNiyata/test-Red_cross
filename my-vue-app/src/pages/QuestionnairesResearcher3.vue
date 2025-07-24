@@ -13,23 +13,31 @@ import html2pdf from "html2pdf.js";
 const pdfContent = ref<HTMLElement | null>(null);
 const store = useQuestionnaireStore();
 const router = useRouter();
+
+const { answers, suggestedRoutes } = storeToRefs(store);
 type FileItem = File | { id: number; name: string; rehydrated: true };
 const exportToPdf = () => {
-  // Check if the content element is available
   if (!pdfContent.value) {
     console.error("PDF content element not found.");
     return;
   }
 
+  // Safety check to ensure the answer for the project name exists.
+  if (!answers.value[1002]) {
+    console.error(
+      "Project Name (answer 1002) is not available for the PDF filename."
+    );
+  }
+
   const options = {
     margin: 1,
-    filename: `RIRM-Summary-${store.researcher.project_name || "report"}.pdf`,
+    // Use the project name directly from the answers ref.
+    filename: `RIRM-Summary-${answers.value[1002] || "report"}.pdf`,
     image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true },
     jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
   };
 
-  // Call html2pdf to generate the file
   html2pdf().from(pdfContent.value).set(options).save();
 };
 
@@ -77,8 +85,6 @@ const secondFormAnswers = computed(
       })
       .filter((q) => q !== null) as Question2[]
 );
-
-const { answers, suggestedRoutes } = storeToRefs(store);
 
 const finalDisplayRoute = computed(() => {
   if (suggestedRoutes.value.includes("Route C")) {
@@ -208,6 +214,8 @@ const submitFinalResponse = async () => {
         confidentiality_level: confidentialityLevel,
         token: store.currentToken,
         version: store.currentVersion,
+        researcher_name: store.researcher.name,
+        researcher_email: store.researcher.email,
       }),
     });
     const responseResult = await response.json();
@@ -237,10 +245,14 @@ const submitFinalResponse = async () => {
       }
     }
 
+    const editUrl = `${window.location.origin}/edit-response/${responseToken}`;
+
     // --- Step 6: Show Success and Log the Edit URL ---
+    await fetch(`${VITE_API_BASE_URL}/api/response/${responseID}/finalize`, {
+      method: "POST",
+    });
 
     // 2. Construct the full edit URL
-    const editUrl = `${window.location.origin}/edit-response/${responseToken}`;
 
     // 3. Log it to the console for testing
     console.log("--- SUBMISSION SUCCESSFUL ---");
@@ -567,6 +579,40 @@ const isConfidentialFormComplete = computed(() => {
     return false;
   }
   return true;
+});
+
+// Add these new computed properties after your other computed properties
+
+const hasNonsenseStagingTyping = computed(() => {
+  const answer104 = answers.value[104];
+  const answer201 = answers.value[201];
+
+  // Condition 1: User implies a shared pathway in Q104...
+  if (typeof answer104 === 'string' && answer104.startsWith('Yes')) {
+    // ...but then fails to select the corresponding staging/typing in Q201.
+    if (
+      typeof answer201 === 'string' &&
+      !answer201.startsWith('Yes, both staging and typing') &&
+      !answer201.startsWith('Yes, typing only')
+    ) {
+      return true;
+    }
+  }
+  return false;
+});
+
+const hasNonsenseContradiction = computed(() => {
+  const answer202 = answers.value[202];
+  const answer203 = answers.value[203];
+
+  // Condition 2: User says no criteria exist in Q202...
+  if (answer202 === 'No') {
+    // ...but then claims to have found a contradiction within them in Q203.
+    if (typeof answer203 === 'string' && answer203.startsWith('Yes')) {
+      return true;
+    }
+  }
+  return false;
 });
 </script>
 
@@ -938,7 +984,7 @@ const isConfidentialFormComplete = computed(() => {
       </div>
     </div>
     <div class="btn-container">
-      <div v-if="suggestedRoutes.includes('Route C')" class="preamble-inline">
+      <div v-if="suggestedRoutes.includes('Route C') && !hasNonsenseContradiction" class="preamble-inline">
         <div class="preamble-icon">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -990,6 +1036,39 @@ const isConfidentialFormComplete = computed(() => {
           </div>
         </div>
       </div>
+
+      <div v-if="hasNonsenseStagingTyping" class="preamble-inline">
+    <div class="preamble-icon">
+       </div>
+    <div class="preamble-text-group">
+      <div>
+        <strong>Logical Inconsistency Detected: Pathway and Classification</strong>
+        <p>
+          Your responses indicate a mismatch. You confirmed evidence for a shared pathway with distinct triggers (Question 104), which logically requires a classification of "staging and typing" (for Route H) or "typing only" (for Route G).
+        </p>
+        <p>
+          However, your selection for disease classification (Question 201) does not align with this evidence. Please re-evaluate your inputs to ensure consistency.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div v-if="hasNonsenseContradiction" class="preamble-inline">
+    <div class="preamble-icon">
+       </div>
+    <div class="preamble-text-group">
+      <div>
+        <strong>Logical Inconsistency Detected: Diagnostic Criteria</strong>
+        <p>
+          Your responses are contradictory. You stated that there are no defined criteria for diagnosis (Question 202), but then identified a contradiction within those same criteria (Question 203).
+        </p>
+        <p>
+          This indicates a fundamental inconsistency in the provided data. Please re-evaluate your inputs or conduct further research to establish a clear and non-contradictory set of diagnostic criteria before proceeding.
+        </p>
+      </div>
+    </div>
+  </div>
+
 
       <button type="button" class="edit-btn" @click="editAnswers">
         Edit answer
