@@ -1,0 +1,18 @@
+services:
+  form_backend_service:
+    image: trueeye.azurecr.io/researcher_form_backend:latest
+    container_name: trueeye_researcher_form_backend
+    environment:
+      DB_HOST: DB_HOST
+      DB_PORT: DB_PORT
+      DB_USER: DB_USER
+      DB_PASSWORD: DB_PASSWORD
+      DB_NAME: DB_NAME
+    ports:
+      - "8080:8080"
+    networks:
+      - researcher_form_network
+    restart: always
+networks:
+  researcher_form_network:
+    external: true
