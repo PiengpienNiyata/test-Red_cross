@@ -11,12 +11,19 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       chosen_disease: "",
       chosen_intervention: "",
     },
-    answers: {} as Record<number, any>, 
+    answers: {} as Record<number, any>,
     researcherID: null as number | null,
     // finalRoute: null as string | null,
-        suggestedRoutes: [] as string[],
+    suggestedRoutes: [] as string[],
+    currentToken: null as string | null,
+    currentVersion: 0 as number,
   }),
   actions: {
+        setCurrentTokenAndVersion(token: string, version: number) {
+      this.currentToken = token;
+      this.currentVersion = version;
+    },
+
     setAnswers(data: Record<number, any>) {
       this.answers = { ...this.answers, ...data };
     },
@@ -26,11 +33,23 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     // setFinalRoute(route: string) {
     //   this.finalRoute = route;
     // },
-        setSuggestedRoutes(routes: string[]) {
+    setSuggestedRoutes(routes: string[]) {
       this.suggestedRoutes = routes;
     },
-    
+
     processResearcherInfo(answersObject: Record<number, string>) {
+       if (!this.researcher) {
+    this.researcher = {
+      name: "",
+      project_name: "",
+      branch_info: "",
+      phone_number: "",
+      email: "",
+      chosen_disease: "",
+      chosen_intervention: "",
+    };
+  }
+  
       this.researcher.name = answersObject[1001] || "";
       this.researcher.project_name = answersObject[1002] || "";
       this.researcher.branch_info = answersObject[1003] || "";
@@ -53,7 +72,8 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.researcherID = null;
       // this.finalRoute = null;
       this.suggestedRoutes = [];
-
+            this.currentToken = null;
+      this.currentVersion = 0;
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {

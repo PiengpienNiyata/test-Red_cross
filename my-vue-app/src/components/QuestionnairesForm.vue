@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { questionnaireData } from "@/stores/questionnaires1";
 import { toRefs } from "vue";
+import GlossaryModal from "@/components/GlossaryModal.vue";
+
 
 const store = useQuestionnaireStore();
 const questionnaire = ref(questionnaireData[0]);
@@ -15,6 +17,16 @@ const missingQuestions = ref<number[]>([]);
 const invalidQuestions = ref<number[]>([]);
 const completeAnswer = ref(true);
 const invalidForm = ref(true);
+
+const isGlossaryVisible = ref(false);
+
+const openGlossaryModal = () => {
+  isGlossaryVisible.value = true;
+};
+
+const closeGlossaryModal = () => {
+  isGlossaryVisible.value = false;
+};
 
 const isFormValid = computed(() => {
   invalidQuestions.value = [];
@@ -323,21 +335,32 @@ onMounted(() => {
         </div>
       </div>
 
-      <button type="submit" class="submit-btn">ถัดไป</button>
+      <button type="submit" class="submit-btn">Next</button>
+      <span>
+      <a
+        class="gls-btn"
+        @click="openGlossaryModal"
+        style="color: #eb4648; cursor: pointer"
+      >
+        Show all glossary
+      </a>
+    </span>
+
+    <GlossaryModal :isVisible="isGlossaryVisible" @close="closeGlossaryModal" />
     </form>
 
     <div v-if="warningModal" class="modal">
       <div class="modal-content">
         <h3 v-if="missingQuestions.length > 0" class="noti">
-          กรุณาตอบทุกคำถามก่อนดำเนินการต่อ
+          Please answer all questions before proceeding.
         </h3>
         <h3 v-else-if="invalidQuestions.length > 0" class="noti">
-          กรุณากรอกข้อมูลให้ถูกต้อง
+          Please enter the correct information.
         </h3>
 
         <ul v-if="invalidQuestions.length > 0"></ul>
 
-        <button @click="closeWarningModal" class="close-btn">ปิด</button>
+        <button @click="closeWarningModal" class="close-btn">Close</button>
       </div>
     </div>
   </div>

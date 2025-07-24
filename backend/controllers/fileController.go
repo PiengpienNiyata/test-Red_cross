@@ -53,3 +53,17 @@ func UploadFile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file_id": uploadedFile.ID})
 }
+
+func GetFileByID(c *gin.Context) {
+	fileID := c.Param("id")
+
+	var file models.UploadedFile
+	if err := database.DB.First(&file, fileID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return
+	}
+
+	c.Header("Content-Type", file.MimeType)
+
+	c.Data(http.StatusOK, file.MimeType, file.FileData)
+}

@@ -66,7 +66,7 @@ export default {
 }
 
 .sidebar-item {
-  cursor: pointer;
+  /* cursor: pointer; */
   max-height: 100px;
   display: flex;
   width: 200px;
@@ -76,7 +76,8 @@ export default {
 
 .sidebar-item-2 {
   max-width: 160px;
-  cursor: pointer;
+  /* cursor: pointer; */
+  cursor: default;
   max-height: 100px;
   display: flex;
   align-items: center;

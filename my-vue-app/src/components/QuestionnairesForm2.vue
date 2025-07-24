@@ -5,7 +5,7 @@ import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
 import PreResult from "@/components/preResult.vue";
 import FinalResult from "@/components/result.vue";
-import GlossaryModal from "./GlossaryModal.vue";
+import GlossaryModal from "@/components/GlossaryModal.vue";
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
 const store = useQuestionnaireStore();
@@ -265,27 +265,38 @@ const prevQuestion = () => {
   if (questionHistory.value.length > 0) {
     const destinationQuestion =
       questionHistory.value[questionHistory.value.length - 1];
-
     if (destinationQuestion) {
-      const routeToRemove = getRouteForQuestion(
+      const routesToRemoveStr = getRouteForQuestion(
         destinationQuestion.id,
-        answers.value[destinationQuestion.id]
+        answers.value[destinationQuestion.id],
+        answers.value
       );
 
-      if (routeToRemove) {
-        suggestedRoutes.value = suggestedRoutes.value.filter(
-          (r) => r !== routeToRemove
-        );
-        console.log(
-          `Arrived at ${
-            destinationQuestion.id
-          }. Removed ${routeToRemove}. Suggested Routes: [${suggestedRoutes.value.join(
-            ", "
-          )}]`
-        );
+      if (routesToRemoveStr) {
+        let routesToRemove = routesToRemoveStr.split(",").map((r) => r.trim());
+
+        if (routesToRemove.includes("Route H")) {
+          const answer201 = answers.value[201];
+          if (
+            typeof answer201 === "string" &&
+            answer201.startsWith("Yes, both staging and typing")
+          ) {
+            routesToRemove = routesToRemove.filter((r) => r !== "Route H");
+          }
+        }
+
+        if (routesToRemove.length > 0) {
+          suggestedRoutes.value = suggestedRoutes.value.filter(
+            (r) => !routesToRemove.includes(r)
+          );
+          console.log(
+            `Arrived at ${destinationQuestion.id}. Removed ${routesToRemove.join(
+              ", "
+            )}. Suggested Routes: [${suggestedRoutes.value.join(", ")}]`
+          );
+        }
       }
     }
-
     currentQuestion.value = questionHistory.value.pop() || null;
     isPreResult.value = false;
     isFinalResult.value = false;
@@ -366,7 +377,8 @@ const handleFileChange = (
 
 const getRouteForQuestion = (
   questionId: number,
-  answer: any
+  answer: any,
+  allAnswers: Record<number, any>
 ): string | null => {
   if (!answer) return null;
 
@@ -399,10 +411,15 @@ const getRouteForQuestion = (
       }
       break;
     case 203:
+      const answer102 = allAnswers[102];
       if (answerKey.startsWith("Yes (Please define the contradiction :")) {
         route = "Route C";
       } else if (answerKey === "No") {
-        route = "Route D";
+        if (answer102 === "No") {
+          route = "Route H, Route D";
+        } else {
+          route = "Route D";
+        }
       }
       break;
   }
@@ -410,10 +427,21 @@ const getRouteForQuestion = (
 };
 
 const updateSuggestedRoutes = (questionId: number) => {
-  const routeToAdd = getRouteForQuestion(questionId, answers.value[questionId]);
+  const routesToAddStr = getRouteForQuestion(
+    questionId,
+    answers.value[questionId],
+    answers.value
+  );
 
-  if (routeToAdd && !suggestedRoutes.value.includes(routeToAdd)) {
-    suggestedRoutes.value.push(routeToAdd);
+  if (routesToAddStr) {
+    // Split the string by comma, in case there are multiple routes
+    const routes = routesToAddStr.split(",").map((r) => r.trim());
+    // Add each route only if it's not already in the list
+    routes.forEach((route) => {
+      if (!suggestedRoutes.value.includes(route)) {
+        suggestedRoutes.value.push(route);
+      }
+    });
     console.log(
       `Suggested Routes are now: [${suggestedRoutes.value.join(", ")}]`
     );
@@ -768,7 +796,7 @@ watch(radioSelection, (newSelection) => {
             type="file"
             @change="handleFileChange($event, currentQuestion.id)"
             class="input-file"
-            accept=".pdf,.png,.jpeg,.jpg"
+            accept=".pdf,.png,.jpeg,.jpg,.docx,.xlsx"
             style="margin-left: 50px"
           />
           <div

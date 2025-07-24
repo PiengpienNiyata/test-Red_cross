@@ -8,7 +8,7 @@
 
         <div class="content-body">
           <Sidebar />
-          <div class="page-content">
+          <div class="page-content" ref="pageContent">
             <router-view />
           </div>
         </div>
@@ -27,6 +27,13 @@ export default {
   components: {
     Sidebar,
     Header,
+  },
+   watch: {
+    $route(to, from) {
+      if (this.$refs.pageContent) {
+        this.$refs.pageContent.scrollTop = 0;
+      }
+    },
   },
 };
 </script>

@@ -19,6 +19,9 @@ func SetupRoutes(router *gin.Engine) {
 		api.POST("/response/file", controllers.UploadFile)
 
 		api.GET("/submissions", controllers.GetFullSubmissionData)
+		api.GET("/response/edit/:token", controllers.GetLatestResponseByToken)
+
+		api.GET("/file/:id", controllers.GetFileByID)
 
 	}
 }

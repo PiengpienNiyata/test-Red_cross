@@ -8,11 +8,11 @@ const emit = defineEmits(["continue"]);
 <template>
   <div class="pre-result">
     <p v-if="props.lastQuestion" class="p">
-      หมายเลข match: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
+      match number: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
     </p>
 
 
-    <button type="button" class="btn" @click="emit('continue')">ดำเนินการต่อ</button>
+    <button type="button" class="btn" @click="emit('continue')">continue</button>
   </div>
 </template>
 

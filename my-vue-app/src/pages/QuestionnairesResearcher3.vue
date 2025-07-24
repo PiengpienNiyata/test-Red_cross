@@ -8,9 +8,34 @@ import type { Question2 } from "@/stores/questionnaires2";
 import { VITE_API_BASE_URL } from "@/stores/config";
 import ConfidentialForm from "@/components/ConfidentialForm.vue";
 import { storeToRefs } from "pinia";
+import html2pdf from "html2pdf.js";
 
+const pdfContent = ref<HTMLElement | null>(null);
 const store = useQuestionnaireStore();
 const router = useRouter();
+type FileItem = File | { id: number; name: string; rehydrated: true };
+const exportToPdf = () => {
+  // Check if the content element is available
+  if (!pdfContent.value) {
+    console.error("PDF content element not found.");
+    return;
+  }
+
+  const options = {
+    margin: 1,
+    filename: `RIRM-Summary-${store.researcher.project_name || "report"}.pdf`,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+  };
+
+  // Call html2pdf to generate the file
+  html2pdf().from(pdfContent.value).set(options).save();
+};
+
+const getFileDownloadUrl = (fileId: number) => {
+  return `${VITE_API_BASE_URL}/api/file/${fileId}`;
+};
 
 const getQuestionById = (id: number): Question2 | null => {
   for (const section of questionnaireData1[0].sections) {
@@ -90,11 +115,14 @@ const formatCheckboxAnswer = (answer: any): string => {
 const submissionSuccess = ref(false);
 const submissionError = ref(false);
 
-
-
-
 const submitFinalResponse = async () => {
   try {
+    console.log(store.currentToken);
+    console.log(store.currentVersion);
+    console.log(store.answers);
+    console.log(store.researcherID);
+    console.log(store.researcher);
+    // --- Step 1 & 2: Validate and create researcher (No changes here) ---
     store.processResearcherInfo(store.answers as Record<string, string>);
     const { name, project_name, branch_info, phone_number, email } =
       store.researcher;
@@ -102,7 +130,6 @@ const submitFinalResponse = async () => {
       alert("Please fill in all researcher details before submitting!");
       return;
     }
-
     let researcherID = store.researcherID;
     if (!researcherID) {
       const researcherResponse = await fetch(
@@ -119,16 +146,15 @@ const submitFinalResponse = async () => {
       store.setResearcherID(researcherID!);
     }
 
+    // --- Step 3: Separate all answers correctly (No changes here) ---
     const fileAnswersToUpload: { questionId: string; file: File }[] = [];
     const otherAnswers: Record<string, any> = {};
     const researchContext: Record<string, any> = {
       research_questions: {},
       molecular_signaling: {},
     };
-
     let confidentialityLevel = "";
-
-    Object.entries(store.answers).forEach(([id, value]) => {
+    Object.entries(answers.value).forEach(([id, value]) => {
       if (value && typeof value === "object") {
         if (value.files instanceof FileList) {
           Array.from(value.files).forEach((file: any) =>
@@ -142,7 +168,6 @@ const submitFinalResponse = async () => {
           });
         }
       }
-
       if (Number(id) >= 1008 && Number(id) <= 1010) {
         const keyMap: Record<string, string> = {
           "1008": "principle",
@@ -168,6 +193,7 @@ const submitFinalResponse = async () => {
       }
     });
 
+    // --- Step 4: Create the Main Response Record (No changes here) ---
     const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -176,36 +202,49 @@ const submitFinalResponse = async () => {
         questionnaire_id: 1,
         answers: otherAnswers,
         final_route: suggestedRoutes.value.join(", ") || "unknown",
-        disease_name: store.answers[1006] || "",
-        intervention: store.answers[1007] || "",
+        disease_name: answers.value[1006] || "",
+        intervention: answers.value[1007] || "",
         research_context: researchContext,
         confidentiality_level: confidentialityLevel,
+        token: store.currentToken,
+        version: store.currentVersion,
       }),
     });
-
     const responseResult = await response.json();
     if (!response.ok) throw new Error("Failed to save response");
-    const responseID = responseResult.id;
 
+    // --- UPDATED LOGIC ---
+    // 1. Get the responseID AND the token from the backend's response
+    const responseID = responseResult.id;
+    const responseToken = responseResult.token;
+
+    // --- Step 5: Upload All Files (No changes here) ---
     if (fileAnswersToUpload.length > 0) {
       const uploadPromises = fileAnswersToUpload.map(({ questionId, file }) => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("response_id", String(responseID));
         formData.append("question_id", questionId);
-
         return fetch(`${VITE_API_BASE_URL}/api/response/file`, {
           method: "POST",
           body: formData,
         });
       });
-
       const uploadResults = await Promise.all(uploadPromises);
       const failedUpload = uploadResults.find((res) => !res.ok);
       if (failedUpload) {
         throw new Error(`Failed to upload file: ${await failedUpload.text()}`);
       }
     }
+
+    // --- Step 6: Show Success and Log the Edit URL ---
+
+    // 2. Construct the full edit URL
+    const editUrl = `${window.location.origin}/edit-response/${responseToken}`;
+
+    // 3. Log it to the console for testing
+    console.log("--- SUBMISSION SUCCESSFUL ---");
+    console.log("Edit URL for this submission:", editUrl);
 
     submissionSuccess.value = true;
   } catch (error) {
@@ -214,12 +253,9 @@ const submitFinalResponse = async () => {
   }
 };
 
-
-
-
 const startNewSurvey = () => {
   store.resetStore();
-  router.push("/questionnairesResearcher");
+  router.push("/");
 };
 
 const createObjectURL = (file: File) => {
@@ -267,7 +303,7 @@ const summaryStep2 = computed(() => {
     }
   }
 
-  return `From your response to question 202 - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question 201 - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
+  return `From your response to question B-2 - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question B-1 - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
 });
 
 const summaryStep3 = computed(() => {
@@ -299,7 +335,7 @@ const summaryStep3 = computed(() => {
     }
   }
 
-  return `From your response to question 101 - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
+  return `From your response to question A-1 - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
 });
 
 const summaryStep4 = computed(() => {
@@ -364,10 +400,10 @@ const summaryStep5 = computed(() => {
 
   if (answer103 === "More than 80% efficiency") {
     title = "Remission-Oriented Research Question";
-    body = `Given your response to question 103 ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
+    body = `Given your response to question A-3 ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
   } else {
     title = "Exploratory Pre-Remission Research Question";
-    body = `Based on your response to question 103 ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
+    body = `Based on your response to question A-3 ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
   }
 
   return `<strong>${title}:</strong> ${body}`;
@@ -395,11 +431,23 @@ const summaryParagraphs = computed(() => {
   };
 
   const answer102 = store.answers[102];
+  const answer201 = store.answers[201];
+  const answer203 = store.answers[203];
+
+  if (answer102 === "No" && answer203 === "No") {
+    paragraphs.push({
+      text: `Your responses indicate that while ${diseaseName} has a consistent diagnostic model with no contradictions (question B-3), the current intervention is unable to achieve a high rate of true remission (question A-2). This combination suggests the disease, while a single entity, has a complex pathogenesis that the current treatment does not fully address. ${buildDecisionSentence(
+        "This supports investigating its complexity via Route H.",
+        "investigating its complexity via",
+        "Route H"
+      )}`,
+    });
+  }
   if (answer102) {
     const q102_text = getQuestionById2(102)?.question || "";
     if (answer102.selectedOption?.startsWith("Yes")) {
       paragraphs.push({
-        text: `Based on your response to question 102 - "<em>${q102_text}</em>", your assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence(
+        text: `Based on your response to question A-2 - "<em>${q102_text}</em>", your assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence(
           "This supports the decision to pursue Route A.",
           "to pursue",
           "Route A"
@@ -407,7 +455,7 @@ const summaryParagraphs = computed(() => {
       });
     } else {
       paragraphs.push({
-        text: `Based on your response to question 102 - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence(
+        text: `Based on your response to question A-2 - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence(
           "This supports the decision not to pursue Route A.",
           "not to pursue",
           "Route A"
@@ -416,12 +464,11 @@ const summaryParagraphs = computed(() => {
     }
   }
 
-  const answer201 = store.answers[201];
   if (answer201) {
     const q201_text = getQuestionById2(201)?.question || "";
     if (answer201 === "No") {
       paragraphs.push({
-        text: `From your response to question 201 - "<em>${q201_text}</em>", you've indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence(
+        text: `From your response to question B-1 - "<em>${q201_text}</em>", you've indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence(
           "This observation justifies choosing Route B.",
           "justifies choosing",
           "Route B"
@@ -429,7 +476,7 @@ const summaryParagraphs = computed(() => {
       });
     } else if (typeof answer201 === "string" && answer201.startsWith("Yes")) {
       paragraphs.push({
-        text: `From your response to question 201 - "<em>${q201_text}</em>", your acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence(
+        text: `From your response to question B-1 - "<em>${q201_text}</em>", your acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence(
           "This contradicts the core assumption of Route B, justifying the decision not to pursue this route.",
           "not to pursue this route",
           "Route B"
@@ -438,12 +485,11 @@ const summaryParagraphs = computed(() => {
     }
   }
 
-  const answer203 = store.answers[203];
   if (answer203) {
     const q203_text = getQuestionById2(203)?.question || "";
     if (typeof answer203 === "string" && answer203.startsWith("Yes")) {
       paragraphs.push({
-        text: `By identifying a contradiction within the diagnostic criteria (question 203 - "<em>${q203_text}</em>"), you suggest that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence(
+        text: `By identifying a contradiction within the diagnostic criteria (question B-3 - "<em>${q203_text}</em>"), you suggest that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence(
           "This critical insight directs the investigation towards Route C.",
           "directs the investigation towards",
           "Route C"
@@ -451,7 +497,7 @@ const summaryParagraphs = computed(() => {
       });
     } else if (answer203 === "No") {
       paragraphs.push({
-        text: `Your response to question 203 - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence(
+        text: `Your response to question B-3 - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence(
           "This allows for the exploration of its pathway via Route D.",
           "allows for the exploration of its pathway via",
           "Route D"
@@ -464,7 +510,7 @@ const summaryParagraphs = computed(() => {
     const answer201_5 = store.answers[201.5];
     if (answer201_5 === "Have 2 stages") {
       paragraphs.push({
-        text: `Your identification of two distinct stages (question 201.5) provides a clear framework for comparative analysis. ${buildDecisionSentence(
+        text: `Your identification of two distinct stages (question B-1 | staging only) provides a clear framework for comparative analysis. ${buildDecisionSentence(
           "This supports pursuing Route E to investigate the molecular transition between stages.",
           "supports pursuing",
           "Route E"
@@ -472,7 +518,7 @@ const summaryParagraphs = computed(() => {
       });
     } else if (answer201_5 === "Have more than 2 stages") {
       paragraphs.push({
-        text: `The presence of more than two stages (question 201.5) suggests a complex, multi-step progression. ${buildDecisionSentence(
+        text: `The presence of more than two stages (question B-1 | more than 2 stages) suggests a complex, multi-step progression. ${buildDecisionSentence(
           "This complexity warrants the detailed analysis provided by Route F.",
           "warrants the detailed analysis provided by",
           "Route F"
@@ -526,186 +572,263 @@ const isConfidentialFormComplete = computed(() => {
 
 <template>
   <div class="final-review">
-    <div class="questionnaire">
-      <div
-        v-for="section in questionnaireData1[0].sections"
-        :key="section.name"
-        class="section"
-      >
-        <h4 v-if="section.name !== 'null'" class="section-title">
-          {{ section.name }}
-        </h4>
-        <div class="row">
-          <div
-            v-for="q in firstFormAnswers.filter(
+    <div ref="pdfContent">
+      <div class="questionnaire">
+        <div
+          v-for="section in questionnaireData1[0].sections"
+          :key="section.name"
+          class="section"
+        >
+          <h4 v-if="section.name !== 'null'" class="section-title">
+            {{ section.name }}
+          </h4>
+          <div class="row">
+            <div
+              v-for="q in firstFormAnswers.filter(
               (fq) =>
                 (section as any).questions?.some((sq: any) => sq.id === fq.id)
             )"
-            :key="q.id"
-            :class="{
-              'col-md-6': [1001, 1002, 1004, 1005].includes(q.id),
-              'col-md-12': q.id === 1003,
-            }"
-          >
-            <label class="question-label">{{ q.question }}</label>
-            <input
-              v-if="q.type === 'text'"
-              :value="q.answer"
-              type="text"
-              class="input-text"
-              disabled
-            />
-            <textarea
-              v-if="q.type === 'textarea'"
-              :value="q.answer"
-              class="input-text"
-              disabled
-              rows="3"
-              style="field-sizing: content"
-            ></textarea>
+              :key="q.id"
+              :class="{
+                'col-md-6': [1001, 1002, 1004, 1005].includes(q.id),
+                'col-md-12': q.id === 1003,
+              }"
+            >
+              <label class="question-label">{{ q.question }}</label>
+              <input
+                v-if="q.type === 'text'"
+                :value="q.answer"
+                type="text"
+                class="input-text"
+                disabled
+              />
+              <textarea
+                v-if="q.type === 'textarea'"
+                :value="q.answer"
+                class="input-text"
+                disabled
+                rows="3"
+                style="field-sizing: content"
+              ></textarea>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="questionnaire">
-      <h3 class="aa">Explore the precision intervention</h3>
-      <div v-for="q in secondFormAnswers" :key="q.id" class="answer-block">
-        <label class="question-label">{{ q.question }}</label>
+      <div class="questionnaire">
+        <h3 class="aa">Explore the precision intervention</h3>
+        <div v-for="q in secondFormAnswers" :key="q.id" class="answer-block">
+          <label class="question-label">{{ q.question }}</label>
 
-        <p v-if="typeof q.answer === 'string'" class="answer-text">
-          <span style="color: red">Your answer : </span
-          >{{ q.answer.split("||")[0] }}
-        </p>
-        <p v-else-if="Array.isArray(q.answer)" class="answer-text">
-          <span style="color: red">Your answer : </span
-          >{{ q.answer.join(", ") }}
-        </p>
-        <div v-else-if="typeof q.answer === 'object' && q.answer !== null">
-          <div
-            v-if="
-              typeof q.answer === 'object' &&
-              q.answer !== null &&
-              'selectedOption' in q.answer
-            "
-          >
-            <p class="answer-text">
-              <span style="color: red">Your answer : </span>
-              {{ (q.answer as any).selectedOption.split("||")[0] }}
-              <span
-                v-for="(subAnswer, key) in (q.answer as any).subs"
-                :key="key"
-              >
-                (
-                {{
-                  Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-                }}
-                )
-              </span>
-            </p>
-
-            <div v-if="(q.answer as any).fileData" class="sub-answer-block">
-              <strong>Attached Files:</strong>
-              <ul>
-                <li
-                  v-for="(fileInfo, key) in (q.answer as any).fileData"
+          <p v-if="typeof q.answer === 'string'" class="answer-text">
+            <span style="color: red">Your answer : </span
+            >{{ q.answer.split("||")[0] }}
+          </p>
+          <p v-else-if="Array.isArray(q.answer)" class="answer-text">
+            <span style="color: red">Your answer : </span
+            >{{ q.answer.join(", ") }}
+          </p>
+          <div v-else-if="typeof q.answer === 'object' && q.answer !== null">
+            <div
+              v-if="
+                typeof q.answer === 'object' &&
+                q.answer !== null &&
+                'selectedOption' in q.answer
+              "
+            >
+              <p class="answer-text">
+                <span style="color: red">Your answer : </span>
+                {{ (q.answer as any).selectedOption.split("||")[0] }}
+                <span
+                  v-for="(subAnswer, key) in (q.answer as any).subs"
                   :key="key"
                 >
-                  <span
-                    v-for="file in Array.from(fileInfo.files as FileList)"
-                    :key="file.name"
-                    style="margin-left: 8px"
+                  (
+                  {{
+                    Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
+                  }}
+                  )
+                </span>
+              </p>
+
+              <div v-if="(q.answer as any).fileData" class="sub-answer-block">
+                <strong>Attached Files:</strong>
+                <ul>
+                  <li
+                    v-for="(fileInfo, key) in (q.answer as any).fileData"
+                    :key="key"
                   >
-                    <a
-                      :href="createObjectURL(file)"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <!-- <span
+                      v-for="file in Array.from(fileInfo.files as FileList)"
+                      :key="file.name"
+                      style="margin-left: 8px"
                     >
-                      {{ file.name }}
-                    </a>
-                  </span>
+                      <a
+                        :href="createObjectURL(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                    </span> -->
+                    <!-- <span
+                      v-for="file in (fileInfo.files as FileItem[])"
+                      :key="file.name"
+                      style="margin-left: 8px"
+                    >
+                      <a
+                        v-if="!file.rehydrated"
+                        :href="createObjectURL(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                      <span v-else>{{ file.name }}</span>
+                    </span> -->
+                    <span
+                      v-for="file in (fileInfo.files as FileItem[])"
+                      :key="file.name"
+                      style="margin-left: 8px"
+                    >
+                      <a
+                        v-if="'rehydrated' in file"
+                        :href="getFileDownloadUrl(file.id)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                      <a
+                        v-else
+                        :href="createObjectURL(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div
+              v-else-if="
+                typeof q.answer === 'object' &&
+                q.answer !== null &&
+                'main' in q.answer
+              "
+            >
+              <p class="answer-text">
+                <span style="color: red">Your answer : </span
+                >{{ formatCheckboxAnswer(q.answer) }}
+              </p>
+            </div>
+
+            <div
+              v-else-if="
+                typeof q.answer === 'object' &&
+                q.answer !== null &&
+                'files' in q.answer
+              "
+            >
+              <!-- <ul>
+                <li
+                  v-for="file in Array.from((q.answer as any).files as FileList)"
+                  :key="file.name"
+                >
+                  <a
+                    :href="createObjectURL(file)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+                </li>
+              </ul> -->
+              <!-- <ul>
+                <li
+                  v-for="file in ((q.answer as any).files as FileItem[])"
+                  :key="file.name"
+                >
+                  <a
+                    v-if="!file.rehydrated"
+                    :href="createObjectURL(file)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+                  <span v-else>{{ file.name }}</span>
+                </li>
+              </ul> -->
+              <ul>
+                <li
+                  v-for="file in ((q.answer as any).files as FileItem[])"
+                  :key="file.name"
+                >
+                  <a
+                    v-if="'rehydrated' in file"
+                    :href="getFileDownloadUrl(file.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+                  <a
+                    v-else
+                    :href="createObjectURL(file)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
                 </li>
               </ul>
             </div>
           </div>
-
-          <div
-            v-else-if="
-              typeof q.answer === 'object' &&
-              q.answer !== null &&
-              'main' in q.answer
-            "
-          >
-            <p class="answer-text">
-              <span style="color: red">Your answer : </span
-              >{{ formatCheckboxAnswer(q.answer) }}
-            </p>
-          </div>
-
-          <div
-            v-else-if="
-              typeof q.answer === 'object' &&
-              q.answer !== null &&
-              'files' in q.answer
-            "
-          >
-            <ul>
-              <li
-                v-for="file in Array.from((q.answer as any).files as FileList)"
-                :key="file.name"
-              >
-                <a
-                  :href="createObjectURL(file)"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ file.name }}
-                </a>
-              </li>
-            </ul>
-          </div>
         </div>
-      </div>
 
-      <p class="p" v-if="suggestedRoutes.length > 0">
-        Road Map Suggestion:
-        <span class="final-route-text">{{ finalDisplayRoute }}</span>
-      </p>
-    </div>
-    <div class="questionnaire">
-      <h2 style="margin-bottom: 20px">Step of extrapolation</h2>
-      <h1
-        class="aa"
-        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
-      >
-        Step 1 : Choose the legitimated route to explore for the originating
-        cell
-      </h1>
-      <!-- <h1 class="aa" style="padding-top: 0px; margin-top: 0px">
+        <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">
+          Road Map Suggestion:
+          <span class="final-route-text">{{ finalDisplayRoute }}</span>
+        </h3>
+      </div>
+      <div class="questionnaire">
+        <h2 style="margin-bottom: 20px">Step of extrapolation</h2>
+        <h1
+          class="aa"
+          style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
+        >
+          Step 1 : Choose the legitimated route to explore for the originating
+          cell
+        </h1>
+        <!-- <h1 class="aa" style="padding-top: 0px; margin-top: 0px">
         Step 1 : Choose the legitimated route to explore for the originating
         cell
       </h1> -->
 
-      <div style="margin-left: 30px; margin-right: 30px">
-        <div
-          v-for="(p, index) in summaryParagraphs"
-          :key="index"
-          class="summary-item"
-        >
-          <span class="summary-bullet">•</span>
-          <div v-if="p.text" class="summary-text-content">
-            <span v-html="p.text"></span>
-          </div>
-          <div v-else class="summary-text-content">
-            <span class="dynamic-text">
-              (Answer questions 201 and 202 to generate this section.)
-            </span>
+        <div style="margin-left: 30px; margin-right: 30px">
+          <div
+            v-for="(p, index) in summaryParagraphs"
+            :key="index"
+            class="summary-item"
+          >
+            <span class="summary-bullet">•</span>
+            <div v-if="p.text" class="summary-text-content">
+              <span v-html="p.text"></span>
+            </div>
+            <div v-else class="summary-text-content">
+              <span class="dynamic-text">
+                (Answer questions 201 and 202 to generate this section.)
+              </span>
+            </div>
           </div>
         </div>
-      </div>
-      <br style="padding-bottom: 0px" />
+        <br style="padding-bottom: 0px" />
 
-      <h1
+        <!-- <h1
         class="aa"
         style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
       >
@@ -714,8 +837,8 @@ const isConfidentialFormComplete = computed(() => {
 
       <div style="margin-left: 30px; margin-right: 30px">
         <div class="summary-item">
-          <span class="summary-bullet">•</span>
-          <!-- <div v-if="summaryStep2" class="summary-text-content">
+          <span class="summary-bullet">•</span> -->
+        <!-- <div v-if="summaryStep2" class="summary-text-content">
             <span v-html="summaryStep2"></span>
           </div>
           <div v-else class="summary-text-content">
@@ -723,17 +846,16 @@ const isConfidentialFormComplete = computed(() => {
               (Answer questions 201 and 202 to generate this section.)
             </span>
           </div> -->
-          <div class="summary-text-content">
+        <!-- <div class="summary-text-content">
             <span style="color: red"
               >N/A (Insufficient data. <br />Need : originating cell type
               identifier)</span
             >
           </div>
         </div>
-      </div>
-      <!-- <br style="padding-bottom: 0px" /> -->
+      </div> -->
 
-      <h1
+        <!-- <h1
         class="aa"
         style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
       >
@@ -748,13 +870,13 @@ const isConfidentialFormComplete = computed(() => {
           </div>
           <div v-else class="summary-text-content">
             <span class="dynamic-text">
-              (Answer questions 101 to generate this section.)
+              (Answer questions A-1 to generate this section.)
             </span>
           </div>
         </div>
-      </div>
+      </div> -->
 
-      <h1
+        <!-- <h1
         class="aa"
         style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
       >
@@ -763,8 +885,8 @@ const isConfidentialFormComplete = computed(() => {
 
       <div style="margin-left: 30px; margin-right: 30px">
         <div class="summary-item">
-          <span class="summary-bullet">•</span>
-          <!-- <div v-if="summaryStep4" class="summary-text-content">
+          <span class="summary-bullet">•</span> -->
+        <!-- <div v-if="summaryStep4" class="summary-text-content">
             <span v-html="summaryStep4"></span>
           </div>
           <div v-else class="summary-text-content">
@@ -772,16 +894,16 @@ const isConfidentialFormComplete = computed(() => {
               (Answer questions 201 and 202 to generate this section.)
             </span>
           </div> -->
-          <div class="summary-text-content">
+        <!-- <div class="summary-text-content">
             <span style="color: red"
               >N/A (Insufficient data. <br />Need : proable initial inducers and
               what they're induce.)</span
             >
           </div>
         </div>
-      </div>
+      </div> -->
 
-      <h1
+        <!-- <h1
         class="aa"
         style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
       >
@@ -796,120 +918,129 @@ const isConfidentialFormComplete = computed(() => {
           </div>
           <div v-else class="summary-text-content">
             <span class="dynamic-text">
-              (Answer questions 103 to generate this section.)
+              (Answer questions A-3 to generate this section.)
             </span>
           </div>
         </div>
-      </div>
+      </div> -->
 
-      <h1
-        class="aa"
-        style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
-      >
-        Step 6 : Confirm confidentiality level
-      </h1>
-
-      <div style="margin-left: 30px; margin-right: 30px">
-        <ConfidentialForm />
-      </div>
-      <br />
-
-      <div class="btn-container">
-        <div v-if="suggestedRoutes.includes('Route C')" class="preamble-inline">
-          <div class="preamble-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
-              />
-            </svg>
-          </div>
-          <div class="preamble-text-group">
-            <div>
-              <strong>Contradiction Warning: Re-evaluation Required</strong>
-              <p>
-                Your responses have identified a significant contradiction
-                within the diagnostic criteria or natural history of the
-                disease. This is a critical finding, as it challenges the
-                assumption that the condition is a single, uniform entity.
-              </p>
-              <p>
-                This suggests that what is currently defined as one disease may,
-                in fact, represent a heterogeneous syndrome—a collection of
-                distinct pathological processes that converge on similar
-                clinical signs. Proceeding with the current data is inadvisable,
-                as it could lead to confounding results and a failure to
-                identify the true originating cell type(s).
-              </p>
-              <strong>Recommended Action:</strong>
-              <ul>
-                <li>
-                  <strong>Further Research:</strong> Conduct additional
-                  preclinical or clinical research to gather data that clarifies
-                  the diagnostic criteria and resolves the observed
-                  contradiction.
-                </li>
-                <li>
-                  <strong>Re-evaluate Inputs:</strong> Carefully review the
-                  answers provided in this questionnaire to ensure they are
-                  based on a consistent and robust set of evidence.
-                </li>
-              </ul>
-              <p style="margin-bottom: 0;">
-                Resolution of this contradiction is a prerequisite for
-                legitimately exploring the originating cell and pursuing a
-                high-precision therapeutic strategy.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <button type="button" class="edit-btn" @click="editAnswers">
-          Edit answer
-        </button>
-        <button
-          v-if="!suggestedRoutes.includes('Route C')"
-          type="button"
-          class="submit-btn"
-          @click="submitFinalResponse"
-          :disabled="!isConfidentialFormComplete"
+        <h1
+          class="aa"
+          style="margin-left: 15px; padding-top: 0px; margin-top: 0px"
         >
-          Save
-        </button>
+          Step 6 : Confirm confidentiality level
+        </h1>
 
-        <button v-else type="button" class="submit-btn" @click="startNewSurvey">
-          Reset form
-        </button>
-
-        <div v-if="submissionSuccess" class="modal">
-          <div class="modal-content">
-            <h3 class="h3">บันทึกข้อมูลสำเร็จ</h3>
-            <p>ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว</p>
-            <div class="modal-buttons">
-              <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
-              <button @click="startNewSurvey" class="btn btn-primary">
-                ส่งคำตอบเพิ่ม
-              </button>
-            </div>
+        <div style="margin-left: 30px; margin-right: 30px">
+          <ConfidentialForm />
+        </div>
+        <br />
+      </div>
+    </div>
+    <div class="btn-container">
+      <div v-if="suggestedRoutes.includes('Route C')" class="preamble-inline">
+        <div class="preamble-icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+            />
+          </svg>
+        </div>
+        <div class="preamble-text-group">
+          <div>
+            <strong>Contradiction Warning: Re-evaluation Required</strong>
+            <p>
+              Your responses have identified a significant contradiction within
+              the diagnostic criteria or natural history of the disease. This is
+              a critical finding, as it challenges the assumption that the
+              condition is a single, uniform entity.
+            </p>
+            <p>
+              This suggests that what is currently defined as one disease may,
+              in fact, represent a heterogeneous syndrome—a collection of
+              distinct pathological processes that converge on similar clinical
+              signs. Proceeding with the current data is inadvisable, as it
+              could lead to confounding results and a failure to identify the
+              true originating cell type(s).
+            </p>
+            <strong>Recommended Action:</strong>
+            <ul>
+              <li>
+                <strong>Further Research:</strong> Conduct additional
+                preclinical or clinical research to gather data that clarifies
+                the diagnostic criteria and resolves the observed contradiction.
+              </li>
+              <li>
+                <strong>Re-evaluate Inputs:</strong> Carefully review the
+                answers provided in this questionnaire to ensure they are based
+                on a consistent and robust set of evidence.
+              </li>
+            </ul>
+            <p style="margin-bottom: 0">
+              Resolution of this contradiction is a prerequisite for
+              legitimately exploring the originating cell and pursuing a
+              high-precision therapeutic strategy.
+            </p>
           </div>
         </div>
+      </div>
 
-        <div v-if="submissionError" class="modal">
-          <div class="modal-content">
-            <h3 class="h3">เกิดข้อผิดพลาด</h3>
-            <p>เกิดปัญหาในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง</p>
-            <button @click="submissionError = false" class="btn btn-primary">
-              ปิด
+      <button type="button" class="edit-btn" @click="editAnswers">
+        Edit answer
+      </button>
+      <button
+        v-if="!suggestedRoutes.includes('Route C')"
+        type="button"
+        class="submit-btn"
+        @click="submitFinalResponse"
+        :disabled="!isConfidentialFormComplete"
+      >
+        Save
+      </button>
+
+      <button v-else type="button" class="submit-btn" @click="startNewSurvey">
+        Reset form
+      </button>
+
+      <!-- <button type="button" class="export-btn" @click="startNewSurvey">
+          Export to pdf
+        </button> -->
+
+      <div v-if="submissionSuccess" class="modal">
+        <div class="modal-content">
+          <h3 class="h3">Data saved successfully.</h3>
+          <p>Your information has been saved successfully.</p>
+          <div class="modal-buttons">
+            <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
+            <button @click="startNewSurvey" class="btn btn-primary">
+              Submit another response.
             </button>
           </div>
         </div>
       </div>
+
+      <div v-if="submissionError" class="modal">
+        <div class="modal-content">
+          <h3 class="h3">An error occurred.</h3>
+          <p>There was a problem saving your information. Please try again.</p>
+          <button @click="submissionError = false" class="btn btn-primary">
+            Close
+          </button>
+        </div>
+      </div>
     </div>
+    <a
+      style="color: #eb4648; cursor: pointer; margin-left: 24px"
+      @click="exportToPdf"
+    >
+      Export to .pdf here
+    </a>
   </div>
 </template>
 <style scoped>

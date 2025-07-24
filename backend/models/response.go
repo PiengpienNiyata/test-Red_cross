@@ -19,4 +19,8 @@ type Response struct {
 	Intervention         string         `json:"intervention"`
 	ConfidentialityLevel string         `json:"confidentiality_level"`
 	UploadedFiles        []UploadedFile `json:"uploaded_files" gorm:"foreignKey:ResponseID"`
+	Status               int            `json:"status" gorm:"default:0"`
+	Version              int            `json:"version" gorm:"default:1"`
+	Token                string         `json:"token" gorm:"uniqueIndex:idx_token_version"`
+	// ResearcherData       ResearcherData `json:"researcher_data" gorm:"foreignKey:ResearcherID"`
 }
