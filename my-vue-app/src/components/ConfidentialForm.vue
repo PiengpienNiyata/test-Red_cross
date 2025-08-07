@@ -9,6 +9,9 @@ const store = useQuestionnaireStore();
 const { answers } = toRefs(store);
 
 const question = ref<Question2>(questionnaireData[0].sections[0].questions[0]);
+const props = defineProps<{
+  disabled?: boolean;
+}>();
 
 const hasSubOptions = (option: string): boolean => {
   if (!question.value.subOptions) return false;
@@ -139,7 +142,7 @@ watch(localSelection, (newValue) => {
   </div>
 
   <div class="confidential-form-container">
-    <label class="question-label">{{ question.question }}</label>
+    <label class="question-label page-break-before">{{ question.question }}</label>
 
     <div class="radio-group">
       <div
@@ -154,6 +157,7 @@ watch(localSelection, (newValue) => {
             :value="option"
             v-model="localSelection"
             class="radio-input"
+             :disabled="props.disabled"
           />
           <label class="radio-label">{{ option }}</label>
         </div>
@@ -174,6 +178,7 @@ watch(localSelection, (newValue) => {
                 :value="subOpt"
                 v-model="answers[question.id].subs[option]"
                 class="radio-input"
+                 :disabled="props.disabled"
               />
               <label class="radio-label">{{ subOpt }}</label>
             </div>
@@ -215,5 +220,15 @@ watch(localSelection, (newValue) => {
   margin-left: 30px;
   padding-left: 15px;
   border-left: 2px solid #f0f0f0;
+}
+.radio-input:disabled {
+  accent-color: #000;
+  cursor: not-allowed;
+}
+
+/* Change the text color of the label next to a disabled radio button */
+.radio-input:disabled + .radio-label {
+  color: #000;
+  cursor: not-allowed;
 }
 </style>

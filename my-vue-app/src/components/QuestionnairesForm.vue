@@ -6,7 +6,6 @@ import { questionnaireData } from "@/stores/questionnaires1";
 import { toRefs } from "vue";
 import GlossaryModal from "@/components/GlossaryModal.vue";
 
-
 const store = useQuestionnaireStore();
 const questionnaire = ref(questionnaireData[0]);
 const router = useRouter();
@@ -48,7 +47,7 @@ const isFormValid = computed(() => {
       if (
         typeof answer === "string" &&
         answer.trim().length < 3 &&
-        q.id < 1014
+        q.id <= 1007
       ) {
         invalidQuestions.value.push(q.id);
         return false;
@@ -139,49 +138,114 @@ const scrollToFirstError = () => {
   }
 };
 
+// const validateForm = () => {
+//   missingQuestions.value = [];
+//   invalidQuestions.value = [];
+
+//   const optionalQuestionIds = [1008, 1009, 1010, 1011, 1012, 1013];
+
+//   missingQuestions.value = questionnaire.value.sections
+//     .flatMap((section) => section.questions)
+//     .filter((q) => {
+//         // --- THIS IS THE KEY CHANGE ---
+//         // If the question is in our optional list, don't check if it's missing.
+//         if (optionalQuestionIds.includes(q.id)) {
+//             return false;
+//         }
+
+//         // For all other questions, perform the original check.
+//         return !answers.value[q.id] ||
+//                String(answers.value[q.id]).trim() === "" ||
+//                (Array.isArray(answers.value[q.id]) && answers.value[q.id].length === 0);
+//     })
+//     .map((q) => q.id);
+
+//   invalidQuestions.value = questionnaire.value.sections
+//     .flatMap((section) => section.questions)
+//     .filter((q) => {
+//       const answer = answers.value[q.id];
+
+//       if (q.type === "radio" && (answer === undefined || answer === ""))
+//         return true;
+//       if (!answer || (Array.isArray(answer) && answer.length === 0))
+//         return true;
+//       if (typeof answer === "string" && answer.trim().length < 3 && q.id <= 1007)
+//         return true;
+
+//       if (q.id === 1002 && typeof answer === "string") {
+//         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//         return !emailRegex.test(answer);
+//       }
+
+//       if (q.id === 1004 && typeof answer === "string") {
+//         const phoneRegex = /^(?:02|05)\d{7,8}$|^(0[689])\d{8}$/;
+//         return !phoneRegex.test(answer);
+//       }
+
+//       return false;
+//     })
+//     .map((q) => q.id);
+
+//   completeAnswer.value = missingQuestions.value.length === 0;
+//   invalidForm.value = invalidQuestions.value.length === 0;
+
+//   if (!isFormValid.value) {
+//     highlightErrors();
+//     scrollToFirstError();
+//     warningModal.value = true;
+//   } else {
+//     saveAnswers();
+//   }
+// };
+
 const validateForm = () => {
   missingQuestions.value = [];
   invalidQuestions.value = [];
 
-  missingQuestions.value = questionnaire.value.sections
-    .flatMap((section) => section.questions)
-    .filter(
-      (q) =>
-        !answers.value[q.id] ||
-        (Array.isArray(answers.value[q.id]) && answers.value[q.id].length === 0)
-    )
-    .map((q) => q.id);
+  const optionalQuestionIds = [1008, 1009, 1010, 1011, 1012, 1013];
 
-  invalidQuestions.value = questionnaire.value.sections
-    .flatMap((section) => section.questions)
-    .filter((q) => {
-      const answer = answers.value[q.id];
+  const allQuestions = questionnaire.value.sections.flatMap(
+    (section) => section.questions
+  );
 
-      if (q.type === "radio" && (answer === undefined || answer === ""))
-        return true;
-      if (!answer || (Array.isArray(answer) && answer.length === 0))
-        return true;
-      if (typeof answer === "string" && answer.trim().length < 3 && q.id < 1006)
-        return true;
+  allQuestions.forEach((q) => {
+    const answer = answers.value[q.id];
 
-      if (q.id === 1002 && typeof answer === "string") {
+    // --- STEP 1: Check if the question is MISSING ---
+    // (Only for non-optional questions)
+    const isMissing =
+      !answer ||
+      String(answer).trim() === "" ||
+      (Array.isArray(answer) && answer.length === 0);
+    if (isMissing && !optionalQuestionIds.includes(q.id)) {
+      missingQuestions.value.push(q.id);
+      return; // No need to check for invalid format if it's missing
+    }
+
+    // --- STEP 2: Check if the answer is INVALID ---
+    // (This runs for all questions that have an answer)
+    if (answer) {
+      if (
+        typeof answer === "string" &&
+        answer.trim().length < 3 &&
+        q.id <= 1007
+      ) {
+        invalidQuestions.value.push(q.id);
+      }
+      if (q.id === 1005 && typeof answer === "string") {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return !emailRegex.test(answer);
+        if (!emailRegex.test(answer)) invalidQuestions.value.push(q.id);
       }
-
       if (q.id === 1004 && typeof answer === "string") {
+        // We check the unformatted number here
         const phoneRegex = /^(?:02|05)\d{7,8}$|^(0[689])\d{8}$/;
-        return !phoneRegex.test(answer);
+        if (!phoneRegex.test(answer)) invalidQuestions.value.push(q.id);
       }
+    }
+  });
 
-      return false;
-    })
-    .map((q) => q.id);
-
-  completeAnswer.value = missingQuestions.value.length === 0;
-  invalidForm.value = invalidQuestions.value.length === 0;
-
-  if (!isFormValid.value) {
+  // --- STEP 3: Final decision ---
+  if (missingQuestions.value.length > 0 || invalidQuestions.value.length > 0) {
     highlightErrors();
     scrollToFirstError();
     warningModal.value = true;
@@ -198,7 +262,22 @@ const closeWarningModal = () => {
 };
 
 const saveAnswers = () => {
-  store.setAnswers(answers.value);
+  // Create a temporary copy of the answers to modify
+  const answersToSave = { ...answers.value };
+
+  // Define the IDs of the optional questions
+  const optionalQuestionIds = [1008, 1009, 1010, 1011, 1012, 1013];
+
+  // Loop through the optional questions
+  optionalQuestionIds.forEach((id) => {
+    // If the answer is missing, blank, or just whitespace, set it to "N/A"
+    if (!answersToSave[id] || String(answersToSave[id]).trim() === "") {
+      answersToSave[id] = "N/A";
+    }
+  });
+
+  // Save the modified answers object to the store
+  store.setAnswers(answersToSave);
   router.push("/questionnairesResearcher2");
 };
 
@@ -214,6 +293,32 @@ const initializeAnswers = () => {
     });
   });
 };
+
+// Add this computed property to your script
+
+const formattedPhoneNumber = computed({
+  // GET: Takes the raw number from the store and adds spaces for display
+  get() {
+    const rawNumber = answers.value[1004];
+    if (!rawNumber) return "";
+    const cleaned = String(rawNumber).replace(/\D/g, ""); // Remove non-digits
+
+    // Format for 10-digit mobile numbers (0xx-xxx-xxxx)
+    if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+    }
+    // Format for 9-digit Bangkok numbers (0x-xxx-xxxx)
+    if (cleaned.length === 9) {
+      return cleaned.replace(/(\d{2})(\d{3})(\d{4})/, "$1 $2 $3");
+    }
+
+    return rawNumber; // Return as-is if it doesn't match
+  },
+  // SET: Takes the formatted input from the user and saves only the numbers
+  set(newValue) {
+    answers.value[1004] = String(newValue).replace(/\D/g, "");
+  },
+});
 
 onMounted(() => {
   initializeAnswers();
@@ -254,11 +359,28 @@ onMounted(() => {
             }"
             class="question-container"
           >
-            <label class="question-label">{{ q.question }}</label>
+            <div class="label-wrapper">
+  <label class="question-label">{{ q.question }}</label>
+  <span v-if="[1008, 1009, 1010, 1011, 1012, 1013].includes(q.id)" class="optional-remark">
+    <span class="asterisk">*optional</span> (leave blank if not applicable)
+  </span>
+</div>
+            <!-- phone input -->
+            <input
+              v-if="q.type === 'text' && q.id === 1004"
+              v-model="formattedPhoneNumber"
+              :placeholder="q.question"
+              type="tel"
+              class="input-text"
+              :data-question-id="q.id"
+              :class="{
+                'error-border': invalidQuestions.includes(q.id),
+              }"
+            />
 
             <!-- Text Input -->
             <input
-              v-if="q.type === 'text'"
+              v-if="q.type === 'text' && q.id !== 1004"
               v-model="answers[q.id]"
               :placeholder="q.question"
               type="text"
@@ -325,28 +447,28 @@ onMounted(() => {
                 'error-border':
                   missingQuestions.includes(q.id) ||
                   invalidQuestions.includes(q.id),
-                'padding-left': q.id === 1011 || q.id === 1012|| q.id === 1013,
-
+                'padding-left': q.id === 1011 || q.id === 1012 || q.id === 1013,
               }"
             ></textarea>
-
-            <!-- File submit input -->
           </div>
         </div>
       </div>
 
       <button type="submit" class="submit-btn">Next</button>
       <span>
-      <a
-        class="gls-btn"
-        @click="openGlossaryModal"
-        style="color: #eb4648; cursor: pointer"
-      >
-        Show all glossary
-      </a>
-    </span>
+        <a
+          class="gls-btn"
+          @click="openGlossaryModal"
+          style="color: #eb4648; cursor: pointer"
+        >
+          Show all glossary
+        </a>
+      </span>
 
-    <GlossaryModal :isVisible="isGlossaryVisible" @close="closeGlossaryModal" />
+      <GlossaryModal
+        :isVisible="isGlossaryVisible"
+        @close="closeGlossaryModal"
+      />
     </form>
 
     <div v-if="warningModal" class="modal">
@@ -433,8 +555,8 @@ onMounted(() => {
 
 .question-label {
   font-size: 18px;
-  display: block;
-  padding: 8px;
+  /* display: block;
+  padding: 8px; */
   color: #000000;
 }
 
@@ -544,5 +666,22 @@ input.error-border {
   border: 2px solid #eb4648 !important;
   padding: 10px;
   border-radius: 6px;
+}
+
+.optional-remark {
+  display: inline; /* This brings it onto the same line as the label */
+  margin-left: 8px; /* Adds some space from the label */
+  font-size: 14px;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.optional-remark .asterisk {
+  color: #eb4648; /* Your theme's red color */
+}
+.label-wrapper {
+  display: flex;
+  align-items: baseline; /* Vertically aligns the text nicely */
+  padding: 8px; /* Move padding from the label to the wrapper */
 }
 </style>

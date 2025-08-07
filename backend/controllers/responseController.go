@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -51,6 +52,7 @@ func SaveResponse(c *gin.Context) {
 		Version              *int                   `json:"version"`
 		ResearcherName       string                 `json:"researcher_name"`
 		ResearcherEmail      string                 `json:"researcher_email"`
+		ExistingFileIDs      []uint                 `json:"existing_file_ids"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -115,6 +117,24 @@ func SaveResponse(c *gin.Context) {
 	if err := database.DB.Create(&response).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save response", "details": err.Error()})
 		return
+	}
+
+	if len(request.ExistingFileIDs) > 0 {
+		var originalFiles []models.UploadedFile
+		// Find all original files based on the IDs sent from the frontend
+		database.DB.Where("id IN ?", request.ExistingFileIDs).Find(&originalFiles)
+
+		for _, originalFile := range originalFiles {
+			newFileCopy := models.UploadedFile{
+				ResponseID: response.ID, // Link to the NEW response ID
+				QuestionID: originalFile.QuestionID,
+				FileName:   originalFile.FileName,
+				MimeType:   originalFile.MimeType,
+				FileData:   originalFile.FileData, // Copy the binary data
+			}
+			// Create a new record for the copied file
+			database.DB.Create(&newFileCopy)
+		}
 	}
 
 	// go services.SendSubmissionNotification(
@@ -198,7 +218,9 @@ func GetLatestResponseByToken(c *gin.Context) {
 		"version":               response.Version,
 		"token":                 response.Token,
 		"uploaded_files":        response.UploadedFiles,
-		"researcher_data":       researcher, // Attach the researcher data here
+		"researcher_data":       researcher,      // Attach the researcher data here
+		"remark":                response.Remark, // <-- ADD THIS LINE
+
 	}
 
 	c.JSON(http.StatusOK, combinedResult)
@@ -225,11 +247,120 @@ func FinalizeSubmission(c *gin.Context) {
 	// Send the notification emails in the background
 	go services.SendSubmissionNotification(
 		researcher.Name,
-		"jirawansong99@gmail.com", // Using your test email for now
-		response.DiseaseName,
+		//"jirawansong99@gmail.com", // Using your test email for now
+		researcher.Email,
+		researcher.ProjectName,
 		response.Token,
 		response.Version,
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Submission finalized and notifications sent."})
+}
+
+// --- ADD THIS ENTIRE NEW FUNCTION ---
+func UpdateSubmissionStatus(c *gin.Context) {
+	var request struct {
+		Token  string `json:"token"`
+		Status int    `json:"status"`
+		Remark string `json:"remark"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	// Find the latest response for the given token to get its ID
+	var latestResponse models.Response
+	if err := database.DB.Where("token = ?", request.Token).Order("version desc").First(&latestResponse).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found"})
+		return
+	}
+
+	// Update the status and remark for that specific response ID
+	if err := database.DB.Model(&models.Response{}).Where("id = ?", latestResponse.ID).Updates(map[string]interface{}{"status": request.Status, "remark": request.Remark}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update status"})
+		return
+	}
+
+	// After updating, fetch the researcher's info for the email notification
+	var researcher models.ResearcherData
+	if err := database.DB.First(&researcher, latestResponse.ResearcherID).Error; err != nil {
+		// Even if this fails, the status was updated, so we don't return an error to the client
+		// but we log it on the server.
+		fmt.Println("Could not find researcher for email notification:", err)
+	} else {
+		// --- THIS IS THE NEW CONDITIONAL LOGIC ---
+		// If the status is -1 (Canceled), notify the admin.
+		// Otherwise, notify the researcher about the status update.
+		if request.Status == -1 {
+			go services.SendCancellationNotificationToAdmin(
+				researcher.Name,
+				researcher.ProjectName, // Use ProjectName for consistency in cancellation notices
+				latestResponse.Token,
+			)
+		} else {
+			go services.SendStatusUpdateEmail(
+				researcher.Name,
+				researcher.Email,
+				researcher.ProjectName, // Use ProjectName for consistency in cancellation notices
+				request.Status,
+				request.Remark,
+				latestResponse.Token,
+			)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Submission status updated successfully"})
+}
+
+// --- ADD THIS ENTIRE NEW FUNCTION ---
+
+func GetResponseByTokenAndVersion(c *gin.Context) {
+	token := c.Param("token")
+	version := c.Param("version")
+	var response models.Response
+
+	// Find the specific version for the given token
+	err := database.DB.
+		Preload("UploadedFiles").
+		Where("token = ? AND version = ?", token, version).
+		First(&response).Error
+
+	if err != nil {
+		c.Error(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Specific response version not found"})
+		return
+	}
+
+	// Now, get the associated researcher data
+	var researcher models.ResearcherData
+	if err := database.DB.First(&researcher, response.ResearcherID).Error; err != nil {
+		c.Error(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "Associated researcher not found"})
+		return
+	}
+
+	// Combine them into the same structure as GetLatestResponseByToken
+	combinedResult := gin.H{
+		"id":                    response.ID,
+		"researcher_id":         response.ResearcherID,
+		"questionnaire_id":      response.QuestionnaireID,
+		"answers":               response.Answers,
+		"research_context":      response.ResearchContext,
+		"survey":                response.Survey,
+		"final_route":           response.FinalRoute,
+		"submitted_at":          response.SubmittedAt,
+		"disease_name":          response.DiseaseName,
+		"intervention":          response.Intervention,
+		"confidentiality_level": response.ConfidentialityLevel,
+		"status":                response.Status,
+		"version":               response.Version,
+		"token":                 response.Token,
+		"remark":                response.Remark,
+		"uploaded_files":        response.UploadedFiles,
+		"researcher_data":       researcher,
+	}
+
+	c.JSON(http.StatusOK, combinedResult)
 }

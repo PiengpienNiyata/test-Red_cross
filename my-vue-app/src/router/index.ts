@@ -7,6 +7,11 @@ import QuestionnairesResearcher3 from '@/pages/QuestionnairesResearcher3.vue';
 import AdminDashboard from '@/pages/AdminDashboard.vue';
 import GlossaryPage from '@/pages/GlossaryPage.vue';
 import EditResponsePage from '@/pages/EditResponse.vue';
+import FetchResponseForReview from '@/pages/FetchResponseForReview.vue';
+import Review from '@/pages/ResponseReview.vue';
+
+
+import SummaryPage from '@/pages/Summary.vue';
 
 const routes = [
   { path: '/', redirect: '/glossary' },
@@ -16,7 +21,14 @@ const routes = [
   { path: '/questionnairesResearcher2', name: 'QuestionnairesResearcher2', component: QuestionnairesResearcher2 },
   { path: '/questionnairesResearcher3', name: 'QuestionnairesResearcher3', component: QuestionnairesResearcher3 },
     { path: '/admin/dashboard', name: 'AdminDashboard', component: AdminDashboard },
-{ path: '/edit-response/:token', name: 'EditResponse', component: EditResponsePage },]
+{ path: '/edit-response/:token', name: 'EditResponse', component: EditResponsePage },
+{ path: '/review-response/:token', name: 'ReviewResponse', component: FetchResponseForReview },
+{ path: '/review-response/:token/:version', name: 'ReviewResponseByVersion', component: FetchResponseForReview },
+
+{ path: '/review', name: 'Review', component: Review },
+
+  { path: '/summary', name: 'Summary', component: SummaryPage },
+]
 ;
 
 const router = createRouter({

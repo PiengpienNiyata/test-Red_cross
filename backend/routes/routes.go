@@ -24,6 +24,9 @@ func SetupRoutes(router *gin.Engine) {
 		api.GET("/file/:id", controllers.GetFileByID)
 
 		api.POST("/response/:id/finalize", controllers.FinalizeSubmission)
+		api.POST("/response/status", controllers.UpdateSubmissionStatus)
+		api.GET("/versions/:token", controllers.GetAllVersionsByToken)
+		api.GET("/response/review/:token/:version", controllers.GetResponseByTokenAndVersion)
 
 	}
 }

@@ -10,7 +10,7 @@ const glossaryData = ref([
   {
     term: "Remission",
     definition:
-      "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently. True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease. The unstable remission is defined as the status in which the occurrence of the true remission being happened while the source of causative signal persisted.",
+      "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.",
   },
   {
     term: "True remission",
@@ -56,6 +56,10 @@ const glossaryData = ref([
     term: "Endocrine",
     definition:
       "A cell signaling mechanism where a cell signals to distant cells, such as through the bloodstream.",
+  },
+      {
+    term: "Contradiction",
+  definition: "If different types or stages of a disease show contradictory responses (divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that what we call one disease might actually represent separate disease entities with converging symptoms. It can also mean the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.",
   },
 ]);
 

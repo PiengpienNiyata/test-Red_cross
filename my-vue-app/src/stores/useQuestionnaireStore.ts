@@ -1,5 +1,10 @@
 import { defineStore } from "pinia";
-
+interface VersionHistoryItem {
+  id: number;
+  version: number;
+  submitted_at: string;
+  status: number;
+}
 export const useQuestionnaireStore = defineStore("questionnaire", {
   state: () => ({
     researcher: {
@@ -12,14 +17,24 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       chosen_intervention: "",
     },
     answers: {} as Record<number, any>,
+    previousAnswers: {} as Record<number, any>,
+    liveFileAnswers: [] as { questionId: string; file: File }[],
+
     researcherID: null as number | null,
     // finalRoute: null as string | null,
     suggestedRoutes: [] as string[],
     currentToken: null as string | null,
     currentVersion: 0 as number,
+        currentRemark: null as string | null, 
+            currentStatus: null as number | null,
+    showReviewerFeedback: true,
+        versionHistory: [] as VersionHistoryItem[],
+    latestVersion: 0 as number,
+
   }),
+  
   actions: {
-        setCurrentTokenAndVersion(token: string, version: number) {
+    setCurrentTokenAndVersion(token: string, version: number) {
       this.currentToken = token;
       this.currentVersion = version;
     },
@@ -27,6 +42,15 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     setAnswers(data: Record<number, any>) {
       this.answers = { ...this.answers, ...data };
     },
+    setPreviousAnswers(data: Record<number, any>) { // <-- ADD THIS ACTION
+  this.previousAnswers = data;
+},
+      setLiveFiles(files: { questionId: string; file: File }[]) {
+    this.liveFileAnswers = files;
+  },
+    clearLiveFiles() {
+    this.liveFileAnswers = [];
+  },
     setResearcherID(id: number) {
       this.researcherID = id;
     },
@@ -34,20 +58,36 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     setSuggestedRoutes(routes: string[]) {
       this.suggestedRoutes = routes;
     },
+    setCurrentRemark(remark: string) {
+      this.currentRemark = remark;
+    },
+     setCurrentStatus(status: number) {
+        this.currentStatus = status;
+    },
+     setVersionHistory(versions: VersionHistoryItem[]) {
+      this.versionHistory = versions;
+      // The first version in the sorted list is the latest one
+      if (versions.length > 0) {
+        this.latestVersion = versions[0].version;
+      }
+    },
 
+        hideReviewerFeedback() {
+      this.showReviewerFeedback = false;
+    },
     processResearcherInfo(answersObject: Record<number, string>) {
-       if (!this.researcher) {
-    this.researcher = {
-      name: "",
-      project_name: "",
-      branch_info: "",
-      phone_number: "",
-      email: "",
-      chosen_disease: "",
-      chosen_intervention: "",
-    };
-  }
-  
+      if (!this.researcher) {
+        this.researcher = {
+          name: "",
+          project_name: "",
+          branch_info: "",
+          phone_number: "",
+          email: "",
+          chosen_disease: "",
+          chosen_intervention: "",
+        };
+      }
+
       this.researcher.name = answersObject[1001] || "";
       this.researcher.project_name = answersObject[1002] || "";
       this.researcher.branch_info = answersObject[1003] || "";
@@ -69,9 +109,16 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.answers = {};
       this.researcherID = null;
       // this.finalRoute = null;
+    this.liveFileAnswers = [];
+    this.previousAnswers = {};
       this.suggestedRoutes = [];
-            this.currentToken = null;
+      this.currentToken = null;
       this.currentVersion = 0;
+            this.currentRemark = null; 
+      this.currentStatus = null;
+      this.showReviewerFeedback = true;
+this.versionHistory = [];
+      this.latestVersion = 0;
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {
@@ -82,7 +129,10 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       });
       this.researcherID = null;
       // this.finalRoute = null;
+          this.liveFileAnswers = [];
+
       this.suggestedRoutes = [];
+      
     },
   },
 });

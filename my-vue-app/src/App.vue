@@ -4,7 +4,9 @@
 
     <div class="content-wrapper">
       <div class="content-section">
-        <h1 class="section-title">Questionnaire for Researcher</h1>
+        <h1 class="section-title" v-if="isAdminDashboard">Reviewer's Dashboard</h1>
+        <h1 class="section-title" v-else-if="isReviewPage">Researcher's Response</h1>
+        <h1 class="section-title" v-else>Questionnaire for Researcher</h1>
 
         <div class="content-body">
           <Sidebar />
@@ -18,24 +20,28 @@
 </template>
 
 
-<script>
+<script setup lang="ts">
 import Sidebar from "@/components/Sidebar.vue";
 import Header from "@/components/Header.vue";
 import "@/assets/main.css";
+import { computed, ref, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
-export default {
-  components: {
-    Sidebar,
-    Header,
-  },
-   watch: {
-    $route(to, from) {
-      if (this.$refs.pageContent) {
-        this.$refs.pageContent.scrollTop = 0;
-      }
-    },
-  },
-};
+const pageContent = ref<HTMLElement | null>(null);
+const route = useRoute();
+const router = useRouter();
+
+const isReviewPage = computed(() => route.path === '/Review');
+const isAdminDashboard = computed(() => route.path === '/admin/dashboard');
+
+watch(
+  () => route.path,
+  () => {
+    if (pageContent.value) {
+      pageContent.value.scrollTop = 0;
+    }
+  }
+);
 </script>
 
 <style scoped>
