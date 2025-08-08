@@ -25,14 +25,13 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     suggestedRoutes: [] as string[],
     currentToken: null as string | null,
     currentVersion: 0 as number,
-        currentRemark: null as string | null, 
-            currentStatus: null as number | null,
+    currentRemark: null as string | null,
+    currentStatus: null as number | null,
     showReviewerFeedback: true,
-        versionHistory: [] as VersionHistoryItem[],
+    versionHistory: [] as VersionHistoryItem[],
     latestVersion: 0 as number,
-
   }),
-  
+
   actions: {
     setCurrentTokenAndVersion(token: string, version: number) {
       this.currentToken = token;
@@ -42,15 +41,16 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     setAnswers(data: Record<number, any>) {
       this.answers = { ...this.answers, ...data };
     },
-    setPreviousAnswers(data: Record<number, any>) { // <-- ADD THIS ACTION
-  this.previousAnswers = data;
-},
-      setLiveFiles(files: { questionId: string; file: File }[]) {
-    this.liveFileAnswers = files;
-  },
+    setPreviousAnswers(data: Record<number, any>) {
+      // <-- ADD THIS ACTION
+      this.previousAnswers = data;
+    },
+    setLiveFiles(files: { questionId: string; file: File }[]) {
+      this.liveFileAnswers = files;
+    },
     clearLiveFiles() {
-    this.liveFileAnswers = [];
-  },
+      this.liveFileAnswers = [];
+    },
     setResearcherID(id: number) {
       this.researcherID = id;
     },
@@ -61,10 +61,10 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     setCurrentRemark(remark: string) {
       this.currentRemark = remark;
     },
-     setCurrentStatus(status: number) {
-        this.currentStatus = status;
+    setCurrentStatus(status: number) {
+      this.currentStatus = status;
     },
-     setVersionHistory(versions: VersionHistoryItem[]) {
+    setVersionHistory(versions: VersionHistoryItem[]) {
       this.versionHistory = versions;
       // The first version in the sorted list is the latest one
       if (versions.length > 0) {
@@ -72,7 +72,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       }
     },
 
-        hideReviewerFeedback() {
+    hideReviewerFeedback() {
       this.showReviewerFeedback = false;
     },
     processResearcherInfo(answersObject: Record<number, string>) {
@@ -109,15 +109,15 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.answers = {};
       this.researcherID = null;
       // this.finalRoute = null;
-    this.liveFileAnswers = [];
-    this.previousAnswers = {};
+      this.liveFileAnswers = [];
+      this.previousAnswers = {};
       this.suggestedRoutes = [];
       this.currentToken = null;
       this.currentVersion = 0;
-            this.currentRemark = null; 
+      this.currentRemark = null;
       this.currentStatus = null;
       this.showReviewerFeedback = true;
-this.versionHistory = [];
+      this.versionHistory = [];
       this.latestVersion = 0;
     },
     resetServey() {
@@ -129,10 +129,12 @@ this.versionHistory = [];
       });
       this.researcherID = null;
       // this.finalRoute = null;
-          this.liveFileAnswers = [];
+      this.liveFileAnswers = [];
 
       this.suggestedRoutes = [];
-      
     },
+  },
+  persist: {
+    storage: sessionStorage,
   },
 });

@@ -360,11 +360,14 @@ onMounted(() => {
             class="question-container"
           >
             <div class="label-wrapper">
-  <label class="question-label">{{ q.question }}</label>
-  <span v-if="[1008, 1009, 1010, 1011, 1012, 1013].includes(q.id)" class="optional-remark">
-    <span class="asterisk">*optional</span> (leave blank if not applicable)
-  </span>
-</div>
+              <label class="question-label">{{ q.question }}</label>
+              <span
+                v-if="[1001, 1002, 1003, 1004, 1005, 1006, 1007].includes(q.id)"
+                class="optional-remark"
+              >
+                <span class="asterisk">*</span>
+              </span>
+            </div>
             <!-- phone input -->
             <input
               v-if="q.type === 'text' && q.id === 1004"
@@ -670,11 +673,9 @@ input.error-border {
 
 .optional-remark {
   display: inline; /* This brings it onto the same line as the label */
-  margin-left: 8px; /* Adds some space from the label */
-  font-size: 14px;
+  font-size: 24px;
   color: #6c757d;
-  font-style: italic;
-}
+  margin-left: 4px;}
 
 .optional-remark .asterisk {
   color: #eb4648; /* Your theme's red color */

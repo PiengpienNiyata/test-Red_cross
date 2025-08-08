@@ -146,59 +146,58 @@ const parseOption = (option: string) => {
 };
 
 const formatQ207Answer = (question: Question2, answer: any): string => {
-  if (typeof answer !== "object" || answer === null) return "";
+  if (typeof answer !== 'object' || answer === null) return '';
 
-  const parts: string[] = [];
+  const finalParts: string[] = [];
 
-  // 1. Handle the radio selection part
+  // Part 1: Format the "Level of Development" (radio button)
   if (answer.radioSelection) {
     let radioText = answer.radioSelection;
-    if (radioText.includes("___")) {
+    if (radioText.includes('___')) {
       const optionIndex = question.options?.findIndex(
         (opt) => parseOption(opt).label === radioText
       );
       if (optionIndex !== undefined && optionIndex > -1) {
         const key = `${question.id}-${optionIndex}-0`;
-        // Use a placeholder if inline text is empty but the option is selected
-        const inlineValue = answer.inlineText?.[key]?.trim() || "...";
-        radioText = radioText.replace("___", inlineValue);
+        const inlineValue = answer.inlineText?.[key]?.trim() || '...';
+        radioText = radioText.replace('___', inlineValue);
       }
     }
-    parts.push(radioText.split("||")[0]);
+    // Add the formatted radio selection with its label
+    finalParts.push(`<span style="color: red">Level of Development:</span> ${radioText.split('||')[0]}`);
   }
 
-  // 2. Handle the checkbox selections part
+  // Part 2: Format the "Pathogenesis Mechanisms" (checkboxes)
   if (answer.checkboxes && answer.checkboxes.length > 0) {
-    answer.checkboxes.forEach((checkboxOpt: string) => {
+    const mechanismParts = answer.checkboxes.map((checkboxOpt: string) => {
       let checkboxText = checkboxOpt;
 
-      if (checkboxText.includes("___")) {
+      if (checkboxText.includes('___')) {
         const optionIndex = question.options?.findIndex(
           (opt) => parseOption(opt).label === checkboxText
         );
         if (optionIndex !== undefined && optionIndex > -1) {
           const key = `${question.id}-${optionIndex}-0`;
-          const inlineValue = answer.inlineText?.[key]?.trim() || "...";
-          checkboxText = checkboxText.replace("___", inlineValue);
+          const inlineValue = answer.inlineText?.[key]?.trim() || '...';
+          checkboxText = checkboxText.replace('___', inlineValue);
         }
       }
 
       if (
-        checkboxText.startsWith("Inflammation") &&
-        answer.subs?.["Inflammation"]
+        checkboxText.startsWith('Inflammation') &&
+        answer.subs?.['Inflammation']
       ) {
-        checkboxText = `${checkboxText.split("||")[0]} (${
-          answer.subs["Inflammation"]
-        })`;
-      } else {
-        checkboxText = checkboxText.split("||")[0];
+        return `${checkboxText.split('||')[0]} (${answer.subs['Inflammation']})`;
       }
-
-      parts.push(checkboxText);
+      return checkboxText.split('||')[0];
     });
+    
+    // Add the formatted checkboxes with their label
+    finalParts.push(`<span style="color: red">Pathogenesis Mechanisms:</span> ${mechanismParts.join(', ')}`);
   }
 
-  return parts.join(", ");
+  // Join the two main parts with a line break for clarity
+  return finalParts.join('<br>');
 };
 // const finalDisplayRoute = computed(() => {
 //   if (suggestedRoutes.value.includes("Route C")) {
@@ -316,7 +315,14 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
     if (mainOpt.includes("___")) {
       const parts = mainOpt.split("___");
       let constructed = parts[0].split("||")[0];
-      const optionIndex = question.options?.findIndex((opt) => opt === mainOpt);
+
+      // --- THIS IS THE FIX ---
+      // Find the index by comparing the parsed label, not the raw option string
+      const optionIndex = question.options?.findIndex(
+        (opt) => parseOption(opt).label === mainOpt
+      );
+      // --- END OF FIX ---
+
       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
         for (let i = 0; i < parts.length - 1; i++) {
           const key = `${question.id}-${optionIndex}-${i}`;
@@ -335,10 +341,13 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
         : subAnswer;
       return `${mainLabel} (${subAnswerString})`;
     }
+
     return mainLabel;
   });
+
   return formattedParts.join(", ");
 };
+
 
 const submissionSuccess = ref(false);
 const submissionError = ref(false);
@@ -373,9 +382,14 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   if (finalString.includes("___")) {
     const parts = finalString.split("___");
     let constructed = parts[0];
+
+    // --- THIS IS THE FIX ---
+    // Find the index by comparing the parsed label, not the raw option string
     const optionIndex = question.options?.findIndex(
-      (opt) => opt === finalString
+      (opt) => parseOption(opt).label === finalString
     );
+    // --- END OF FIX ---
+
     if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
       for (let i = 0; i < parts.length - 1; i++) {
         const key = `${question.id}-${optionIndex}-${i}`;
@@ -387,6 +401,7 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   }
   return finalString.split("||")[0];
 };
+
 
 const summaryStep2 = computed(() => {
   const answer201 = answers.value[201];
@@ -1037,7 +1052,7 @@ const reviewStatusText = computed(() => {
             </div>
           </div>
         </div> -->
-        <div v-for="q in secondFormAnswers" :key="q.id" class="answer-block">
+<div v-for="q in secondFormAnswers" :key="q.id" class="answer-block" :class="{ 'changed-answer': getAnswerDifference(q.id) }">
           <label class="question-label">{{ q.question }}</label>
 
           <p v-if="typeof q.answer === 'string'" class="answer-text">
@@ -1056,12 +1071,42 @@ const reviewStatusText = computed(() => {
               !Array.isArray(q.answer)
             "
           >
-            <div v-if="q.id === 207">
-              <p class="answer-text">
-                <span style="color: red">Answer : </span>
-                {{ formatQ207Answer(q, q.answer) }}
-              </p>
-            </div>
+<div v-if="q.id === 207 && q.answer" class="answer-text">
+  <div v-if="(q.answer as any).radioSelection" class="q207-part">
+    <span style="color: red">Level of Development : </span
+          >
+    {{
+      getConstructedAnswer(q, {
+        selectedOption: (q.answer as any).radioSelection,
+        inlineText: (q.answer as any).inlineText,
+      })
+    }}
+  </div>
+
+  <div
+    v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
+    class="q207-part"
+  >
+    <span style="color: red">Pathogenesis Mechanisms : </span>
+
+<ul class="mechanism-list">
+  <li v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
+      const masterOptions = getQuestionById2(207)?.options || [];
+      const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
+      const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
+      return indexA - indexB;
+    })" :key="mechanism">
+    {{
+      formatCheckboxAnswer(q, {
+        main: [mechanism],
+        subs: (q.answer as any).subs,
+        inlineText: (q.answer as any).inlineText,
+      })
+    }}
+  </li>
+</ul>
+  </div>
+</div>
 
             <div v-else-if="'selectedOption' in q.answer">
               <p class="answer-text">
@@ -1149,7 +1194,7 @@ const reviewStatusText = computed(() => {
           ></div>
 
           <div v-if="getAnswerDifference(q.id)" class="previous-answer-block">
-            <p class="previous-answer-text">
+            <!-- <p class="previous-answer-text">
               <span style="color: grey; margin-left: 16px"
                 >Previous Answer (version {{ currentVersion - 1 }}) :
               </span>
@@ -1220,7 +1265,79 @@ const reviewStatusText = computed(() => {
                   </a>
                 </li>
               </ul>
-            </div>
+            </div> -->
+            <div class="previous-answer-heading">
+  Previous Answer (version {{ currentVersion - 1 }})
+</div>
+
+<div v-if="q.id === 207" class="previous-answer-text">
+  <div v-if="(getAnswerDifference(q.id) as any).radioSelection" class="q207-part">
+    <span style="margin-left: 12px;">Level of Development:</span>
+    {{ getConstructedAnswer(q, { selectedOption: (getAnswerDifference(q.id) as any).radioSelection, inlineText: (getAnswerDifference(q.id) as any).inlineText }) }}
+  </div>
+  <div v-if="(getAnswerDifference(q.id) as any).checkboxes?.length > 0" class="q207-part">
+    <span style="margin-left: 12px;">Pathogenesis Mechanisms:</span>
+    <ul class="mechanism-list">
+      <li v-for="mechanism in [...(getAnswerDifference(q.id) as any).checkboxes].sort((a, b) => {
+        const masterOptions = getQuestionById2(207)?.options || [];
+        const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
+        const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
+        return indexA - indexB;
+      })" :key="mechanism">
+        {{ formatCheckboxAnswer(q, { main: [mechanism], subs: (getAnswerDifference(q.id) as any).subs, inlineText: (getAnswerDifference(q.id) as any).inlineText }) }}
+      </li>
+    </ul>
+  </div>
+</div>
+
+<p v-else class="previous-answer-text">
+  <template v-if="typeof getAnswerDifference(q.id) === 'string'">
+    {{ getAnswerDifference(q.id).split("||")[0] }}
+  </template>
+  <template v-else-if="getAnswerDifference(q.id) && 'selectedOption' in getAnswerDifference(q.id)">
+    {{ getConstructedAnswer(q, getAnswerDifference(q.id)) }}
+  </template>
+  <template v-else-if="getAnswerDifference(q.id) && 'main' in getAnswerDifference(q.id)">
+    {{ formatCheckboxAnswer(q, getAnswerDifference(q.id)) }}
+  </template>
+</p>
+
+<div
+  v-if="(getAnswerDifference(q.id) as any).fileData || (getAnswerDifference(q.id) as any).files"
+  class="sub-answer-block"
+>
+  <strong style="color: #757575">Previous Files:</strong>
+  <ul class="previous-files-list">
+    <li
+      v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
+      :key="key"
+    >
+      <span v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
+        <a
+          v-if="'rehydrated' in file"
+          :href="getFileDownloadUrl(file.id)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ file.name }}
+        </a>
+      </span>
+    </li>
+    <li
+      v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
+      :key="file.name"
+    >
+      <a
+        v-if="'rehydrated' in file"
+        :href="getFileDownloadUrl(file.id)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ file.name }}
+      </a>
+    </li>
+  </ul>
+</div>
           </div>
         </div>
         <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">
@@ -1880,10 +1997,13 @@ const reviewStatusText = computed(() => {
   margin-bottom: 8px;
 }
 .answer-text,
-.answer-block ul {
+.answer-block ul,
+.previous-answer-block,
+.previous-answer-block ul {
   font-size: 16px;
   color: #555;
   margin-left: 16px;
+  white-space: pre-wrap; /* <-- ADD THIS LINE */
 }
 .sub-answer-block {
   margin-left: 32px;
@@ -2273,5 +2393,25 @@ const reviewStatusText = computed(() => {
 
 .previous-files-list a {
   color: #8a8a8a; /* A slightly dimmer link color for old files */
+}
+
+.q207-part {
+  margin-bottom: 0.75rem; /* Adds space between the two parts of the answer */
+}
+.q207-part:last-child {
+  margin-bottom: 0;
+}
+.mechanism-list {
+  margin-top: 0.25rem;
+  padding-left: 20px; /* Indents the bulleted list */
+  list-style-type: disc;
+}
+
+.answer-block.changed-answer {
+  background-color: #fffdf5; /* Light yellow background */
+  border: 1px solid #fde68a; /* Slightly darker yellow border */
+  border-radius: 8px;
+  padding: 1rem;
+  margin-left: 0; /* Override the default margin-left for a full-width highlight */
 }
 </style>

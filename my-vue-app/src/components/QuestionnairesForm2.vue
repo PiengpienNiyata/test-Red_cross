@@ -437,6 +437,7 @@ const checkboxModel = computed({
   },
 });
 
+
 const handleFileChange = (
   event: Event,
   questionId: number,
@@ -1397,6 +1398,19 @@ watch(
             :key="index"
             class="checkbox-option-container"
           >
+            <h4 v-if="index === 0" class="option-group-title">
+    Level of Development
+  </h4>
+ <h4
+    v-if="
+      parseOption(option).type === 'checkbox' &&
+      index > 0 &&
+      currentQuestion?.options?.[index - 1] && parseOption(currentQuestion.options[index - 1]).type === 'radio'
+    "
+    class="option-group-title"
+  >
+    Pathogenesis Mechanisms
+  </h4>
             <div class="checkbox-option">
               <template v-if="currentQuestion.id === 207 && answers[207]">
                 <div class="option-item">
@@ -1766,5 +1780,15 @@ watch(
   gap: 10px;
   margin-bottom: 12px; /* Space between each sub-option */
   font-size: 18px; /* Matches the parent option font size */
+}
+
+.option-group-title {
+  /* font-size: 1rem; */
+  /* font-weight: 600; */
+  color: #374151; /* A dark grey */
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid #e5e7eb; /* A light separator line */
 }
 </style>

@@ -1,36 +1,60 @@
-
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHistory } from "vue-router";
 // import Home from '@/pages/Home.vue';
-import QuestionnairesResearcher from '@/pages/QuestionnairesResearcher.vue';
-import QuestionnairesResearcher2 from '@/pages/QuestionnairesResearcher2.vue';
-import QuestionnairesResearcher3 from '@/pages/QuestionnairesResearcher3.vue';
-import AdminDashboard from '@/pages/AdminDashboard.vue';
-import GlossaryPage from '@/pages/GlossaryPage.vue';
-import EditResponsePage from '@/pages/EditResponse.vue';
-import FetchResponseForReview from '@/pages/FetchResponseForReview.vue';
-import Review from '@/pages/ResponseReview.vue';
+import QuestionnairesResearcher from "@/pages/QuestionnairesResearcher.vue";
+import QuestionnairesResearcher2 from "@/pages/QuestionnairesResearcher2.vue";
+import QuestionnairesResearcher3 from "@/pages/QuestionnairesResearcher3.vue";
+import AdminDashboard from "@/pages/AdminDashboard.vue";
+import GlossaryPage from "@/pages/GlossaryPage.vue";
+import EditResponsePage from "@/pages/EditResponse.vue";
+import FetchResponseForReview from "@/pages/FetchResponseForReview.vue";
+import Review from "@/pages/ResponseReview.vue";
 
-
-import SummaryPage from '@/pages/Summary.vue';
+import SummaryPage from "@/pages/Summary.vue";
 
 const routes = [
-  { path: '/', redirect: '/glossary' },
+  { path: "/", redirect: "/glossary" },
 
-  { path: '/glossary', name: 'Glossary', component: GlossaryPage }, 
-  { path: '/questionnairesResearcher', name: 'QuestionnairesResearcher', component: QuestionnairesResearcher },
-  { path: '/questionnairesResearcher2', name: 'QuestionnairesResearcher2', component: QuestionnairesResearcher2 },
-  { path: '/questionnairesResearcher3', name: 'QuestionnairesResearcher3', component: QuestionnairesResearcher3 },
-    { path: '/admin/dashboard', name: 'AdminDashboard', component: AdminDashboard },
-{ path: '/edit-response/:token', name: 'EditResponse', component: EditResponsePage },
-{ path: '/review-response/:token', name: 'ReviewResponse', component: FetchResponseForReview },
-{ path: '/review-response/:token/:version', name: 'ReviewResponseByVersion', component: FetchResponseForReview },
+  { path: "/glossary", name: "Glossary", component: GlossaryPage },
+  {
+    path: "/questionnairesResearcher",
+    name: "QuestionnairesResearcher",
+    component: QuestionnairesResearcher,
+  },
+  {
+    path: "/questionnairesResearcher2",
+    name: "QuestionnairesResearcher2",
+    component: QuestionnairesResearcher2,
+  },
+  {
+    path: "/questionnairesResearcher3",
+    name: "QuestionnairesResearcher3",
+    component: QuestionnairesResearcher3,
+  },
+  {
+    path: "/admin/dashboard",
+    name: "AdminDashboard",
+    component: AdminDashboard,
+  },
+  {
+    path: "/edit-response/:token",
+    name: "EditResponse",
+    component: EditResponsePage,
+  },
+  {
+    path: "/review-response/:token",
+    name: "ReviewResponse",
+    component: FetchResponseForReview,
+  },
+  {
+    path: "/review-response/:token/:version",
+    name: "ReviewResponseByVersion",
+    component: FetchResponseForReview,
+  },
 
-{ path: '/review', name: 'Review', component: Review },
+  { path: "/review", name: "Review", component: Review },
 
-  { path: '/summary', name: 'Summary', component: SummaryPage },
-]
-;
-
+  { path: "/summary", name: "Summary", component: SummaryPage },
+];
 const router = createRouter({
   history: createWebHistory(),
   routes,

@@ -110,9 +110,9 @@ const parseOption = (option: string) => {
 const formatQ207Answer = (question: Question2, answer: any): string => {
   if (typeof answer !== "object" || answer === null) return "";
 
-  const parts: string[] = [];
+  const finalParts: string[] = [];
 
-  // 1. Handle the radio selection part
+  // Part 1: Format the "Level of Development" (radio button)
   if (answer.radioSelection) {
     let radioText = answer.radioSelection;
     if (radioText.includes("___")) {
@@ -121,17 +121,19 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
       );
       if (optionIndex !== undefined && optionIndex > -1) {
         const key = `${question.id}-${optionIndex}-0`;
-        // Use a placeholder if inline text is empty but the option is selected
         const inlineValue = answer.inlineText?.[key]?.trim() || "...";
         radioText = radioText.replace("___", inlineValue);
       }
     }
-    parts.push(radioText.split("||")[0]);
+    // Add the formatted radio selection with its label
+    finalParts.push(
+      `<strong>Level of Development:</strong> ${radioText.split("||")[0]}`
+    );
   }
 
-  // 2. Handle the checkbox selections part
+  // Part 2: Format the "Pathogenesis Mechanisms" (checkboxes)
   if (answer.checkboxes && answer.checkboxes.length > 0) {
-    answer.checkboxes.forEach((checkboxOpt: string) => {
+    const mechanismParts = answer.checkboxes.map((checkboxOpt: string) => {
       let checkboxText = checkboxOpt;
 
       if (checkboxText.includes("___")) {
@@ -149,18 +151,21 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
         checkboxText.startsWith("Inflammation") &&
         answer.subs?.["Inflammation"]
       ) {
-        checkboxText = `${checkboxText.split("||")[0]} (${
+        return `${checkboxText.split("||")[0]} (${
           answer.subs["Inflammation"]
         })`;
-      } else {
-        checkboxText = checkboxText.split("||")[0];
       }
-
-      parts.push(checkboxText);
+      return checkboxText.split("||")[0];
     });
+
+    // Add the formatted checkboxes with their label
+    finalParts.push(
+      `<strong>Pathogenesis Mechanisms:</strong> ${mechanismParts.join(", ")}`
+    );
   }
 
-  return parts.join(", ");
+  // Join the two main parts with a line break for clarity
+  return finalParts.join("<br>");
 };
 
 const routeDefinitions: {
@@ -237,17 +242,56 @@ const editAnswers = () => {
   router.push("/questionnairesResearcher");
 };
 
+// const formatCheckboxAnswer = (question: Question2, answer: any): string => {
+//   if (!answer || !Array.isArray(answer.main)) return "";
+
+//   const formattedParts = answer.main.map((mainOpt: string) => {
+//     // --- THIS IS THE NEW LOGIC FOR INLINE TEXT ---
+//     if (mainOpt.includes("___")) {
+//       const parts = mainOpt.split("___");
+//       // Get the clean label part (e.g., "Other : ")
+//       let constructed = parts[0].split("||")[0];
+
+//       const optionIndex = question.options?.findIndex((opt) => opt === mainOpt);
+//       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
+//         for (let i = 0; i < parts.length - 1; i++) {
+//           const key = `${question.id}-${optionIndex}-${i}`;
+//           const inlineValue = answer.inlineText[key] || "";
+//           constructed += inlineValue + parts[i + 1].split("||")[0];
+//         }
+//         return constructed;
+//       }
+//       return constructed; // Return the base string if inline text is not found
+//     }
+//     const mainLabel = mainOpt.split("||")[0];
+//     const subAnswer = answer.subs?.[mainLabel];
+//     if (subAnswer && subAnswer.length > 0) {
+//       const subAnswerString = Array.isArray(subAnswer)
+//         ? subAnswer.join(", ")
+//         : subAnswer;
+//       return `${mainLabel} (${subAnswerString})`;
+//     }
+
+//     return mainLabel;
+//   });
+
+//   return formattedParts.join(", ");
+// };
 const formatCheckboxAnswer = (question: Question2, answer: any): string => {
   if (!answer || !Array.isArray(answer.main)) return "";
 
   const formattedParts = answer.main.map((mainOpt: string) => {
-    // --- THIS IS THE NEW LOGIC FOR INLINE TEXT ---
     if (mainOpt.includes("___")) {
       const parts = mainOpt.split("___");
-      // Get the clean label part (e.g., "Other : ")
       let constructed = parts[0].split("||")[0];
 
-      const optionIndex = question.options?.findIndex((opt) => opt === mainOpt);
+      // --- THIS IS THE FIX ---
+      // Find the index by comparing the parsed label, not the raw option string
+      const optionIndex = question.options?.findIndex(
+        (opt) => parseOption(opt).label === mainOpt
+      );
+      // --- END OF FIX ---
+
       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
         for (let i = 0; i < parts.length - 1; i++) {
           const key = `${question.id}-${optionIndex}-${i}`;
@@ -256,7 +300,7 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
         }
         return constructed;
       }
-      return constructed; // Return the base string if inline text is not found
+      return constructed;
     }
     const mainLabel = mainOpt.split("||")[0];
     const subAnswer = answer.subs?.[mainLabel];
@@ -383,7 +427,6 @@ const handleCancelProject = async () => {
 // --- ADD THIS HELPER FUNCTION ---
 
 const getConstructedAnswer = (question: Question2, answer: any): string => {
-  // Return early if it's not the right kind of object
   if (typeof answer !== "object" || !answer.selectedOption) {
     if (typeof answer === "string") return answer.split("||")[0];
     return answer;
@@ -395,10 +438,12 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
     const parts = finalString.split("___");
     let constructed = parts[0];
 
-    // Find the original option index to build the key for inlineText
+    // --- THIS IS THE FIX ---
+    // Find the index by comparing the parsed label, not the raw option string
     const optionIndex = question.options?.findIndex(
-      (opt) => opt === finalString
+      (opt) => parseOption(opt).label === finalString
     );
+    // --- END OF FIX ---
 
     if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
       for (let i = 0; i < parts.length - 1; i++) {
@@ -481,13 +526,20 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
           <span style="color: red">Your answer : </span
           >{{ q.answer.join(", ") }}
         </p>
-        <div v-if="q.id === 207">
+        <!-- <div v-if="q.id === 207">
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
-            {{ formatQ207Answer(q, q.answer) }}
+            <span v-html="formatQ207Answer(q, q.answer)"></span>
           </p>
         </div>
-        <div v-else-if="q.answer && typeof q.answer === 'object' && !Array.isArray(q.answer) && 'selectedOption' in q.answer">
+        <div
+          v-else-if="
+            q.answer &&
+            typeof q.answer === 'object' &&
+            !Array.isArray(q.answer) &&
+            'selectedOption' in q.answer
+          "
+        >
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
             {{ getConstructedAnswer(q, q.answer) }}
@@ -498,7 +550,84 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
             </span>
           </p>
         </div>
-        <div v-else-if="q.answer && typeof q.answer === 'object' && !Array.isArray(q.answer) && 'main' in q.answer">
+        <div
+          v-else-if="
+            q.answer &&
+            typeof q.answer === 'object' &&
+            !Array.isArray(q.answer) &&
+            'main' in q.answer
+          "
+        >
+          <p class="answer-text">
+            <span style="color: red">Your answer : </span>
+            {{ formatCheckboxAnswer(q, q.answer) }}
+          </p>
+        </div> -->
+
+       <div v-if="q.id === 207 && q.answer" class="answer-text">
+  <div v-if="(q.answer as any).radioSelection" class="q207-part">
+    <span style="color: red">Level of Development : </span
+          >
+    {{
+      getConstructedAnswer(q, {
+        selectedOption: (q.answer as any).radioSelection,
+        inlineText: (q.answer as any).inlineText,
+      })
+    }}
+  </div>
+
+  <div
+    v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
+    class="q207-part"
+  >
+    <span style="color: red">Pathogenesis Mechanisms : </span>
+
+<ul class="mechanism-list">
+  <li v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
+      const masterOptions = getQuestionById2(207)?.options || [];
+      const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
+      const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
+      return indexA - indexB;
+    })" :key="mechanism">
+    {{
+      formatCheckboxAnswer(q, {
+        main: [mechanism],
+        subs: (q.answer as any).subs,
+        inlineText: (q.answer as any).inlineText,
+      })
+    }}
+  </li>
+</ul>
+  </div>
+</div>
+
+        <div
+          v-else-if="
+            q.answer &&
+            typeof q.answer === 'object' &&
+            !Array.isArray(q.answer) &&
+            'selectedOption' in q.answer
+          "
+        >
+          <p class="answer-text">
+            <span style="color: red">Your answer : </span>
+            {{ getConstructedAnswer(q, q.answer) }}
+            <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
+              ({{
+                Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
+              }})
+            </span>
+          </p>
+        </div>
+
+        <div
+          v-else-if="
+            q.answer &&
+            typeof q.answer === 'object' &&
+            !Array.isArray(q.answer) &&
+            'main' in q.answer
+          "
+        >
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
             {{ formatCheckboxAnswer(q, q.answer) }}
@@ -1097,6 +1226,7 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   font-size: 16px;
   color: #555;
   margin-left: 16px;
+  white-space: pre-wrap; /* <-- ADD THIS LINE */
 }
 .sub-answer-block {
   margin-left: 32px;
@@ -1338,5 +1468,17 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
 
 .action-bar-group {
   display: flex;
+}
+
+.q207-part {
+  margin-bottom: 0.75rem; /* Adds space between the two parts of the answer */
+}
+.q207-part:last-child {
+  margin-bottom: 0;
+}
+.mechanism-list {
+  margin-top: 0.25rem;
+  padding-left: 20px; /* Indents the bulleted list */
+  list-style-type: disc;
 }
 </style>
