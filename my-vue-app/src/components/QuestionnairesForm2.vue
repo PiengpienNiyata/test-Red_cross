@@ -1289,7 +1289,7 @@ watch(
                     accept=".pdf,.png,.jpeg,.jpg"
                   />
                   <div class="file-format-text">
-                    (Attach in .pdf, .png, .jpeg or .jpg format)
+                    (Attach in .pdf, .png, .jpeg or .jpg format. Max 3 files.)
                   </div>
                 </div>
               </div>

@@ -398,7 +398,7 @@ const handleCancelProject = async () => {
 
   isCancelling.value = true;
   try {
-    const response = await fetch(`${VITE_API_BASE_URL}/api/response/status`, {
+const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-- CHANGE THIS URL
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

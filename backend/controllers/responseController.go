@@ -364,3 +364,47 @@ func GetResponseByTokenAndVersion(c *gin.Context) {
 
 	c.JSON(http.StatusOK, combinedResult)
 }
+
+// ADD THIS NEW FUNCTION for the researcher's cancel action
+
+func CancelSubmission(c *gin.Context) {
+	var request struct {
+		Token  string `json:"token"`
+		Status int    `json:"status"` // Should be -1
+		Remark string `json:"remark"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+
+	// We only allow this endpoint to set the status to -1 (Canceled)
+	if request.Status != -1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "This endpoint can only be used to cancel a submission."})
+		return
+	}
+
+	var latestResponse models.Response
+	if err := database.DB.Where("token = ?", request.Token).Order("version desc").First(&latestResponse).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Submission not found"})
+		return
+	}
+
+	if err := database.DB.Model(&models.Response{}).Where("id = ?", latestResponse.ID).Update("status", request.Status).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel submission"})
+		return
+	}
+
+	// We can still notify the admin that a project was canceled
+	var researcher models.ResearcherData
+	if err := database.DB.First(&researcher, latestResponse.ResearcherID).Error; err == nil {
+		go services.SendCancellationNotificationToAdmin(
+			researcher.Name,
+			researcher.ProjectName,
+			latestResponse.Token,
+		)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Submission canceled successfully"})
+}

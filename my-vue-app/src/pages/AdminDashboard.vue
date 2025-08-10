@@ -6,7 +6,7 @@ import { useRouter } from "vue-router";
 import { formatPhoneNumber } from "@/utils/formatters";
 import { useRoute } from "vue-router";
 import CustomDateInput from "@/components/CustomDateInput.vue";
-
+import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 // Define the structure of a submission object
 interface Submission {
   id: number;
@@ -26,6 +26,7 @@ interface Submission {
 
 const router = useRouter();
 const route = useRoute();
+const store = useQuestionnaireStore();
 
 // --- STATE MANAGEMENT ---
 const allSubmissions = ref<Submission[]>([]);
@@ -54,25 +55,59 @@ const sortRouteString = (routeString: string): string => {
 };
 
 // --- DATA FETCHING ---
-onMounted(() => {
-  fetchSubmissions();
-});
+
+
+// const fetchSubmissions = async () => {
+//   try {
+//     // NOTE: You must create this API endpoint on your Go backend.
+//     // It should return an array of all submissions.
+//     const response = await fetch(`${VITE_API_BASE_URL}/api/submissions`); // Assuming VITE_API_BASE_URL is configured
+//     if (!response.ok) throw new Error("Failed to fetch submissions");
+//     const data = await response.json();
+//     allSubmissions.value = data;
+//   } catch (error) {
+//     console.error("Error fetching submissions:", error);
+//     // You might want to set some mock data here for development if the API isn't ready
+//     // allSubmissions.value = MOCK_DATA;
+//   }
+// };
 
 const fetchSubmissions = async () => {
   try {
-    // NOTE: You must create this API endpoint on your Go backend.
-    // It should return an array of all submissions.
-    const response = await fetch(`${VITE_API_BASE_URL}/api/submissions`); // Assuming VITE_API_BASE_URL is configured
-    if (!response.ok) throw new Error("Failed to fetch submissions");
+    const token = store.authToken;
+
+    if (!token) {
+      // If for some reason there's no token, stop.
+      // The router guard should prevent this, but it's a good safety check.
+      console.error("Authentication token not found.");
+      router.push('/login'); // Redirect to login
+      return;
+    }
+
+    const response = await fetch(`${VITE_API_BASE_URL}/api/submissions`, {
+      headers: {
+        'Authorization': `Bearer ${token}` // <-- This is the crucial part
+      }
+    });
+
+    if (!response.ok) {
+        // If the token is invalid or expired, the server will return 401
+        if (response.status === 401) {
+            store.clearAuthToken(); // Clear the bad token
+            router.push('/login');   // Send the user back to the login page
+        }
+        throw new Error("Failed to fetch submissions");
+    }
+
     const data = await response.json();
     allSubmissions.value = data;
   } catch (error) {
     console.error("Error fetching submissions:", error);
-    // You might want to set some mock data here for development if the API isn't ready
-    // allSubmissions.value = MOCK_DATA;
   }
 };
-
+onMounted(() => {
+  fetchSubmissions();
+});
 // --- FILTERING AND SEARCHING ---
 const filteredAndSortedSubmissions = computed(() => {
   let submissions = allSubmissions.value;

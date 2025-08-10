@@ -146,25 +146,29 @@ const parseOption = (option: string) => {
 };
 
 const formatQ207Answer = (question: Question2, answer: any): string => {
-  if (typeof answer !== 'object' || answer === null) return '';
+  if (typeof answer !== "object" || answer === null) return "";
 
   const finalParts: string[] = [];
 
   // Part 1: Format the "Level of Development" (radio button)
   if (answer.radioSelection) {
     let radioText = answer.radioSelection;
-    if (radioText.includes('___')) {
+    if (radioText.includes("___")) {
       const optionIndex = question.options?.findIndex(
         (opt) => parseOption(opt).label === radioText
       );
       if (optionIndex !== undefined && optionIndex > -1) {
         const key = `${question.id}-${optionIndex}-0`;
-        const inlineValue = answer.inlineText?.[key]?.trim() || '...';
-        radioText = radioText.replace('___', inlineValue);
+        const inlineValue = answer.inlineText?.[key]?.trim() || "...";
+        radioText = radioText.replace("___", inlineValue);
       }
     }
     // Add the formatted radio selection with its label
-    finalParts.push(`<span style="color: red">Level of Development:</span> ${radioText.split('||')[0]}`);
+    finalParts.push(
+      `<span style="color: red">Level of Development:</span> ${
+        radioText.split("||")[0]
+      }`
+    );
   }
 
   // Part 2: Format the "Pathogenesis Mechanisms" (checkboxes)
@@ -172,32 +176,38 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
     const mechanismParts = answer.checkboxes.map((checkboxOpt: string) => {
       let checkboxText = checkboxOpt;
 
-      if (checkboxText.includes('___')) {
+      if (checkboxText.includes("___")) {
         const optionIndex = question.options?.findIndex(
           (opt) => parseOption(opt).label === checkboxText
         );
         if (optionIndex !== undefined && optionIndex > -1) {
           const key = `${question.id}-${optionIndex}-0`;
-          const inlineValue = answer.inlineText?.[key]?.trim() || '...';
-          checkboxText = checkboxText.replace('___', inlineValue);
+          const inlineValue = answer.inlineText?.[key]?.trim() || "...";
+          checkboxText = checkboxText.replace("___", inlineValue);
         }
       }
 
       if (
-        checkboxText.startsWith('Inflammation') &&
-        answer.subs?.['Inflammation']
+        checkboxText.startsWith("Inflammation") &&
+        answer.subs?.["Inflammation"]
       ) {
-        return `${checkboxText.split('||')[0]} (${answer.subs['Inflammation']})`;
+        return `${checkboxText.split("||")[0]} (${
+          answer.subs["Inflammation"]
+        })`;
       }
-      return checkboxText.split('||')[0];
+      return checkboxText.split("||")[0];
     });
-    
+
     // Add the formatted checkboxes with their label
-    finalParts.push(`<span style="color: red">Pathogenesis Mechanisms:</span> ${mechanismParts.join(', ')}`);
+    finalParts.push(
+      `<span style="color: red">Pathogenesis Mechanisms:</span> ${mechanismParts.join(
+        ", "
+      )}`
+    );
   }
 
   // Join the two main parts with a line break for clarity
-  return finalParts.join('<br>');
+  return finalParts.join("<br>");
 };
 // const finalDisplayRoute = computed(() => {
 //   if (suggestedRoutes.value.includes("Route C")) {
@@ -348,7 +358,6 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
   return formattedParts.join(", ");
 };
 
-
 const submissionSuccess = ref(false);
 const submissionError = ref(false);
 
@@ -401,7 +410,6 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   }
   return finalString.split("||")[0];
 };
-
 
 const summaryStep2 = computed(() => {
   const answer201 = answers.value[201];
@@ -1052,7 +1060,12 @@ const reviewStatusText = computed(() => {
             </div>
           </div>
         </div> -->
-<div v-for="q in secondFormAnswers" :key="q.id" class="answer-block" :class="{ 'changed-answer': getAnswerDifference(q.id) }">
+        <div
+          v-for="q in secondFormAnswers"
+          :key="q.id"
+          class="answer-block"
+          :class="{ 'changed-answer': getAnswerDifference(q.id) }"
+        >
           <label class="question-label">{{ q.question }}</label>
 
           <p v-if="typeof q.answer === 'string'" class="answer-text">
@@ -1071,42 +1084,44 @@ const reviewStatusText = computed(() => {
               !Array.isArray(q.answer)
             "
           >
-<div v-if="q.id === 207 && q.answer" class="answer-text">
-  <div v-if="(q.answer as any).radioSelection" class="q207-part">
-    <span style="color: red">Level of Development : </span
-          >
-    {{
-      getConstructedAnswer(q, {
-        selectedOption: (q.answer as any).radioSelection,
-        inlineText: (q.answer as any).inlineText,
-      })
-    }}
-  </div>
+            <div v-if="q.id === 207 && q.answer" class="answer-text">
+              <div v-if="(q.answer as any).radioSelection" class="q207-part">
+                <span style="color: red">Level of Development : </span>
+                {{
+                  getConstructedAnswer(q, {
+                    selectedOption: (q.answer as any).radioSelection,
+                    inlineText: (q.answer as any).inlineText,
+                  })
+                }}
+              </div>
 
-  <div
-    v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
-    class="q207-part"
-  >
-    <span style="color: red">Pathogenesis Mechanisms : </span>
+              <div
+                v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
+                class="q207-part"
+              >
+                <span style="color: red">Pathogenesis Mechanisms : </span>
 
-<ul class="mechanism-list">
-  <li v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
+                <ul class="mechanism-list">
+                  <li
+                    v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
       const masterOptions = getQuestionById2(207)?.options || [];
       const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
       const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
       return indexA - indexB;
-    })" :key="mechanism">
-    {{
-      formatCheckboxAnswer(q, {
-        main: [mechanism],
-        subs: (q.answer as any).subs,
-        inlineText: (q.answer as any).inlineText,
-      })
-    }}
-  </li>
-</ul>
-  </div>
-</div>
+    })"
+                    :key="mechanism"
+                  >
+                    {{
+                      formatCheckboxAnswer(q, {
+                        main: [mechanism],
+                        subs: (q.answer as any).subs,
+                        inlineText: (q.answer as any).inlineText,
+                      })
+                    }}
+                  </li>
+                </ul>
+              </div>
+            </div>
 
             <div v-else-if="'selectedOption' in q.answer">
               <p class="answer-text">
@@ -1267,77 +1282,112 @@ const reviewStatusText = computed(() => {
               </ul>
             </div> -->
             <div class="previous-answer-heading">
-  Previous Answer (version {{ currentVersion - 1 }})
-</div>
+              Previous Answer (version {{ currentVersion - 1 }})
+            </div>
 
-<div v-if="q.id === 207" class="previous-answer-text">
-  <div v-if="(getAnswerDifference(q.id) as any).radioSelection" class="q207-part">
-    <span style="margin-left: 12px;">Level of Development:</span>
-    {{ getConstructedAnswer(q, { selectedOption: (getAnswerDifference(q.id) as any).radioSelection, inlineText: (getAnswerDifference(q.id) as any).inlineText }) }}
-  </div>
-  <div v-if="(getAnswerDifference(q.id) as any).checkboxes?.length > 0" class="q207-part">
-    <span style="margin-left: 12px;">Pathogenesis Mechanisms:</span>
-    <ul class="mechanism-list">
-      <li v-for="mechanism in [...(getAnswerDifference(q.id) as any).checkboxes].sort((a, b) => {
+            <div v-if="q.id === 207" class="previous-answer-text">
+              <div
+                v-if="(getAnswerDifference(q.id) as any).radioSelection"
+                class="q207-part"
+              >
+                <span style="margin-left: 12px">Level of Development:</span>
+                {{
+                  getConstructedAnswer(q, {
+                    selectedOption: (getAnswerDifference(q.id) as any)
+                      .radioSelection,
+                    inlineText: (getAnswerDifference(q.id) as any).inlineText,
+                  })
+                }}
+              </div>
+              <div
+                v-if="(getAnswerDifference(q.id) as any).checkboxes?.length > 0"
+                class="q207-part"
+              >
+                <span style="margin-left: 12px">Pathogenesis Mechanisms:</span>
+                <ul class="mechanism-list">
+                  <li
+                    v-for="mechanism in [...(getAnswerDifference(q.id) as any).checkboxes].sort((a, b) => {
         const masterOptions = getQuestionById2(207)?.options || [];
         const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
         const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
         return indexA - indexB;
-      })" :key="mechanism">
-        {{ formatCheckboxAnswer(q, { main: [mechanism], subs: (getAnswerDifference(q.id) as any).subs, inlineText: (getAnswerDifference(q.id) as any).inlineText }) }}
-      </li>
-    </ul>
-  </div>
-</div>
+      })"
+                    :key="mechanism"
+                  >
+                    {{
+                      formatCheckboxAnswer(q, {
+                        main: [mechanism],
+                        subs: (getAnswerDifference(q.id) as any).subs,
+                        inlineText: (getAnswerDifference(q.id) as any)
+                          .inlineText,
+                      })
+                    }}
+                  </li>
+                </ul>
+              </div>
+            </div>
 
-<p v-else class="previous-answer-text">
-  <template v-if="typeof getAnswerDifference(q.id) === 'string'">
-    {{ getAnswerDifference(q.id).split("||")[0] }}
-  </template>
-  <template v-else-if="getAnswerDifference(q.id) && 'selectedOption' in getAnswerDifference(q.id)">
-    {{ getConstructedAnswer(q, getAnswerDifference(q.id)) }}
-  </template>
-  <template v-else-if="getAnswerDifference(q.id) && 'main' in getAnswerDifference(q.id)">
-    {{ formatCheckboxAnswer(q, getAnswerDifference(q.id)) }}
-  </template>
-</p>
+            <p v-else class="previous-answer-text" style="margin-left: 16px">
+              <template v-if="typeof getAnswerDifference(q.id) === 'string'">
+                {{ getAnswerDifference(q.id).split("||")[0] }}
+              </template>
+              <template
+                v-else-if="
+                  getAnswerDifference(q.id) &&
+                  'selectedOption' in getAnswerDifference(q.id)
+                "
+              >
+                {{ getConstructedAnswer(q, getAnswerDifference(q.id)) }}
+              </template>
+              <template
+                v-else-if="
+                  getAnswerDifference(q.id) &&
+                  'main' in getAnswerDifference(q.id)
+                "
+              >
+                {{ formatCheckboxAnswer(q, getAnswerDifference(q.id)) }}
+              </template>
+            </p>
 
-<div
-  v-if="(getAnswerDifference(q.id) as any).fileData || (getAnswerDifference(q.id) as any).files"
-  class="sub-answer-block"
->
-  <strong style="color: #757575">Previous Files:</strong>
-  <ul class="previous-files-list">
-    <li
-      v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
-      :key="key"
-    >
-      <span v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
-        <a
-          v-if="'rehydrated' in file"
-          :href="getFileDownloadUrl(file.id)"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {{ file.name }}
-        </a>
-      </span>
-    </li>
-    <li
-      v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
-      :key="file.name"
-    >
-      <a
-        v-if="'rehydrated' in file"
-        :href="getFileDownloadUrl(file.id)"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {{ file.name }}
-      </a>
-    </li>
-  </ul>
-</div>
+            <div
+              v-if="(getAnswerDifference(q.id) as any).fileData || (getAnswerDifference(q.id) as any).files"
+              class="sub-answer-block"
+            >
+              <strong style="color: #757575">Previous Files:</strong>
+              <ul class="previous-files-list">
+                <li
+                  v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
+                  :key="key"
+                >
+                  <span
+                    v-for="file in normalizeFiles(fileInfo.files)"
+                    :key="file.name"
+                  >
+                    <a
+                      v-if="'rehydrated' in file"
+                      :href="getFileDownloadUrl(file.id)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ file.name }}
+                    </a>
+                  </span>
+                </li>
+                <li
+                  v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
+                  :key="file.name"
+                >
+                  <a
+                    v-if="'rehydrated' in file"
+                    :href="getFileDownloadUrl(file.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">

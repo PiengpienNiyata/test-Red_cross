@@ -8,8 +8,9 @@ import GlossaryPage from "@/pages/GlossaryPage.vue";
 import EditResponsePage from "@/pages/EditResponse.vue";
 import FetchResponseForReview from "@/pages/FetchResponseForReview.vue";
 import Review from "@/pages/ResponseReview.vue";
-
+import AdminLogin from "@/pages/AdminLogin.vue"; 
 import SummaryPage from "@/pages/Summary.vue";
+import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 
 const routes = [
   { path: "/", redirect: "/glossary" },
@@ -31,27 +32,32 @@ const routes = [
     component: QuestionnairesResearcher3,
   },
   {
-    path: "/admin/dashboard",
-    name: "AdminDashboard",
-    component: AdminDashboard,
-  },
-  {
     path: "/edit-response/:token",
     name: "EditResponse",
     component: EditResponsePage,
   },
+   { path: "/login", name: "AdminLogin", component: AdminLogin },
+  {
+    path: "/admin/dashboard",
+    name: "AdminDashboard",
+    component: AdminDashboard,
+    meta: { requiresAuth: true },
+  },
+  
   {
     path: "/review-response/:token",
     name: "ReviewResponse",
     component: FetchResponseForReview,
+    meta: { requiresAuth: true },
   },
   {
     path: "/review-response/:token/:version",
     name: "ReviewResponseByVersion",
     component: FetchResponseForReview,
+    meta: { requiresAuth: true },
   },
 
-  { path: "/review", name: "Review", component: Review },
+  { path: "/review", name: "Review", component: Review, meta: { requiresAuth: true }, },
 
   { path: "/summary", name: "Summary", component: SummaryPage },
 ];
@@ -62,4 +68,19 @@ const router = createRouter({
     return { top: 0 };
   },
 });
+
+router.beforeEach((to, from, next) => {
+  const store = useQuestionnaireStore();
+  const isAuthenticated = !!store.authToken;
+
+  // If the route requires authentication and the user is not logged in
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    // Redirect to the login page
+    next({ name: 'AdminLogin', query: { redirect: to.fullPath }  });
+  } else {
+    // Otherwise, allow the navigation
+    next();
+  }
+});
+
 export default router;

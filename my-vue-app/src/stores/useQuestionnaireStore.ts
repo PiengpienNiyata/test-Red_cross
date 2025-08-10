@@ -30,9 +30,17 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     showReviewerFeedback: true,
     versionHistory: [] as VersionHistoryItem[],
     latestVersion: 0 as number,
+     authToken: null as string | null,
   }),
 
   actions: {
+    setAuthToken(token: string) { // <-- ADD THIS
+        this.authToken = token;
+    },
+    clearAuthToken() { // <-- ADD THIS
+        this.authToken = null;
+    },
+
     setCurrentTokenAndVersion(token: string, version: number) {
       this.currentToken = token;
       this.currentVersion = version;
@@ -97,6 +105,9 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.researcher.chosen_intervention = answersObject[1007] || "";
     },
     resetStore() {
+      this.latestVersion = 0;
+    this.authToken = null;
+    
       this.researcher = {
         name: "",
         project_name: "",
@@ -119,6 +130,34 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
+      
+    },
+        resetQuestionnaire() {
+      this.latestVersion = 0;
+    
+      this.researcher = {
+        name: "",
+        project_name: "",
+        branch_info: "",
+        phone_number: "",
+        email: "",
+        chosen_disease: "",
+        chosen_intervention: "",
+      };
+      this.answers = {};
+      this.researcherID = null;
+      // this.finalRoute = null;
+      this.liveFileAnswers = [];
+      this.previousAnswers = {};
+      this.suggestedRoutes = [];
+      this.currentToken = null;
+      this.currentVersion = 0;
+      this.currentRemark = null;
+      this.currentStatus = null;
+      this.showReviewerFeedback = true;
+      this.versionHistory = [];
+      this.latestVersion = 0;
+      
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {

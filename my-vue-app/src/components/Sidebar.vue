@@ -1,37 +1,43 @@
 <template>
   <div class="sidebar d-flex flex-column">
-    <div v-if="isAdminDashboard" class="status-filter">
-      <!-- <h4 class="status-title">Filter by Status</h4> -->
-      <div
-        v-for="status in statusOptions"
-        :key="status.value"
-        class="status-item"
-        :class="{
-          'active-status':
-            String($route.query.status || '') === String(status.value),
-        }"
-        @click="filterByStatus(status.value)"
-      >
-        <span>{{ status.text }}</span>
+    <template v-if="isAdminDashboard">
+      <div class="status-filter">
+        <div
+          v-for="status in statusOptions"
+          :key="status.value"
+          class="status-item"
+          :class="{
+            'active-status':
+              String($route.query.status || '') === String(status.value),
+          }"
+          @click="filterByStatus(status.value)"
+        >
+          <span>{{ status.text }}</span>
+        </div>
       </div>
-    </div>
-<template v-else-if="isReviewPage">
-  <div class="version-history">
-    <div
-      v-for="item in store.versionHistory"
-      :key="item.version"
-      class="version-item"
-      :class="{ 'active-version': store.currentVersion === item.version }"
-      @click="selectVersion(item)"
-    >
-      <span>Version {{ item.version }}</span>
-      <small>{{ new Date(item.submitted_at).toLocaleDateString() }}</small>
-    </div>
-  </div>
-  <div class="sidebar-footer">
-    <button @click="goToDashboard" class="dashboard-btn">Dashboard</button>
-  </div>
-</template>
+      <div class="sidebar-footer">
+        <button @click="openLogoutConfirmModal" class="dashboard-btn">
+          Logout
+        </button>
+      </div>
+    </template>
+    <template v-else-if="isReviewPage">
+      <div class="version-history">
+        <div
+          v-for="item in store.versionHistory"
+          :key="item.version"
+          class="version-item"
+          :class="{ 'active-version': store.currentVersion === item.version }"
+          @click="selectVersion(item)"
+        >
+          <span>Version {{ item.version }}</span>
+          <small>{{ new Date(item.submitted_at).toLocaleDateString() }}</small>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <button @click="goToDashboard" class="dashboard-btn">Dashboard</button>
+      </div>
+    </template>
     <div v-else-if="isFetchingPage" class="version-history"></div>
 
     <template v-else>
@@ -114,6 +120,35 @@
         </div>
       </div>
     </template>
+    <div v-if="showLogoutConfirmModal" class="modal">
+      <div class="modal-content">
+        <h3>Confirm Logout</h3>
+        <p>Are you sure you want to log out?</p>
+        <div class="modal-buttons">
+          <button
+            @click="showLogoutConfirmModal = false"
+            class="modal-btn cancel-btn"
+          >
+            Cancel
+          </button>
+          <button @click="handleLogout" class="modal-btn confirm-btn">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showLogoutSuccessModal" class="modal">
+      <div class="modal-content">
+        <h3>Logout Successful</h3>
+        <p>You have been successfully logged out.</p>
+        <div class="modal-buttons-center">
+          <button @click="redirectToLogin" class="modal-btn confirm-btn">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -123,7 +158,10 @@ import icon3 from "@/assets/icon3.png";
 import icon4 from "@/assets/icon4.png";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRoute, useRouter } from "vue-router";
-import { computed } from "vue";
+import { computed, ref } from "vue";
+
+const showLogoutConfirmModal = ref(false);
+const showLogoutSuccessModal = ref(false);
 
 // --- INTERFACE (from the second script) ---
 interface VersionHistoryItem {
@@ -173,9 +211,24 @@ const filterByStatus = (statusValue: number | string) => {
   router.push({ path: "/admin/dashboard", query: { status: statusValue } });
 };
 
+const openLogoutConfirmModal = () => {
+  showLogoutConfirmModal.value = true;
+};
+
 const goToDashboard = () => {
   store.resetServey();
   router.push("/admin/dashboard");
+};
+
+const handleLogout = () => {
+  showLogoutConfirmModal.value = false;
+  store.clearAuthToken();
+  showLogoutSuccessModal.value = true;
+};
+
+const redirectToLogin = () => {
+  showLogoutSuccessModal.value = false;
+  router.push("/login");
 };
 </script>
 
@@ -231,7 +284,7 @@ const goToDashboard = () => {
 }
 
 .version-title {
-  font-weight: 600;
+  /* font-weight: 600; */
   margin-bottom: 1rem;
   color: #333;
 }
@@ -253,7 +306,7 @@ const goToDashboard = () => {
 .version-item.active-version {
   background-color: #fee2e2; /* Light red */
   border-color: #eb4648;
-  font-weight: bold;
+  /* font-weight: bold; */
   color: #eb4648;
 }
 
@@ -273,7 +326,7 @@ const goToDashboard = () => {
 }
 
 .status-title {
-  font-weight: 600;
+  /* font-weight: 600; */
   margin-bottom: 1rem;
   color: #333;
 }
@@ -297,7 +350,7 @@ const goToDashboard = () => {
 .status-item.active-status {
   background-color: #fee2e2; /* Light red */
   border-color: #eb4648;
-  font-weight: bold;
+  /* font-weight: bold; */
   color: #eb4648;
 }
 
@@ -337,4 +390,79 @@ const goToDashboard = () => {
   border-radius: 4px;
   cursor: pointer;
 }
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.modal-content {
+  max-width: 400px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  align-items: center;
+}
+
+.modal-content h3 {
+  font-size: 1.5rem;
+  /* font-weight: 600; */
+  margin-bottom: 1rem;
+}
+
+.modal-content p {
+  margin-bottom: 1.5rem;
+  color: #4B5563;
+  line-height: 1.6;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
+
+.modal-buttons-center {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.modal-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  /* font-weight: 500; */
+  min-width: 120px;
+  transition: background-color 0.2s;
+}
+
+/* .cancel-btn {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+} */
+.cancel-btn:hover {
+  background-color: #c2c2c2;
+}
+
+/* .confirm-btn {
+  background-color: #eb4648;
+  color: white;
+} */
+.confirm-btn:hover, .dashboard-btn:hover {
+  background-color: #c9302c;
+}
+
 </style>
