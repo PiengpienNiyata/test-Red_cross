@@ -818,14 +818,61 @@ const hasNonsenseContradiction = computed(() => {
   return false;
 });
 
+// const handleStatusUpdate = async (status: number, remark: string) => {
+//   if (isSubmitting.value) return;
+//   isSubmitting.value = true;
+
+//   try {
+//     const response = await fetch(`${VITE_API_BASE_URL}/api/response/status`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         token: store.currentToken,
+//         status: status,
+//         remark: remark,
+//       }),
+//     });
+
+//     if (!response.ok) {
+//       throw new Error("Failed to update status");
+//     }
+
+//     // Close all modals and show the success message
+//     showApproveModal.value = false;
+//     showReviseModal.value = false;
+//     showRejectModal.value = false;
+//     showSuccessModal.value = true;
+//   } catch (error) {
+//     console.error("Error updating status:", error);
+//     alert("There was an error updating the status. Please try again.");
+//   } finally {
+//     isSubmitting.value = false;
+//   }
+// };
+
+// REPLACE your existing handleStatusUpdate function with this one
+
 const handleStatusUpdate = async (status: number, remark: string) => {
   if (isSubmitting.value) return;
   isSubmitting.value = true;
 
   try {
+    // 1. Get the authentication token from the store
+    const token = store.authToken;
+    if (!token) {
+      alert("Authentication error. Please log in again.");
+      router.push('/login');
+      isSubmitting.value = false;
+      return;
+    }
+
+    // 2. Make the API call with the Authorization header
     const response = await fetch(`${VITE_API_BASE_URL}/api/response/status`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': `Bearer ${token}` // <-- This is the crucial part
+      },
       body: JSON.stringify({
         token: store.currentToken,
         status: status,
@@ -834,6 +881,11 @@ const handleStatusUpdate = async (status: number, remark: string) => {
     });
 
     if (!response.ok) {
+      // If the token is invalid/expired, redirect to login
+      if (response.status === 401) {
+          store.clearAuthToken();
+          router.push('/login');
+      }
       throw new Error("Failed to update status");
     }
 

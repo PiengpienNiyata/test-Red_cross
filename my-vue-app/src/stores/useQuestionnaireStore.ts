@@ -5,6 +5,27 @@ interface VersionHistoryItem {
   submitted_at: string;
   status: number;
 }
+
+// REPLACE this function
+function stripFileObjects(obj: any): any {
+  if (obj instanceof File) {
+    // Instead of returning null, return a placeholder object with the filename.
+    return { name: obj.name, isNewUnsavedFile: true };
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(stripFileObjects);
+  }
+  if (obj && typeof obj === 'object') {
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        newObj[key] = stripFileObjects(obj[key]);
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
 export const useQuestionnaireStore = defineStore("questionnaire", {
   state: () => ({
     researcher: {
@@ -173,7 +194,20 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.suggestedRoutes = [];
     },
   },
-  persist: {
-    storage: sessionStorage,
+persist: {
+  storage: sessionStorage,
+  serializer: {
+    // Our custom function to SAVE the state
+    serialize: (state) => {
+      // Before saving, we create a clean version of the state with File objects removed
+      const cleanedState = stripFileObjects(state);
+      return JSON.stringify(cleanedState);
+    },
+    // The default function to LOAD the state
+    deserialize: (jsonString) => {
+      return JSON.parse(jsonString);
+    },
   },
+},
+
 });

@@ -9,6 +9,7 @@ import GlossaryModal from "@/components/GlossaryModal.vue";
 import DynamicInlineInput from "@/components/DynamicInlineInput.vue";
 import { storeToRefs } from "pinia";
 import { VITE_API_BASE_URL } from "@/stores/config";
+const File = window.File;
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
 const store = useQuestionnaireStore();
@@ -1318,42 +1319,85 @@ watch(
               </div>
 
               <div v-if="hasFileInput(option)" class="file-input-wrapper">
+                <div class="file-list-container">
+                  <div
+                    v-for="(file, index) in (answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || []).filter((f: any) => f)"
+                    :key="file.name + index"
+                    class="file-preview"
+                  >
+                    <a
+                      v-if="file.rehydrated"
+                      :href="
+                        file.rehydrated
+                          ? getFileDownloadUrl(file.id)
+                          : createObjectURL(file)
+                      "
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="file-link"
+                    >
+                      {{ file.name }}
+                    </a>
+                    <a
+                      v-else-if="file instanceof File"
+                      :href="createObjectURL(file)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="file-link"
+                    >
+                      {{ file.name }}
+                    </a>
+                    <span
+                      v-else-if="file.isNewUnsavedFile"
+                      class="unsaved-file-placeholder"
+                    >
+                      {{ file.name }}
+                    </span>
 
-  <div class="file-list-container">
-    <div 
-      v-for="(file, index) in answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || []"
-      :key="file.name + index"
-      class="file-preview"
-    >
-      <a
-        :href="file.rehydrated ? getFileDownloadUrl(file.id) : createObjectURL(file)"
-        target="_blank" rel="noopener noreferrer" class="file-link"
-      >
-        {{ file.name }}
-      </a>
-      <button 
-        @click="removeFile(currentQuestion.id, getCleanOptionLabel(option), index)"
-        class="remove-file-btn" type="button"
-      >
-        &times;
-      </button>
-    </div>
-  </div>
+                    <button
+                      @click="
+                        removeFile(
+                          currentQuestion.id,
+                          getCleanOptionLabel(option),
+                          index
+                        )
+                      "
+                      class="remove-file-btn"
+                      type="button"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
 
-  <div v-if="!answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || answers[currentQuestion.id].fileData[getCleanOptionLabel(option)].files.length < 3">
-    <input
-      type="file"
-      multiple
-      @change="handleFileChange($event, currentQuestion.id, getCleanOptionLabel(option))"
-      class="input-file-conditional"
-      accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
-    />
-    <div class="file-format-text">
-      (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt, xlsx)
-    </div>
-  </div>
-
-</div>
+                <div
+                  v-if="
+                    !answers[currentQuestion.id]?.fileData?.[
+                      getCleanOptionLabel(option)
+                    ]?.files ||
+                    answers[currentQuestion.id].fileData[
+                      getCleanOptionLabel(option)
+                    ].files.length < 3
+                  "
+                >
+                  <input
+                    type="file"
+                    multiple
+                    @change="
+                      handleFileChange(
+                        $event,
+                        currentQuestion.id,
+                        getCleanOptionLabel(option)
+                      )
+                    "
+                    class="input-file-conditional"
+                    accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
+                  />
+                  <div class="file-format-text">
+                    (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt, xlsx)
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1773,5 +1817,11 @@ watch(
 .input-file-conditional {
   display: block; /* Forces the input onto its own line */
   margin-top: 0.5rem; /* Adds a bit of space above it */
+}
+
+.unsaved-file-placeholder {
+  color: #6b7280; /* A muted grey color */
+  font-style: italic;
+  text-decoration: none;
 }
 </style>
