@@ -437,32 +437,93 @@ const checkboxModel = computed({
   },
 });
 
+// const handleFileChange = (
+//   event: Event,
+//   questionId: number,
+//   optionKey?: string
+// ) => {
+//   const target = event.target as HTMLInputElement;
+//   if (!target.files || target.files.length === 0) return;
 
+//   const fileData = { files: target.files };
+
+//   if (optionKey) {
+//     const existingAnswer = answers.value[questionId];
+
+//     if (typeof existingAnswer !== "object" || existingAnswer === null) {
+//       return;
+//     }
+
+//     existingAnswer.fileData = {
+//       ...existingAnswer.fileData,
+//       [optionKey]: fileData,
+//     };
+
+//     answers.value[questionId] = { ...existingAnswer };
+//   } else {
+//     answers.value[questionId] = fileData;
+//   }
+// };
+
+// const removeFile = (questionId: number, optionKey: string) => {
+//   const answer = answers.value[questionId];
+//   if (
+//     answer &&
+//     typeof answer === "object" &&
+//     answer.fileData &&
+//     answer.fileData[optionKey]
+//   ) {
+//     delete answer.fileData[optionKey];
+//     answers.value[questionId] = { ...answer };
+//   }
+// };
+
+// REPLACE this function
 const handleFileChange = (
   event: Event,
   questionId: number,
   optionKey?: string
 ) => {
   const target = event.target as HTMLInputElement;
-  if (!target.files || target.files.length === 0) return;
+  if (!target.files) return;
 
-  const fileData = { files: target.files };
+  // Use a default key for standalone file questions
+  const key = optionKey || "main";
 
-  if (optionKey) {
-    const existingAnswer = answers.value[questionId];
+  const newFiles = Array.from(target.files);
+  const existingAnswer = answers.value[questionId];
 
-    if (typeof existingAnswer !== "object" || existingAnswer === null) {
-      return;
-    }
+  if (typeof existingAnswer !== "object" || existingAnswer === null) return;
 
-    existingAnswer.fileData = {
-      ...existingAnswer.fileData,
-      [optionKey]: fileData,
-    };
+  if (!existingAnswer.fileData) existingAnswer.fileData = {};
+  if (!existingAnswer.fileData[key])
+    existingAnswer.fileData[key] = { files: [] };
 
-    answers.value[questionId] = { ...existingAnswer };
-  } else {
-    answers.value[questionId] = fileData;
+  const currentFiles = existingAnswer.fileData[key].files || [];
+
+  if (currentFiles.length + newFiles.length > 3) {
+    alert("You can only upload a maximum of 3 files.");
+    target.value = "";
+    return;
+  }
+
+  existingAnswer.fileData[key].files.push(...newFiles);
+  answers.value[questionId] = { ...existingAnswer };
+};
+
+// REPLACE this function
+const removeFile = (
+  questionId: number,
+  optionKey: string | undefined,
+  fileIndex: number
+) => {
+  // Use a default key for standalone file questions
+  const key = optionKey || "main";
+  const answer = answers.value[questionId];
+
+  if (answer?.fileData?.[key]?.files) {
+    answer.fileData[key].files.splice(fileIndex, 1);
+    answers.value[questionId] = { ...answer };
   }
 };
 
@@ -801,19 +862,6 @@ watch(radioSelection, (newSelection) => {
   }
 });
 
-const removeFile = (questionId: number, optionKey: string) => {
-  const answer = answers.value[questionId];
-  if (
-    answer &&
-    typeof answer === "object" &&
-    answer.fileData &&
-    answer.fileData[optionKey]
-  ) {
-    delete answer.fileData[optionKey];
-    answers.value[questionId] = { ...answer };
-  }
-};
-
 watch(radioSelection, (newSelection, oldSelection) => {
   if (
     !currentQuestion.value ||
@@ -1079,7 +1127,7 @@ watch(
           class="input-text"
         />
 
-        <div v-if="currentQuestion.type === 'files'">
+        <!-- <div v-if="currentQuestion.type === 'files'">
           <input
             type="file"
             @change="handleFileChange($event, currentQuestion.id)"
@@ -1093,6 +1141,56 @@ watch(
             "
             class="saved-files"
           ></div>
+        </div> -->
+
+        <div v-if="currentQuestion.type === 'files'" class="file-input-wrapper">
+          <div class="file-list-container">
+            <div
+              v-for="(file, index) in answers[currentQuestion.id]?.fileData?.[
+                'main'
+              ]?.files || []"
+              :key="file.name"
+              class="file-preview"
+            >
+              <a
+                :href="
+                  file.rehydrated
+                    ? getFileDownloadUrl(file.id)
+                    : createObjectURL(file)
+                "
+                target="_blank"
+                rel="noopener noreferrer"
+                class="file-link"
+              >
+                {{ file.name }}
+              </a>
+              <button
+                @click="removeFile(currentQuestion.id, undefined, index)"
+                class="remove-file-btn"
+                type="button"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-if="
+              !answers[currentQuestion.id]?.fileData?.['main']?.files ||
+              answers[currentQuestion.id].fileData['main'].files.length < 3
+            "
+          >
+            <input
+              type="file"
+              multiple
+              @change="handleFileChange($event, currentQuestion.id)"
+              class="input-file-conditional"
+              accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
+            />
+            <div class="file-format-text">
+              (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt, xlsx)
+            </div>
+          </div>
         </div>
 
         <div v-else-if="currentQuestion.type === 'radio'" class="radio-group">
@@ -1220,174 +1318,45 @@ watch(
               </div>
 
               <div v-if="hasFileInput(option)" class="file-input-wrapper">
-                <div
-                  v-if="
-                    answers[currentQuestion.id]?.fileData?.[
-                      getCleanOptionLabel(option)
-                    ]?.files?.[0]
-                  "
-                  class="file-preview"
-                >
-                  <a
-                    :href="
-                      answers[currentQuestion.id].fileData[
-                        getCleanOptionLabel(option)
-                      ].files[0].rehydrated
-                        ? getFileDownloadUrl(
-                            answers[currentQuestion.id].fileData[
-                              getCleanOptionLabel(option)
-                            ].files[0].id
-                          )
-                        : createObjectURL(
-                            answers[currentQuestion.id].fileData[
-                              getCleanOptionLabel(option)
-                            ].files[0]
-                          )
-                    "
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="file-link"
-                  >
-                    {{
-                      answers[currentQuestion.id].fileData[
-                        getCleanOptionLabel(option)
-                      ].files[0].name
-                    }}
-                  </a>
-                  <button
-                    @click="
-                      removeFile(
-                        currentQuestion.id,
-                        getCleanOptionLabel(option)
-                      )
-                    "
-                    class="remove-file-btn"
-                    type="button"
-                    style="
-                      font-size: 32px;
-                      color: #eb4648;
-                      background: none;
-                      border: none;
-                      cursor: pointer;
-                    "
-                  >
-                    &times;
-                  </button>
-                </div>
 
-                <div v-else>
-                  <input
-                    type="file"
-                    @change="
-                      handleFileChange(
-                        $event,
-                        currentQuestion.id,
-                        getCleanOptionLabel(option)
-                      )
-                    "
-                    class="input-file-conditional"
-                    accept=".pdf,.png,.jpeg,.jpg"
-                  />
-                  <div class="file-format-text">
-                    (Attach in .pdf, .png, .jpeg or .jpg format. Max 3 files.)
-                  </div>
-                </div>
-              </div>
-              <!-- <div v-if="hasFileInput(option)">
-                <input
-                  type="file"
-                  @change="
-                    handleFileChange(
-                      $event,
-                      currentQuestion.id,
-                      getCleanOptionLabel(option)
-                    )
-                  "
-                  style="margin-left: 30px"
-                  class="input-file-conditional"
-                  accept=".pdf,.png,.jpeg,.jpg"
-                />
-                <div
-                  style="
-                    margin: 16px auto 10px 32px;
-                    padding-top: 0px;
-                    font-style: italic;
-                  "
-                >
-                  Attach in .pdf, .png, .jpeg or .jpg format
-                </div>
+  <div class="file-list-container">
+    <div 
+      v-for="(file, index) in answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || []"
+      :key="file.name + index"
+      class="file-preview"
+    >
+      <a
+        :href="file.rehydrated ? getFileDownloadUrl(file.id) : createObjectURL(file)"
+        target="_blank" rel="noopener noreferrer" class="file-link"
+      >
+        {{ file.name }}
+      </a>
+      <button 
+        @click="removeFile(currentQuestion.id, getCleanOptionLabel(option), index)"
+        class="remove-file-btn" type="button"
+      >
+        &times;
+      </button>
+    </div>
+  </div>
 
-                <div
-                  v-if="
-                    answers[currentQuestion.id] &&
-                    answers[currentQuestion.id][getCleanOptionLabel(option)]
-                  "
-                  class="saved-files"
-                ></div>
-              </div> -->
+  <div v-if="!answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || answers[currentQuestion.id].fileData[getCleanOptionLabel(option)].files.length < 3">
+    <input
+      type="file"
+      multiple
+      @change="handleFileChange($event, currentQuestion.id, getCleanOptionLabel(option))"
+      class="input-file-conditional"
+      accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
+    />
+    <div class="file-format-text">
+      (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt, xlsx)
+    </div>
+  </div>
+
+</div>
             </div>
           </div>
         </div>
-
-        <!-- <div
-          v-else-if="currentQuestion.type === 'checkbox'"
-          class="checkbox-group"
-        >
-          <div
-            v-for="(option, optionIndex) in currentQuestion.options"
-            :key="option"
-            class="option-wrapper"
-          >
-            <div class="checkbox-option">
-              <input
-                type="checkbox"
-                :value="option"
-                v-model="checkboxModel"
-                class="checkbox-input"
-              />
-
-              <label
-                v-if="option.includes('___')"
-                class="checkbox-label inline-input-label"
-              >
-                <span
-                  v-for="(part, index) in parseOptionForInline(
-                    getCleanOptionLabel(option)
-                  )"
-                  :key="index"
-                >
-                  {{ part }}
-                  <DynamicInlineInput
-                    v-if="
-                      index <
-                      parseOptionForInline(getCleanOptionLabel(option)).length -
-                        1
-                    "
-                    v-model="
-                      answers[currentQuestion.id].inlineText[
-                        `${currentQuestion.id}-${optionIndex}-${index}`
-                      ]
-                    "
-                    :disabled="!checkboxModel.includes(option)"
-                    @click.stop
-                  />
-                </span>
-              </label>
-              <label v-else class="checkbox-label">{{
-                getCleanOptionLabel(option)
-              }}</label>
-            </div>
-
-            <div
-              v-if="
-                currentQuestion.subOptions &&
-                currentQuestion.subOptions[getCleanOptionLabel(option)] &&
-                answers[currentQuestion.id].main?.includes(option)
-              "
-              class="sub-option-container"
-            ></div>
-          </div>
-        </div> -->
         <div
           v-else-if="currentQuestion.type === 'checkbox'"
           class="checkbox-group"
@@ -1399,18 +1368,19 @@ watch(
             class="checkbox-option-container"
           >
             <h4 v-if="index === 0" class="option-group-title">
-    Level of Development
-  </h4>
- <h4
-    v-if="
-      parseOption(option).type === 'checkbox' &&
-      index > 0 &&
-      currentQuestion?.options?.[index - 1] && parseOption(currentQuestion.options[index - 1]).type === 'radio'
-    "
-    class="option-group-title"
-  >
-    Pathogenesis Mechanisms
-  </h4>
+              Level of Development
+            </h4>
+            <h4
+              v-if="
+                parseOption(option).type === 'checkbox' &&
+                index > 0 &&
+                currentQuestion?.options?.[index - 1] &&
+                parseOption(currentQuestion.options[index - 1]).type === 'radio'
+              "
+              class="option-group-title"
+            >
+              Pathogenesis Mechanisms
+            </h4>
             <div class="checkbox-option">
               <template v-if="currentQuestion.id === 207 && answers[207]">
                 <div class="option-item">
@@ -1790,5 +1760,18 @@ watch(
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
   border-bottom: 1px solid #e5e7eb; /* A light separator line */
+}
+
+.file-list-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem; /* Adds a small space between each file in the list */
+  margin-bottom: 0.5rem; /* Adds space below the list before the next input */
+}
+
+.input-file-conditional {
+  display: block; /* Forces the input onto its own line */
+  margin-top: 0.5rem; /* Adds a bit of space above it */
 }
 </style>

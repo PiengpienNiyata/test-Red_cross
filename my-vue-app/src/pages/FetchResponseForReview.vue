@@ -25,10 +25,12 @@ const getCleanOptionLabel = (option: string): string => {
 
 // --- REUSABLE REHYDRATION FUNCTION ---
 // This function takes raw data from the API and builds the complex answer object
+// REPLACE the entire rehydrateAnswers function with this one
+
 const rehydrateAnswers = (submissionData: any): Record<number, any> => {
   let combinedAnswers = { ...submissionData.answers };
 
-  // 1. Unpack researcher_data
+  // 1. Unpack researcher and research context data (no change here)
   if (submissionData.researcher_data) {
     const rd = submissionData.researcher_data;
     combinedAnswers[1001] = rd.name || "";
@@ -39,11 +41,8 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
   }
   combinedAnswers[1006] = submissionData.disease_name || "";
   combinedAnswers[1007] = submissionData.intervention || "";
-
-  // 2. Unpack research_context
   if (submissionData.research_context) {
-    const { research_questions, molecular_signaling } =
-      submissionData.research_context;
+    const { research_questions, molecular_signaling } = submissionData.research_context;
     if (research_questions) {
       combinedAnswers[1008] = research_questions.principle || "";
       combinedAnswers[1009] = research_questions.factual_statement || "";
@@ -56,26 +55,32 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
     }
   }
 
-  // 3. Rehydrate uploaded files
+  // --- NEW, ROBUST FILE REHYDRATION LOGIC ---
+
+  // 2. First, group all uploaded files by their question ID
+  const filesByQuestionId: Record<string, any[]> = {};
   if (submissionData.uploaded_files) {
     submissionData.uploaded_files.forEach((file: any) => {
-      const qId = Number(file.question_id);
-      const question = getQuestionById2(qId);
-      if (!question) return;
+      const qId = file.question_id;
+      if (!filesByQuestionId[qId]) {
+        filesByQuestionId[qId] = [];
+      }
+      filesByQuestionId[qId].push({ id: file.id, name: file.file_name, rehydrated: true });
+    });
+  }
 
-      const filePlaceholder = {
-        id: file.id,
-        name: file.file_name,
-        rehydrated: true,
-      };
-      const rawAnswer = combinedAnswers[qId];
+  // 3. Now, iterate through the questions that have files and build the complex answer object
+  Object.keys(filesByQuestionId).forEach(qIdStr => {
+    const qId = Number(qIdStr);
+    const question = getQuestionById2(qId);
+    const rawAnswerString = combinedAnswers[qId];
+    const allFilesForQuestion = filesByQuestionId[qIdStr];
 
-      const originalOption = question.options?.find((opt) => {
+    if (question && typeof rawAnswerString === 'string') {
+      const originalOption = question.options?.find(opt => {
         const cleanOpt = getCleanOptionLabel(opt);
-        if (typeof rawAnswer !== "string") return false;
-        if (cleanOpt.includes(":"))
-          return rawAnswer.startsWith(cleanOpt.split(":")[0]);
-        return rawAnswer.startsWith(cleanOpt);
+        if (cleanOpt.includes(':')) return rawAnswerString.startsWith(cleanOpt.split(':')[0]);
+        return rawAnswerString.startsWith(cleanOpt);
       });
 
       if (originalOption) {
@@ -83,27 +88,25 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
         const newAnswerObject = {
           selectedOption: originalOption,
           inlineText: {},
-          fileData: { [cleanOriginalOption]: { files: [filePlaceholder] } },
-          subs: {},
+          fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
+          subs: {}
         };
-        if (originalOption.includes("___")) {
-          const parts = originalOption.split("___");
-          const prefix = parts[0].split("||")[0];
-          const suffix = parts[1].split("||")[0];
-          let userText = rawAnswer.split("||")[0];
-          userText = userText.replace(prefix, "");
-          userText = userText.replace(suffix, "");
-          const optionIndex = question.options?.indexOf(originalOption);
-          if (optionIndex !== undefined && optionIndex > -1) {
-            newAnswerObject.inlineText = {
-              [`${qId}-${optionIndex}-0`]: userText,
-            };
-          }
+        
+        if (originalOption.includes('___')) {
+            const parts = originalOption.split('___');
+            const prefix = parts[0].split('||')[0];
+            const suffix = parts[1].split('||')[0];
+            let userText = rawAnswerString.split('||')[0];
+            userText = userText.replace(prefix, '').replace(suffix, '');
+            const optionIndex = question.options?.indexOf(originalOption);
+            if (optionIndex !== undefined && optionIndex > -1) {
+                newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
+            }
         }
         combinedAnswers[qId] = newAnswerObject;
       }
-    });
-  }
+    }
+  });
 
   // 4. Rehydrate confidentiality level
   if (submissionData.confidentiality_level) {
@@ -112,17 +115,12 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
     if (match) {
       const mainOption = match[1].trim();
       const subOption = match[2].trim();
-      combinedAnswers[3001] = {
-        selectedOption: mainOption,
-        subs: { [mainOption]: subOption },
-      };
+      combinedAnswers[3001] = { selectedOption: mainOption, subs: { [mainOption]: subOption } };
     } else {
-      combinedAnswers[3001] = {
-        selectedOption: confidentialityString,
-        subs: {},
-      };
+      combinedAnswers[3001] = { selectedOption: confidentialityString, subs: {} };
     }
   }
+
   return combinedAnswers;
 };
 

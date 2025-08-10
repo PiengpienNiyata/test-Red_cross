@@ -639,7 +639,7 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
           class="sub-answer-block"
         >
           <strong>Attached Files:</strong>
-          <ul>
+          <!-- <ul>
             <li
               v-for="(fileInfo, key) in (q.answer as any).fileData"
               :key="key"
@@ -688,7 +688,51 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
                 {{ file.name }}
               </a>
             </li>
-          </ul>
+          </ul> -->
+        <ul>
+  <template v-for="(fileInfo, key) in (q.answer as any).fileData" :key="key">
+    <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
+      <a
+        v-if="'rehydrated' in file"
+        :href="getFileDownloadUrl(file.id)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ file.name }}
+      </a>
+      <a
+        v-else
+        :href="createObjectURL(file)"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {{ file.name }}
+      </a>
+    </li>
+  </template>
+  
+  <li
+    v-for="file in normalizeFiles((q.answer as any).files)"
+    :key="file.name"
+  >
+    <a
+      v-if="'rehydrated' in file"
+      :href="getFileDownloadUrl(file.id)"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {{ file.name }}
+    </a>
+    <a
+      v-else
+      :href="createObjectURL(file)"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {{ file.name }}
+    </a>
+  </li>
+</ul>
         </div>
       </div>
 

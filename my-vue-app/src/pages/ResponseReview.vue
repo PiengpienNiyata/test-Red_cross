@@ -945,121 +945,7 @@ const reviewStatusText = computed(() => {
 
       <div class="questionnaire page-break-before">
         <h3 class="aa">Explore the precision intervention</h3>
-        <!-- <div v-for="q in secondFormAnswers" :key="q.id" class="answer-block">
-          <label class="question-label">{{ q.question }}</label>
 
-          <p v-if="typeof q.answer === 'string'" class="answer-text">
-            <span style="color: red">answer : </span
-            >{{ q.answer.split("||")[0] }}
-          </p>
-          <p v-else-if="Array.isArray(q.answer)" class="answer-text">
-            <span style="color: red">answer : </span>{{ q.answer.join(", ") }}
-          </p>
-          <div v-else-if="typeof q.answer === 'object' && q.answer !== null">
-            <div
-              v-if="
-                typeof q.answer === 'object' &&
-                q.answer !== null &&
-                'selectedOption' in q.answer
-              "
-            >
-              <p class="answer-text">
-                <span style="color: red">answer : </span>
-                {{ (q.answer as any).selectedOption.split("||")[0] }}
-                <span
-                  v-for="(subAnswer, key) in (q.answer as any).subs"
-                  :key="key"
-                >
-                  (
-                  {{
-                    Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-                  }}
-                  )
-                </span>
-              </p>
-
-              <div v-if="(q.answer as any).fileData" class="sub-answer-block">
-                <strong>Attached Files:</strong>
-                <ul>
-                  <li
-                    v-for="(fileInfo, key) in (q.answer as any).fileData"
-                    :key="key"
-                  >
-                   
-                    <span
-                      v-for="file in (fileInfo.files as FileItem[])"
-                      :key="file.name"
-                      style="margin-left: 8px"
-                    >
-                      <a
-                        v-if="'rehydrated' in file"
-                        :href="getFileDownloadUrl(file.id)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {{ file.name }}
-                      </a>
-                      <a
-                        v-else
-                        :href="createObjectURL(file)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        {{ file.name }}
-                      </a>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div
-              v-else-if="
-                typeof q.answer === 'object' &&
-                q.answer !== null &&
-                'main' in q.answer
-              "
-            >
-              <p class="answer-text">
-                <span style="color: red">answer : </span
-                >{{ formatCheckboxAnswer(q.answer) }}
-              </p>
-            </div>
-
-            <div
-              v-else-if="
-                typeof q.answer === 'object' &&
-                q.answer !== null &&
-                'files' in q.answer
-              "
-            >
-             
-              <ul>
-                <li
-                  v-for="file in ((q.answer as any).files as FileItem[])"
-                  :key="file.name"
-                >
-                  <a
-                    v-if="'rehydrated' in file"
-                    :href="getFileDownloadUrl(file.id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                  <a
-                    v-else
-                    :href="createObjectURL(file)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div> -->
         <div
           v-for="q in secondFormAnswers"
           :key="q.id"
@@ -1104,11 +990,11 @@ const reviewStatusText = computed(() => {
                 <ul class="mechanism-list">
                   <li
                     v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
-      const masterOptions = getQuestionById2(207)?.options || [];
-      const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
-      const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
-      return indexA - indexB;
-    })"
+                    const masterOptions = getQuestionById2(207)?.options || [];
+                    const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
+                    const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
+                    return indexA - indexB;
+                    })"
                     :key="mechanism"
                   >
                     {{
@@ -1151,14 +1037,13 @@ const reviewStatusText = computed(() => {
             >
               <strong>Attached Files:</strong>
               <ul>
-                <li
+                <template
                   v-for="(fileInfo, key) in (q.answer as any).fileData"
                   :key="key"
                 >
-                  <span
+                  <li
                     v-for="file in normalizeFiles(fileInfo.files)"
                     :key="file.name"
-                    style="margin-left: 8px"
                   >
                     <a
                       v-if="'rehydrated' in file"
@@ -1176,8 +1061,9 @@ const reviewStatusText = computed(() => {
                     >
                       {{ file.name }}
                     </a>
-                  </span>
-                </li>
+                  </li>
+                </template>
+
                 <li
                   v-for="file in normalizeFiles((q.answer as any).files)"
                   :key="file.name"
@@ -1209,81 +1095,32 @@ const reviewStatusText = computed(() => {
           ></div>
 
           <div v-if="getAnswerDifference(q.id)" class="previous-answer-block">
-            <!-- <p class="previous-answer-text">
-              <span style="color: grey; margin-left: 16px"
-                >Previous Answer (version {{ currentVersion - 1 }}) :
-              </span>
-              <template v-if="typeof getAnswerDifference(q.id) === 'string'">
-                {{ getAnswerDifference(q.id).split("||")[0] }}
-              </template>
-              <template v-else-if="q.id === 207">
-                {{ formatQ207Answer(q, getAnswerDifference(q.id)) }}
-              </template>
-              <template
-                v-else-if="
-                  getAnswerDifference(q.id) &&
-                  'selectedOption' in getAnswerDifference(q.id)
-                "
-              >
-                {{ getConstructedAnswer(q, getAnswerDifference(q.id)) }}
-              </template>
-              <template
-                v-else-if="
-                  getAnswerDifference(q.id) &&
-                  'main' in getAnswerDifference(q.id)
-                "
-              >
-                {{ formatCheckboxAnswer(q, getAnswerDifference(q.id)) }}
-              </template>
-            </p>
-
-            <div
-              v-if="
-                getAnswerDifference(q.id).fileData ||
-                getAnswerDifference(q.id).files
-              "
-              class="sub-answer-block"
-            >
-              <strong style="color: #757575">Previous Files:</strong>
-              <ul class="previous-files-list">
-                <li
-                  v-for="(fileInfo, key) in getAnswerDifference(q.id).fileData"
-                  :key="key"
-                >
-                  <span
-                    v-for="file in normalizeFiles(fileInfo.files)"
-                    :key="file.name"
-                  >
-                    <a
-                      v-if="'rehydrated' in file"
-                      :href="getFileDownloadUrl(file.id)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {{ file.name }}
-                    </a>
-                  </span>
-                </li>
-                <li
-                  v-for="file in normalizeFiles(
-                    getAnswerDifference(q.id).files
-                  )"
-                  :key="file.name"
-                >
-                  <a
-                    v-if="'rehydrated' in file"
-                    :href="getFileDownloadUrl(file.id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                </li>
-              </ul>
-            </div> -->
             <div class="previous-answer-heading">
               Previous Answer (version {{ currentVersion - 1 }})
             </div>
+
+            <!-- <pre
+              v-if="q.id === 201"
+              style="
+                font-size: 10px;
+                background: #eee;
+                padding: 5px;
+                white-space: pre-wrap;
+                word-break: break-all;
+                text-align: left;
+                color: black;
+              "
+            >
+  DEBUG INFO FOR Q201:
+  - Previous Answer for 201: {{ JSON.stringify(previousAnswers[201]) }}
+  - Previous Answer for 201.5: {{ JSON.stringify(previousAnswers[201.5]) }}
+  - Does prev 201 answer start with 'Yes, staging only.'? {{
+                (previousAnswers[201] as any)?.selectedOption?.startsWith(
+                  "Yes, staging only."
+                )
+              }}
+</pre
+            > -->
 
             <div v-if="q.id === 207" class="previous-answer-text">
               <div
@@ -1307,11 +1144,11 @@ const reviewStatusText = computed(() => {
                 <ul class="mechanism-list">
                   <li
                     v-for="mechanism in [...(getAnswerDifference(q.id) as any).checkboxes].sort((a, b) => {
-        const masterOptions = getQuestionById2(207)?.options || [];
-        const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
-        const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
-        return indexA - indexB;
-      })"
+                    const masterOptions = getQuestionById2(207)?.options || [];
+                    const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
+                    const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
+                    return indexA - indexB;
+                })"
                     :key="mechanism"
                   >
                     {{
@@ -1355,11 +1192,11 @@ const reviewStatusText = computed(() => {
             >
               <strong style="color: #757575">Previous Files:</strong>
               <ul class="previous-files-list">
-                <li
+                <template
                   v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
                   :key="key"
                 >
-                  <span
+                  <li
                     v-for="file in normalizeFiles(fileInfo.files)"
                     :key="file.name"
                   >
@@ -1371,8 +1208,9 @@ const reviewStatusText = computed(() => {
                     >
                       {{ file.name }}
                     </a>
-                  </span>
-                </li>
+                  </li>
+                </template>
+
                 <li
                   v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
                   :key="file.name"
@@ -1388,6 +1226,44 @@ const reviewStatusText = computed(() => {
                 </li>
               </ul>
             </div>
+
+<div 
+  v-if="
+    q.id === 201 && 
+    typeof previousAnswers[201] === 'string' &&
+    previousAnswers[201].startsWith('Yes, staging only.') &&
+    previousAnswers[201.5]
+  " 
+  class="orphaned-previous-answer"
+>
+  <label class="question-label" style="font-style: italic; color: #757575;">
+    {{ getQuestionById2(201.5)?.question }}
+  </label>
+  <p class="previous-answer-text" style="margin-left: 16px;">
+    {{ getConstructedAnswer(getQuestionById2(201.5)!, previousAnswers[201.5]) }}
+  </p>
+  
+  <div
+    v-if="(previousAnswers[201.5] as any).fileData || (previousAnswers[201.5] as any).files"
+    class="sub-answer-block"
+  >
+    <strong style="color: #757575">Previous Files:</strong>
+    <ul class="previous-files-list">
+      <template v-for="(fileInfo, key) in (previousAnswers[201.5] as any).fileData" :key="key">
+        <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
+          <a
+            v-if="'rehydrated' in file"
+            :href="getFileDownloadUrl(file.id)"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ file.name }}
+          </a>
+        </li>
+      </template>
+    </ul>
+  </div>
+</div>
           </div>
         </div>
         <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">
@@ -2463,5 +2339,11 @@ const reviewStatusText = computed(() => {
   border-radius: 8px;
   padding: 1rem;
   margin-left: 0; /* Override the default margin-left for a full-width highlight */
+}
+
+.orphaned-previous-answer {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dotted #e0e0e0; /* A light dotted separator */
 }
 </style>
