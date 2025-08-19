@@ -11,9 +11,14 @@ import Review from "@/pages/ResponseReview.vue";
 import AdminLogin from "@/pages/AdminLogin.vue"; 
 import SummaryPage from "@/pages/Summary.vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
+import InstructionPage1 from "@/pages/InstructionPage1.vue";
+import InstructionPage2 from "@/pages/InstructionPage2.vue";
 
 const routes = [
-  { path: "/", redirect: "/glossary" },
+  { path: "/", redirect: "/instruction-1" },
+
+    { path: "/instruction-1", name: "Instruction1", component: InstructionPage1 },
+  { path: "/instruction-2", name: "Instruction2", component: InstructionPage2 },
 
   { path: "/glossary", name: "Glossary", component: GlossaryPage },
   {

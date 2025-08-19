@@ -78,7 +78,7 @@ const closeGlossaryModal = () => {
 
 <template>
   <div class="glossary-page">
-    <h2 class="title">Important Glossary</h2>
+    <h2>Important Glossary</h2>
     <p class="subtitle">
       Please review the following key terms before proceeding to the
       questionnaire.

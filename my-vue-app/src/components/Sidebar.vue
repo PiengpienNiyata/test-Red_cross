@@ -40,6 +40,82 @@
     </template>
     <div v-else-if="isFetchingPage" class="version-history"></div>
 
+    <template v-else-if="isInstruction">
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+          :style="{
+            color: isActive('/instruction-1') ? '#EB4648' : '#A4A4A4',
+          }"
+        >
+          <!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
+
+          <img
+            :src="isActive('/instruction-1') ? icon1 : icon2"
+            alt="icon"
+            class="icon"
+          />
+          <span style="text-align: center">What is RIRM?</span>
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+          :style="{
+            color: isActive('/instruction-2') ? '#EB4648' : '#A4A4A4',
+          }"
+        >
+          <img
+            :src="isActive('/instruction-2') ? icon1 : icon2"
+            alt="icon"
+            class="icon"
+          />
+          <span style="text-align: center"
+            >Instructions for<br />Filling Out <br />the RIRM
+            Questionnaire</span
+          >
+        </div>
+      </div>
+      <div class="divider"></div>
+
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+          :style="{
+            color: isActive('/glossary') ? '#EB4648' : '#A4A4A4',
+          }"
+        >
+          <img
+            :src="isActive('/glossary') ? icon4 : icon3"
+            alt="icon"
+            class="icon"
+          />
+          <span style="display: inline-block; width: 80px; text-align: center"
+            >Important Glossary</span
+          >
+        </div>
+      </div>
+      <!-- <div class="divider"></div>
+
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+          :style="{ color: isActive('/summary') ? '#EB4648' : '#A4A4A4' }"
+        >
+          <img
+            :src="isActive('/summary') ? icon4 : icon3"
+            alt="icon"
+            class="icon"
+          />
+          <span style="display: inline-block; width: 80px; text-align: center"
+            >Steps of<br />extrapolation</span
+          >
+        </div>
+      </div> -->
+    </template>
+
     <template v-else>
       <div class="sidebar-item">
         <div
@@ -179,12 +255,17 @@ const route = useRoute();
 const isReviewPage = computed(() => route.path === "/Review");
 const isAdminDashboard = computed(() => route.path === "/admin/dashboard");
 const isFetchingPage = computed(() => {
-  return ["ReviewResponseByVersion", "ReviewResponse", "Glossary"].includes(
+  return ["ReviewResponseByVersion", "ReviewResponse"].includes(
+    //, "Glossary"
     route.name as string
   );
 });
-const isGlossaryPage = computed(() => route.path === "/glossary");
-
+// const isGlossaryPage = computed(() => route.path === "/glossary");
+const isInstruction = computed(() => {
+  return ["Instruction1", "Instruction2", "Glossary"].includes(
+    route.name as string
+  );
+});
 // --- METHOD CONVERTED TO A FUNCTION (from the second script) ---
 const isActive = (path: string) => {
   return route.path === path;
@@ -403,7 +484,6 @@ const redirectToLogin = () => {
   align-items: center;
 }
 
-
 .modal-content {
   max-width: 400px;
   background: white;
@@ -421,7 +501,7 @@ const redirectToLogin = () => {
 
 .modal-content p {
   margin-bottom: 1.5rem;
-  color: #4B5563;
+  color: #4b5563;
   line-height: 1.6;
 }
 
@@ -461,8 +541,8 @@ const redirectToLogin = () => {
   background-color: #eb4648;
   color: white;
 } */
-.confirm-btn:hover, .dashboard-btn:hover {
+.confirm-btn:hover,
+.dashboard-btn:hover {
   background-color: #c9302c;
 }
-
 </style>

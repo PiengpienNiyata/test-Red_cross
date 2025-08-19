@@ -103,7 +103,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "B-1: Are there any staging and/or typing classification of the disease?",
             options: [
-              "Yes, both staging and typing. ref : ___||files",
+              "Yes, both staging and typing. (Please explain : ___ )||files",
               "Yes, staging only.",//||sub
               "Yes, typing only. (Please define the typing : ___)||files",
               "No (Please explain : ___ )||files",
@@ -115,15 +115,15 @@ export const questionnaireData: Questionnaire2[] = [
             // },
             // subOptions: {
             //   "Yes, staging only.": [
-            //     "Have 2 stages ||files",
-            //     "Have more than 2 stages ||files",
+            //     "Have 2 stages  (Please explain : ___ )||files",
+            //     "Have more than 2 stages  (Please explain : ___ )||files",
             //   ],
             // },
 
 
             
             next: {
-              "Yes, both staging and typing. ref : ___": 202,
+              "Yes, both staging and typing. (Please explain : ___ )": 202,
               "Yes, staging only.": 201.5,
               "Yes, typing only. (Please define the typing : ___)": 202,
               "No (Please explain : ___ )": 202,
@@ -232,10 +232,13 @@ export const questionnaireData: Questionnaire2[] = [
             subOptionsType: { Inflammation: "radio" },
             subOptions: {
               Inflammation: [
-                "Innate Immunity",
-                "Innate acquire immunity",
-                "Acquire immunity",
-                "Toxic or infectious",
+                "Graft versus host (GVH) (HLA)",
+                "Innate immunity (Pathogen Associated Molecular Pattern)",
+                "Inflammation's Damage Associated Molecular Pattern (DAMP) host derived signal secondary from chronic inflammation or damage cell",
+                "Acquire immunity (antigen / antibody reactions)",
+                "Innate -acquired immunity",
+                "Auto antibody (cGAS auto inflammation)",
+                "Inflammaging",
               ],
             },
 

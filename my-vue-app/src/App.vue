@@ -10,10 +10,13 @@
         <h1 class="section-title" v-else-if="isReviewPage">
           Researcher's Response
         </h1>
+        <h1 class="section-title" v-else-if="isInstruction">
+          Introduction for Researcher
+        </h1>
         <h1 class="section-title" v-else-if="!isLoginPage">
           Questionnaire for Researcher
         </h1>
-
+        
         <div class="content-body" :class="{ 'center-content': isLoginPage }">
           <Sidebar v-if="!isLoginPage" />
           <div
@@ -51,6 +54,12 @@ const pageContent = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();
 const store = useQuestionnaireStore(); // <-- GET THE STORE INSTANCE
+
+const isInstruction = computed(() => {
+  return ["Instruction1", "Instruction2", "Glossary"].includes(
+    route.name as string
+  );
+});
 
 // --- NEW STATE FOR SESSION MODAL ---
 const isSessionExpiredModalVisible = ref(false);
@@ -159,7 +168,7 @@ watch(
   display: flex;
   width: 100%;
   /* This allows the sidebar and content to stretch to their full height. */
-  align-items: stretch; 
+  align-items: stretch;
 }
 
 .sidebar {
