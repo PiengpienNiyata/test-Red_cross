@@ -1,68 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import GlossaryModal from "@/components/GlossaryModal.vue"; // Import the modal component
 import { useRouter } from "vue-router";
-import GlossaryModal from "@/components/GlossaryModal.vue";
+import { glossaryData } from "@/stores/glossary"; // <-- Import from new store
 
 const router = useRouter();
 const isGlossaryVisible = ref(false);
-
-const glossaryData = ref([
-  {
-    term: "Remission",
-    definition:
-      "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.",
-  },
-  {
-    term: "True remission",
-    definition:
-      "The occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease.",
-  },
-  {
-    term: "Unstable remission",
-    definition:
-      "The status in which true remission has occurred while the source of the causative signal still persists.",
-  },
-  {
-    term: "Molecular Stages of the Disease",
-    definition:
-      "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
-  },
-  {
-    term: "Molecular Types of the Disease",
-    definition:
-      "Distinct clusters of disease characteristics that share common molecular origins—driven by the same originating cell and signal—but are further influenced by additional distinct signals.",
-  },
-  {
-    term: "Molecular Clinico-pathological Cascade (Molecular Cascade)",
-    definition:
-      "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.",
-  },
-  {
-    term: "Typing",
-    definition:
-      "Distinguishes variants that share a core mechanism but differ by specific additional triggers.",
-  },
-  {
-    term: "Autocrine",
-    definition:
-      "A cell signaling mechanism where a cell secretes a molecule that binds to receptors on the same cell, leading to a response within that cell.",
-  },
-  {
-    term: "Paracrine",
-    definition:
-      "A cell signaling mechanism where a cell signals to neighboring cells.",
-  },
-  {
-    term: "Endocrine",
-    definition:
-      "A cell signaling mechanism where a cell signals to distant cells, such as through the bloodstream.",
-  },
-      {
-    term: "Contradiction",
-  definition: "If different types or stages of a disease show contradictory responses (divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that what we call one disease might actually represent separate disease entities with converging symptoms. It can also mean the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.",
-  },
-]);
-
 const goToNextPage = () => {
   router.push("/questionnairesResearcher");
 };
@@ -87,7 +30,7 @@ const closeGlossaryModal = () => {
     <dl class="glossary-list">
       <div v-for="item in glossaryData" :key="item.term" class="glossary-item">
         <dt class="term">{{ item.term }}</dt>
-        <dd class="definition">{{ item.definition }}</dd>
+        <dd class="definition" v-html="item.definition"></dd>
       </div>
     </dl>
 
@@ -112,39 +55,41 @@ const closeGlossaryModal = () => {
 
 <style scoped>
 .glossary-page {
-  padding: 16px 24px;
+  padding: 2rem;
+  /* max-width: 800px; */
+  margin: 0 auto;
 }
-.title {
-  font-size: 24px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 8px;
-}
+/* h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+} */
 .subtitle {
-  font-size: 16px;
+  font-size: 1rem;
   color: #555;
-  margin-bottom: 24px;
+  margin-bottom: 2rem;
 }
 .glossary-list {
   margin-top: 1rem;
 }
 .glossary-item {
-  margin-bottom: 1.5rem;
-  border-left: 3px solid #fbe9e7;
-  padding-left: 1rem;
+  margin-bottom: 2rem;
+  border-left: 3px solid #fce8e6;
+  padding-left: 1.5rem;
 }
 .term {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: #eb4648;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 .definition {
   margin-left: 0;
   font-size: 1rem;
-  line-height: 1.6;
-  color: #555;
+  line-height: 1.7;
+  color: #333;
 }
+
 .btn-container {
   margin-top: 40px;
 
@@ -164,5 +109,15 @@ const closeGlossaryModal = () => {
 }
 .next-btn:hover {
   background-color: #c9302c;
+}
+
+/* Deep selector to style the HTML from the store */
+:deep(ul), :deep(ol) {
+    padding-left: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+:deep(strong) {
+    font-weight: 600;
 }
 </style>

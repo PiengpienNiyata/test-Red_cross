@@ -1,77 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { glossaryData } from "@/stores/glossary";
 
 defineProps<{
   isVisible: boolean;
 }>();
 const emit = defineEmits(['close']);
-
-const glossaryData = ref([
-  {
-    term: "Remission",
-    definition:
-      "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently."
-  },
-  {
-    term: "True remission",
-    definition:
-      "The occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease.",
-  },
-  {
-    term: "Unstable remission",
-    definition:
-      "The status in which true remission has occurred while the source of the causative signal still persists.",
-  },
-  {
-    term: "Molecular Stages of the Disease",
-    definition:
-      "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
-  },
-  {
-    term: "Molecular Types of the Disease",
-    definition:
-      "Distinct clusters of disease characteristics that share common molecular origins—driven by the same originating cell and signal—but are further influenced by additional distinct signals.",
-  },
-  {
-    term: "Molecular Clinico-pathological Cascade (Molecular Cascade)",
-    definition:
-      "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.",
-  },
-      {
-    term: "Typing",
-    definition: "distinguishes variants that share a core mechanism but differ by specific additional triggers.",
-  },
-  {
-    term: "Autocrine",
-    definition:
-      "A cell signaling mechanism where a cell secretes a molecule that binds to receptors on the same cell, leading to a response within that cell.",
-  },
-  {
-    term: "Paracrine",
-    definition: "A cell signaling mechanism where a cell signals to neighboring cells.",
-  },
-  {
-    term: "Endocrine",
-    definition: "A cell signaling mechanism where a cell signals to distant cells, such as through the bloodstream.",
-  },
-    {
-    term: "Contradiction",
-  definition: "If different types or stages of a disease show contradictory responses (divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that what we call one disease might actually represent separate disease entities with converging symptoms. It can also mean the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.",
-  },
-]);
 </script>
 
 <template>
   <div v-if="isVisible" class="modal-overlay" @click.self="emit('close')">
     <div class="modal-content">
-      <button class="close-button" @click="emit('close')">&times;</button>
-      <h2 class="modal-title">Glossary</h2>
-      <dl class="glossary-list">
-        <div v-for="item in glossaryData" :key="item.term" class="glossary-item">
-          <dt class="term">{{ item.term }}</dt>
-          <dd class="definition">{{ item.definition }}</dd>
-        </div>
-      </dl>
+      <!-- REPLACE the content of modal-content -->
+<div class="modal-header">
+  <h2 class="modal-title">Glossary</h2>
+  <button class="close-button" @click="emit('close')">&times;</button>
+</div>
+<div class="modal-body">
+  <dl class="glossary-list">
+    <div v-for="item in glossaryData" :key="item.term" class="glossary-item">
+      <dt class="term">{{ item.term }}</dt>
+      <dd class="definition" v-html="item.definition"></dd>
+    </div>
+  </dl>
+</div>
     </div>
   </div>
 </template>
@@ -87,40 +38,61 @@ const glossaryData = ref([
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
-
 .modal-content {
   background: white;
-  padding: 2rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
+  max-width: 800px;
+  max-height: 85vh;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  text-align: left;
+  
+  /* NEW: Use flexbox to structure the modal */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Hide the main scrollbar */
+}
+
+/* --- FIXED HEADER --- */
+.modal-header {
+  padding: 0 2.5rem;
+  position: relative;
+  flex-shrink: 0; /* Prevents the header from shrinking */
+
 }
 
 .modal-title {
-  margin-top: 0;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #333;
-  border-bottom: 1px solid #eee;
+  /* border-bottom: 1px solid #eee; */
   padding-bottom: 1rem;
 }
 
 .close-button {
   position: absolute;
-  top: 10px;
-  right: 30px;
+  /* top: 1rem; */
+  right: 2.5rem; 
   border: none;
   background: none;
-  font-size: 2rem;
+  font-size: 2.5rem;
   cursor: pointer;
   color: #aaa;
+ line-height: 0.4;  
+ padding-bottom: 1rem;
+
 }
 .close-button:hover {
   color: #333;
+}
+
+/* --- SCROLLABLE BODY --- */
+.modal-body {
+  padding: 0 2.5rem 2rem 2.5rem; /* Add padding to the body instead of the main container */
+  overflow-y: auto; /* This makes ONLY the body scrollable */
 }
 
 .glossary-list {
@@ -128,20 +100,35 @@ const glossaryData = ref([
 }
 
 .glossary-item {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 3px solid #fce8e6;
+  padding-left: 1.5rem;
 }
 
 .term {
   font-weight: bold;
-  font-size: 1.1rem;
-  color: #eb4648; /* Matching your theme's red color */
-  margin-bottom: 0.25rem;
+  font-size: 1.2rem;
+  color: #eb4648;
+  margin-bottom: 0.5rem;
 }
 
 .definition {
   margin-left: 0;
   font-size: 1rem;
-  line-height: 1.6;
-  color: #555;
+  line-height: 1.7;
+  color: #333;
+}
+
+/* Deep selector to style the HTML from the store */
+:deep(ul), :deep(ol) {
+    padding-left: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+:deep(strong) {
+    font-weight: 600;
+}
+:deep(em) {
+    font-style: italic;
 }
 </style>
