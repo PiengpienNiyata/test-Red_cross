@@ -1029,6 +1029,15 @@ watch(
   },
   { deep: true }
 );
+
+// Add this watch effect anywhere in your <script setup>
+watch(currentQuestion, (newQuestion) => {
+  if (newQuestion) {
+    store.setCurrentQuestionId(newQuestion.id);
+  } else {
+    store.setCurrentQuestionId(null);
+  }
+}, { immediate: true }); // immediate: true ensures it runs on component load
 </script>
 
 <template>

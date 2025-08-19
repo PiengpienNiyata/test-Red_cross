@@ -133,7 +133,7 @@
             alt="icon"
             class="icon"
           />
-          <span style="text-align: center">Questionnaire</span>
+          <span style="text-align: center">General Information</span>
         </div>
       </div>
       <div class="divider"></div>
@@ -141,24 +141,38 @@
       <div class="sidebar-item">
         <div
           class="sidebar-item-2"
-          :style="{
-            color: isActive('/questionnairesResearcher2')
-              ? '#EB4648'
-              : '#A4A4A4',
-          }"
+      :style="{ color: isSectionA_Active ? '#EB4648' : '#A4A4A4' }"
+
         >
           <img
-            :src="isActive('/questionnairesResearcher2') ? icon1 : icon2"
+        :src="isSectionA_Active ? icon1 : icon2"
             alt="icon"
             class="icon"
           />
           <span style="text-align: center"
-            >Explore the<br />precision <br />intervention</span
+            >Section A<br />Treatment/ Intervention-Related
+            <br />Information</span
           >
         </div>
       </div>
       <div class="divider"></div>
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+      :style="{ color: isSectionB_Active ? '#EB4648' : '#A4A4A4' }"
 
+        >
+          <img
+        :src="isSectionB_Active ? icon1 : icon2"
+            alt="icon"
+            class="icon"
+          />
+          <span style="text-align: center"
+            >Section B<br />Disease-Related <br />Information</span
+          >
+        </div>
+      </div>
+      <div class="divider"></div>
       <div class="sidebar-item">
         <div
           class="sidebar-item-2"
@@ -235,6 +249,7 @@ import icon4 from "@/assets/icon4.png";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRoute, useRouter } from "vue-router";
 import { computed, ref } from "vue";
+import { storeToRefs } from "pinia"; // <-- 1. IMPORT
 
 const showLogoutConfirmModal = ref(false);
 const showLogoutSuccessModal = ref(false);
@@ -251,6 +266,7 @@ interface VersionHistoryItem {
 const router = useRouter();
 const store = useQuestionnaireStore();
 const route = useRoute();
+const { currentQuestionId } = storeToRefs(store); // <-- 2. GET from store
 
 const isReviewPage = computed(() => route.path === "/Review");
 const isAdminDashboard = computed(() => route.path === "/admin/dashboard");
@@ -278,6 +294,23 @@ const selectVersion = (versionItem: VersionHistoryItem) => {
     router.push(`/review-response/${token}/${versionItem.version}`);
   }
 };
+// REPLACE your existing isSectionA_Active computed property
+const isSectionA_Active = computed(() => {
+  // Only highlight if we are on the second questionnaire page
+  if (route.name !== 'QuestionnairesResearcher2') return false;
+  
+  if (!currentQuestionId.value) return false;
+  return currentQuestionId.value >= 100 && currentQuestionId.value < 200;
+});
+
+// REPLACE your existing isSectionB_Active computed property
+const isSectionB_Active = computed(() => {
+  // Only highlight if we are on the second questionnaire page
+  if (route.name !== 'QuestionnairesResearcher2') return false;
+
+  if (!currentQuestionId.value) return false;
+  return currentQuestionId.value >= 200 && currentQuestionId.value < 300;
+});
 
 const statusOptions = [
   { value: "", text: "All Statuses" },

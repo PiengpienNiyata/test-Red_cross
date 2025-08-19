@@ -52,6 +52,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     versionHistory: [] as VersionHistoryItem[],
     latestVersion: 0 as number,
      authToken: null as string | null,
+     currentQuestionId: null as number | null,
   }),
 
   actions: {
@@ -100,6 +101,10 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
         this.latestVersion = versions[0].version;
       }
     },
+
+      setCurrentQuestionId(id: number | null) { // <-- ADD THIS ACTION
+    this.currentQuestionId = id;
+  },
 
     hideReviewerFeedback() {
       this.showReviewerFeedback = false;
@@ -151,7 +156,8 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-      
+        this.currentQuestionId = null; // <-- ADD THIS
+
     },
         resetQuestionnaire() {
       this.latestVersion = 0;
@@ -178,7 +184,8 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-      
+        this.currentQuestionId = null; // <-- ADD THIS
+
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {
@@ -190,6 +197,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.researcherID = null;
       // this.finalRoute = null;
       this.liveFileAnswers = [];
+  this.currentQuestionId = null; // <-- ADD THIS
 
       this.suggestedRoutes = [];
     },
