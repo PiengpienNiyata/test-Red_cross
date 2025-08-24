@@ -257,175 +257,6 @@ const formatCheckboxAnswer = (answer: any): string => {
 const submissionSuccess = ref(false);
 const submissionError = ref(false);
 
-// const submitFinalResponse = async () => {
-//   try {
-//     // console.log(store.currentToken);
-//     // console.log(store.currentVersion);
-//     // console.log(store.answers);
-//     // console.log(store.researcherID);
-//     // console.log(store.researcher);
-//     // --- Step 1 & 2: Validate and create researcher (No changes here) ---
-//     store.processResearcherInfo(store.answers as Record<string, string>);
-//     const { name, project_name, branch_info, phone_number, email } =
-//       store.researcher;
-//     if (!name || !project_name || !branch_info || !phone_number || !email) {
-//       alert("Please fill in all researcher details before submitting!");
-//       return;
-//     }
-//     let researcherID = store.researcherID;
-//     if (!researcherID) {
-//       const researcherResponse = await fetch(
-//         `${VITE_API_BASE_URL}/api/researcher`,
-//         {
-//           method: "POST",
-//           headers: { "Content-Type": "application/json" },
-//           body: JSON.stringify(store.researcher),
-//         }
-//       );
-//       const researcherResult = await researcherResponse.json();
-//       if (!researcherResponse.ok) throw new Error("Failed to save researcher");
-//       researcherID = researcherResult.researcher.id;
-//       store.setResearcherID(researcherID!);
-//     }
-
-//     // --- Step 3: Separate all answers correctly (No changes here) ---
-//     const fileAnswersToUpload = store.liveFileAnswers;
-
-//     const existingFileIds: number[] = [];
-//     const otherAnswers: Record<string, any> = {};
-//     const researchContext: Record<string, any> = {
-//       research_questions: {},
-//       molecular_signaling: {},
-//     };
-//     let confidentialityLevel = "";
-
-//     // This loop now only needs to handle existing files and other answer types
-//     Object.entries(answers.value).forEach(([id, value]) => {
-//       // Find EXISTING files (rehydrated from DB)
-//       if (value && typeof value === "object") {
-//         if (value.files && Array.isArray(value.files)) {
-//           value.files.forEach((file: any) => {
-//             if (file.rehydrated) existingFileIds.push(file.id);
-//           });
-//         }
-//         if (value.fileData) {
-//           Object.values(value.fileData).forEach((fileInfo: any) => {
-//             if (fileInfo.files && Array.isArray(fileInfo.files)) {
-//               fileInfo.files.forEach((file: any) => {
-//                 if (file.rehydrated) existingFileIds.push(file.id);
-//               });
-//             }
-//           });
-//         }
-//       }
-//       const numericId = Number(id);
-
-//       // Find the original question from the questionnaire data
-//       const question = getQuestionById2(numericId);
-
-//       // --- THIS IS THE KEY CHANGE ---
-//       // If the question is found and it's a radio button, use our new helper
-//       if (
-//         question &&
-//         question.type === "radio" &&
-//         typeof value === "object" &&
-//         value.selectedOption
-//       ) {
-//         otherAnswers[id] = getConstructedAnswer(question, value);
-//       } else if (Number(id) >= 1008 && Number(id) <= 1010) {
-//         const keyMap: Record<string, string> = {
-//           "1008": "principle",
-//           "1009": "factual_statement",
-//           "1010": "implication",
-//         };
-//         researchContext.research_questions[keyMap[id]] = value;
-//       } else if (Number(id) >= 1011 && Number(id) <= 1013) {
-//         const keyMap: Record<string, string> = {
-//           "1011": "principle",
-//           "1012": "factual_statement",
-//           "1013": "implication",
-//         };
-//         researchContext.molecular_signaling[keyMap[id]] = value;
-//       } else if (Number(id) === 3001) {
-//         if (value && value.selectedOption && value.subs) {
-//           const mainAnswer = value.selectedOption;
-//           const subAnswer = value.subs[mainAnswer];
-//           confidentialityLevel = `${mainAnswer} (Level: ${subAnswer})`;
-//         }
-//       } else {
-//         otherAnswers[id] = value;
-//       }
-//     });
-
-//     // --- Step 4: Create the Main Response Record (No changes here) ---
-//     const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         researcher_id: researcherID,
-//         questionnaire_id: 1,
-//         answers: otherAnswers,
-//         final_route: suggestedRoutes.value.join(", ") || "unknown",
-//         disease_name: answers.value[1006] || "",
-//         intervention: answers.value[1007] || "",
-//         research_context: researchContext,
-//         confidentiality_level: confidentialityLevel,
-//         token: store.currentToken,
-//         version: store.currentVersion,
-//         researcher_name: store.researcher.name,
-//         researcher_email: store.researcher.email,
-//         existing_file_ids: existingFileIds,
-//       }),
-//     });
-//     const responseResult = await response.json();
-//     if (!response.ok) throw new Error("Failed to save response");
-
-//     // --- UPDATED LOGIC ---
-//     // 1. Get the responseID AND the token from the backend's response
-//     const responseID = responseResult.id;
-//     const responseToken = responseResult.token;
-
-//     // --- Step 5: Upload All Files (No changes here) ---
-//     console.log(fileAnswersToUpload.length);
-//     if (fileAnswersToUpload.length > 0) {
-//       const uploadPromises = fileAnswersToUpload.map(({ questionId, file }) => {
-//         const formData = new FormData();
-//         formData.append("file", file);
-//         formData.append("response_id", String(responseID));
-//         formData.append("question_id", questionId);
-//         return fetch(`${VITE_API_BASE_URL}/api/response/file`, {
-//           method: "POST",
-//           body: formData,
-//         });
-//       });
-//       const uploadResults = await Promise.all(uploadPromises);
-//       const failedUpload = uploadResults.find((res) => !res.ok);
-//       if (failedUpload) {
-//         throw new Error(`Failed to upload file: ${await failedUpload.text()}`);
-//       }
-//     }
-
-//     const editUrl = `${window.location.origin}/edit-response/${responseToken}`;
-
-//     // --- Step 6: Show Success and Log the Edit URL ---
-//     await fetch(`${VITE_API_BASE_URL}/api/response/${responseID}/finalize`, {
-//       method: "POST",
-//     });
-
-//     // 2. Construct the full edit URL
-
-//     // 3. Log it to the console for testing
-//     console.log("--- SUBMISSION SUCCESSFUL ---");
-//     console.log("Edit URL for this submission:", editUrl);
-
-//     submissionSuccess.value = true;
-//   } catch (error) {
-//     console.error("Error submitting data:", error);
-//     submissionError.value = true;
-//   }
-// };
-// REPLACE your existing submitFinalResponse function with this one
-
 const submitFinalResponse = async () => {
     console.log('DEBUG: Data received by submit function:', JSON.stringify(store.answers, null, 2));
 
@@ -451,35 +282,33 @@ const submitFinalResponse = async () => {
     }
 
     // --- Step 3: NEW LOGIC to correctly find all files ---
-    const newFilesToUpload: { questionId: string; file: File }[] = [];
-    const existingFileIds: number[] = [];
+console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(store.liveFileAnswers));
+    const newFilesToUpload = store.liveFileAnswers;
 
+    const existingFileIds: number[] = [];
     Object.entries(answers.value).forEach(([id, value]) => {
       if (value && typeof value === 'object') {
-        // This function will check for files and add them to the correct array
-        const processFiles = (files: FileItem[]) => {
+        const findRehydratedFiles = (files: any[]) => {
           if (files && Array.isArray(files)) {
-            files.forEach((file: FileItem) => {
-              if (file instanceof File) {
-                // This is a NEW file that needs to be uploaded
-                newFilesToUpload.push({ questionId: id, file: file });
-              } else if (file.rehydrated) {
-                // This is an EXISTING file from a previous version, save its ID
+            files.forEach((file: any) => {
+              if (file && file.rehydrated) {
                 existingFileIds.push(file.id);
               }
             });
           }
         };
-        // Check for files attached to radio button/checkbox options
         if (value.fileData) {
-          Object.values(value.fileData).forEach((fileInfo: any) => processFiles(fileInfo.files));
+          Object.values(value.fileData).forEach((fileInfo: any) => findRehydratedFiles(fileInfo.files));
         }
-        // Check for files from standalone file inputs (type: 'files')
         if (value.files) {
-            processFiles(value.files);
+          findRehydratedFiles(value.files);
         }
       }
     });
+
+    // 🎯 DEBUG #2: Check the array of existing file IDs.
+    console.log('🎯 DEBUG #2: Found existing (rehydrated) file IDs to keep:', existingFileIds);
+
 
     // --- Step 4: Flatten answers for the database ---
     const otherAnswers: Record<string, any> = {};
@@ -498,6 +327,22 @@ const submitFinalResponse = async () => {
           } else {
             otherAnswers[id] = value; // Keep other complex objects as is
           }
+
+      const isComplexObjectToKeep = (
+        question.id === 207 ||
+        (question.subOptions && Object.keys(question.subOptions).length > 0)
+      );
+      if (isComplexObjectToKeep) {
+        // For these special cases, we save the entire object.
+        otherAnswers[id] = value;
+      } else if (value.selectedOption) {
+        // For all OTHER simple radio buttons, we flatten them.
+        otherAnswers[id] = getConstructedAnswer(question, value);
+      } else {
+        // This handles complex checkboxes.
+        otherAnswers[id] = value;
+      }
+
       } else if (numericId >= 1008 && numericId <= 1010) {
         const keyMap: Record<string, string> = { "1008": "principle", "1009": "factual_statement", "1010": "implication" };
         researchContext.research_questions[keyMap[id]] = value;
@@ -581,152 +426,152 @@ const createObjectURL = (file: File) => {
   return URL.createObjectURL(file);
 };
 
-const summaryStep2 = computed(() => {
-  const answer201 = answers.value[201];
-  const answer202 = answers.value[202];
+// const summaryStep2 = computed(() => {
+//   const answer201 = answers.value[201];
+//   const answer202 = answers.value[202];
 
-  const q201 = getQuestionById2(201);
-  const q202 = getQuestionById2(202);
+//   const q201 = getQuestionById2(201);
+//   const q202 = getQuestionById2(202);
 
-  if (!answer201 || !answer202 || !q201 || !q202) {
-    return null;
-  }
+//   if (!answer201 || !answer202 || !q201 || !q202) {
+//     return null;
+//   }
 
-  let stagingTypingDesc = "";
-  if (typeof answer201 === "string") {
-    if (answer201.startsWith("Yes, both staging and typing")) {
-      const ref = answer201.split("ref : ")[1] || "not specified";
-      stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
-    } else if (answer201 === "Yes, staging only.") {
-      const answer201_5 = answers.value[201.5] || "details not provided";
-      stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
-    } else if (answer201.startsWith("Yes, typing only.")) {
-      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
-      stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
-    } else if (answer201 === "No") {
-      stagingTypingDesc = "that there are no staging or typing classifications";
-    } else if (answer201 === "Uncertain") {
-      stagingTypingDesc =
-        "that it is uncertain if staging or typing classifications exist";
-    }
-  }
+//   let stagingTypingDesc = "";
+//   if (typeof answer201 === "string") {
+//     if (answer201.startsWith("Yes, both staging and typing")) {
+//       const ref = answer201.split("ref : ")[1] || "not specified";
+//       stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+//     } else if (answer201 === "Yes, staging only.") {
+//       const answer201_5 = answers.value[201.5] || "details not provided";
+//       stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+//     } else if (answer201.startsWith("Yes, typing only.")) {
+//       const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+//       stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
+//     } else if (answer201 === "No") {
+//       stagingTypingDesc = "that there are no staging or typing classifications";
+//     } else if (answer201 === "Uncertain") {
+//       stagingTypingDesc =
+//         "that it is uncertain if staging or typing classifications exist";
+//     }
+//   }
 
-  let criteriaDesc = "";
-  if (typeof answer202 === "string") {
-    if (answer202.startsWith("Yes")) {
-      const criteriaText =
-        answer202.split(": ")[1]?.slice(0, -1) || "not provided";
-      criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
-    } else {
-      criteriaDesc = "you do not have defined diagnostic criteria";
-    }
-  }
+//   let criteriaDesc = "";
+//   if (typeof answer202 === "string") {
+//     if (answer202.startsWith("Yes")) {
+//       const criteriaText =
+//         answer202.split(": ")[1]?.slice(0, -1) || "not provided";
+//       criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
+//     } else {
+//       criteriaDesc = "you do not have defined diagnostic criteria";
+//     }
+//   }
 
-  return `From your response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
-});
+//   return `From your response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
+// });
 
-const summaryStep3 = computed(() => {
-  const answer101 = answers.value[101];
-  const q101 = getQuestionById2(101);
+// const summaryStep3 = computed(() => {
+//   const answer101 = answers.value[101];
+//   const q101 = getQuestionById2(101);
 
-  if (!answer101 || !q101) {
-    return null;
-  }
+//   if (!answer101 || !q101) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
-  let mechanismText = `<span class="dynamic-text">undefined</span>`;
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
+//   let mechanismText = `<span class="dynamic-text">undefined</span>`;
 
-  let finalAnswerString = "";
-  if (typeof answer101 === "object" && answer101.selectedOption) {
-    finalAnswerString = answer101.selectedOption;
-  } else if (typeof answer101 === "string") {
-    finalAnswerString = answer101;
-  }
+//   let finalAnswerString = "";
+//   if (typeof answer101 === "object" && answer101.selectedOption) {
+//     finalAnswerString = answer101.selectedOption;
+//   } else if (typeof answer101 === "string") {
+//     finalAnswerString = answer101;
+//   }
 
-  if (finalAnswerString.startsWith("Yes")) {
-    const match = finalAnswerString.match(/mechanism : (.*) and Attach/);
-    const extractedText = match ? match[1] : "";
+//   if (finalAnswerString.startsWith("Yes")) {
+//     const match = finalAnswerString.match(/mechanism : (.*) and Attach/);
+//     const extractedText = match ? match[1] : "";
 
-    if (extractedText && extractedText.trim() !== "") {
-      mechanismText = `<em>${extractedText}</em>`;
-    }
-  }
+//     if (extractedText && extractedText.trim() !== "") {
+//       mechanismText = `<em>${extractedText}</em>`;
+//     }
+//   }
 
-  return `From your response to question - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
-});
+//   return `From your response to question - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
+// });
 
-const summaryStep4 = computed(() => {
-  const answer201 = answers.value[201];
-  const answer202 = answers.value[202];
+// const summaryStep4 = computed(() => {
+//   const answer201 = answers.value[201];
+//   const answer202 = answers.value[202];
 
-  if (!answer201 || !answer202) {
-    return null;
-  }
+//   if (!answer201 || !answer202) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
 
-  let stagingTypingDesc = "";
-  if (typeof answer201 === "string") {
-    if (answer201.startsWith("Yes, both staging and typing")) {
-      const ref = answer201.split("ref : ")[1] || "not specified";
-      stagingTypingDesc = `implying that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
-    } else if (answer201 === "Yes, staging only.") {
-      const answer201_5 = answers.value[201.5] || "details not provided";
-      stagingTypingDesc = `implying that there is staging only, specifically: "<em>${answer201_5}</em>"`;
-    } else if (answer201.startsWith("Yes, typing only.")) {
-      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
-      stagingTypingDesc = `implying that there is typing only, defined as: "<em>${typing}</em>"`;
-    } else {
-      stagingTypingDesc = `implying that there are no staging or typing classifications`;
-    }
-  }
+//   let stagingTypingDesc = "";
+//   if (typeof answer201 === "string") {
+//     if (answer201.startsWith("Yes, both staging and typing")) {
+//       const ref = answer201.split("ref : ")[1] || "not specified";
+//       stagingTypingDesc = `implying that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+//     } else if (answer201 === "Yes, staging only.") {
+//       const answer201_5 = answers.value[201.5] || "details not provided";
+//       stagingTypingDesc = `implying that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+//     } else if (answer201.startsWith("Yes, typing only.")) {
+//       const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+//       stagingTypingDesc = `implying that there is typing only, defined as: "<em>${typing}</em>"`;
+//     } else {
+//       stagingTypingDesc = `implying that there are no staging or typing classifications`;
+//     }
+//   }
 
-  let criteriaDesc = "";
-  if (typeof answer202 === "string") {
-    if (answer202.startsWith("Yes")) {
-      criteriaDesc = `implying that you have defined criteria`;
-    } else {
-      criteriaDesc = `implying that you do not have defined diagnostic criteria`;
-    }
-  }
+//   let criteriaDesc = "";
+//   if (typeof answer202 === "string") {
+//     if (answer202.startsWith("Yes")) {
+//       criteriaDesc = `implying that you have defined criteria`;
+//     } else {
+//       criteriaDesc = `implying that you do not have defined diagnostic criteria`;
+//     }
+//   }
 
-  const probableInducers = ["N/A", "N/A", "N/A"];
-  const n = probableInducers.length;
-  const inducedResult = `<span class="dynamic-text">N/A</span>`;
+//   const probableInducers = ["N/A", "N/A", "N/A"];
+//   const n = probableInducers.length;
+//   const inducedResult = `<span class="dynamic-text">N/A</span>`;
 
-  const inducersList = probableInducers.map((item) => `<br>• ${item}`).join("");
+//   const inducersList = probableInducers.map((item) => `<br>• ${item}`).join("");
 
-  return `By comparing molecular data associated with cell types involved in different stages and types (${stagingTypingDesc}) against molecules involved across all cell types listed in diagnostic criteria (${criteriaDesc}), it is inferred that the <strong>${n}</strong> probable initial inducers of ${diseaseName} are: ${inducersList}<br> All of these are capable of inducing ${inducedResult}.`;
-});
+//   return `By comparing molecular data associated with cell types involved in different stages and types (${stagingTypingDesc}) against molecules involved across all cell types listed in diagnostic criteria (${criteriaDesc}), it is inferred that the <strong>${n}</strong> probable initial inducers of ${diseaseName} are: ${inducersList}<br> All of these are capable of inducing ${inducedResult}.`;
+// });
 
-const summaryStep5 = computed(() => {
-  const answer103 = answers.value[103];
-  const q103 = getQuestionById2(103);
+// const summaryStep5 = computed(() => {
+//   const answer103 = answers.value[103];
+//   const q103 = getQuestionById2(103);
 
-  if (!answer103 || !q103) {
-    return null;
-  }
+//   if (!answer103 || !q103) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
-  let title = "";
-  let body = "";
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
+//   let title = "";
+//   let body = "";
 
-  if (answer103 === "More than 80% efficiency") {
-    title = "Remission-Oriented Research Question";
-    body = `Given your response to question - ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
-  } else {
-    title = "Exploratory Pre-Remission Research Question";
-    body = `Based on your response to question - ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
-  }
+//   if (answer103 === "More than 80% efficiency") {
+//     title = "Remission-Oriented Research Question";
+//     body = `Given your response to question - ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
+//   } else {
+//     title = "Exploratory Pre-Remission Research Question";
+//     body = `Based on your response to question - ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
+//   }
 
-  return `<strong>${title}:</strong> ${body}`;
-});
+//   return `<strong>${title}:</strong> ${body}`;
+// });
 
 const summaryParagraphs = computed(() => {
   const paragraphs: { text: string }[] = [];

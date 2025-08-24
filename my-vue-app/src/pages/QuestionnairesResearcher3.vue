@@ -8,6 +8,7 @@ import type { Question2 } from "@/stores/questionnaires2";
 import { VITE_API_BASE_URL } from "@/stores/config";
 import { storeToRefs } from "pinia";
 import { formatPhoneNumber } from "@/utils/formatters";
+const File = window.File;
 
 const store = useQuestionnaireStore();
 const router = useRouter();
@@ -26,7 +27,10 @@ const {
   currentStatus,
 } = storeToRefs(store);
 console.log("Current Status:", currentStatus.value);
-type FileItem = File | { id: number; name: string; rehydrated: true };
+type FileItem =
+  | File
+  | { id: number; name: string; rehydrated: true }
+  | { name: string; isNewUnsavedFile: true }; //
 
 const getFileDownloadUrl = (fileId: number) => {
   return `${VITE_API_BASE_URL}/api/file/${fileId}`;
@@ -80,6 +84,7 @@ const secondFormAnswers = computed(
       .filter((q) => q !== null) as Question2[]
 );
 
+
 const normalizeFiles = (files: any): FileItem[] => {
   // If it's already a valid array, just return it.
   if (Array.isArray(files)) {
@@ -105,67 +110,6 @@ const parseOption = (option: string) => {
     return { type: "radio", group: parts[0], label: parts[1] };
   }
   return { type: "checkbox", group: null, label: option };
-};
-
-const formatQ207Answer = (question: Question2, answer: any): string => {
-  if (typeof answer !== "object" || answer === null) return "";
-
-  const finalParts: string[] = [];
-
-  // Part 1: Format the "Level of Development" (radio button)
-  if (answer.radioSelection) {
-    let radioText = answer.radioSelection;
-    if (radioText.includes("___")) {
-      const optionIndex = question.options?.findIndex(
-        (opt) => parseOption(opt).label === radioText
-      );
-      if (optionIndex !== undefined && optionIndex > -1) {
-        const key = `${question.id}-${optionIndex}-0`;
-        const inlineValue = answer.inlineText?.[key]?.trim() || "...";
-        radioText = radioText.replace("___", inlineValue);
-      }
-    }
-    // Add the formatted radio selection with its label
-    finalParts.push(
-      `<strong>Level of Development:</strong> ${radioText.split("||")[0]}`
-    );
-  }
-
-  // Part 2: Format the "Pathogenesis Mechanisms" (checkboxes)
-  if (answer.checkboxes && answer.checkboxes.length > 0) {
-    const mechanismParts = answer.checkboxes.map((checkboxOpt: string) => {
-      let checkboxText = checkboxOpt;
-
-      if (checkboxText.includes("___")) {
-        const optionIndex = question.options?.findIndex(
-          (opt) => parseOption(opt).label === checkboxText
-        );
-        if (optionIndex !== undefined && optionIndex > -1) {
-          const key = `${question.id}-${optionIndex}-0`;
-          const inlineValue = answer.inlineText?.[key]?.trim() || "...";
-          checkboxText = checkboxText.replace("___", inlineValue);
-        }
-      }
-
-      if (
-        checkboxText.startsWith("Inflammation") &&
-        answer.subs?.["Inflammation"]
-      ) {
-        return `${checkboxText.split("||")[0]} (${
-          answer.subs["Inflammation"]
-        })`;
-      }
-      return checkboxText.split("||")[0];
-    });
-
-    // Add the formatted checkboxes with their label
-    finalParts.push(
-      `<strong>Pathogenesis Mechanisms:</strong> ${mechanismParts.join(", ")}`
-    );
-  }
-
-  // Join the two main parts with a line break for clarity
-  return finalParts.join("<br>");
 };
 
 const routeDefinitions: {
@@ -242,41 +186,6 @@ const editAnswers = () => {
   router.push("/questionnairesResearcher");
 };
 
-// const formatCheckboxAnswer = (question: Question2, answer: any): string => {
-//   if (!answer || !Array.isArray(answer.main)) return "";
-
-//   const formattedParts = answer.main.map((mainOpt: string) => {
-//     // --- THIS IS THE NEW LOGIC FOR INLINE TEXT ---
-//     if (mainOpt.includes("___")) {
-//       const parts = mainOpt.split("___");
-//       // Get the clean label part (e.g., "Other : ")
-//       let constructed = parts[0].split("||")[0];
-
-//       const optionIndex = question.options?.findIndex((opt) => opt === mainOpt);
-//       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
-//         for (let i = 0; i < parts.length - 1; i++) {
-//           const key = `${question.id}-${optionIndex}-${i}`;
-//           const inlineValue = answer.inlineText[key] || "";
-//           constructed += inlineValue + parts[i + 1].split("||")[0];
-//         }
-//         return constructed;
-//       }
-//       return constructed; // Return the base string if inline text is not found
-//     }
-//     const mainLabel = mainOpt.split("||")[0];
-//     const subAnswer = answer.subs?.[mainLabel];
-//     if (subAnswer && subAnswer.length > 0) {
-//       const subAnswerString = Array.isArray(subAnswer)
-//         ? subAnswer.join(", ")
-//         : subAnswer;
-//       return `${mainLabel} (${subAnswerString})`;
-//     }
-
-//     return mainLabel;
-//   });
-
-//   return formattedParts.join(", ");
-// };
 const formatCheckboxAnswer = (question: Question2, answer: any): string => {
   if (!answer || !Array.isArray(answer.main)) return "";
 
@@ -382,7 +291,6 @@ const lockedStatusText = computed(() => {
       return "";
   }
 });
-// --- ADD: Function to open the cancel modal ---
 const openCancelModal = () => {
   projectNameVerification.value = ""; // Reset verification text
   showCancelModal.value = true;
@@ -398,7 +306,8 @@ const handleCancelProject = async () => {
 
   isCancelling.value = true;
   try {
-const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-- CHANGE THIS URL
+    const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, {
+      // <-- CHANGE THIS URL
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -455,6 +364,45 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
     }
   }
   return finalString.split("||")[0];
+};
+
+const getCleanOptionLabel = (option: string) => option.split("||")[0];
+
+// Add this entire new function to your <script setup>
+const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: string): string => {
+  const subSelection = mainAnswer.subs?.[mainOptionKey];
+
+  // If there is no sub-selection, or it's not a string, return nothing.
+  if (!subSelection || typeof subSelection !== 'string') {
+    return '';
+  }
+
+  // If the sub-option has an inline input, we need to build the final string.
+  if (subSelection.includes('___')) {
+    // Find the indexes needed to build the unique key for the inline text
+    const mainOption = question.options?.find(opt => getCleanOptionLabel(opt) === mainOptionKey);
+    if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
+
+    const mainOptionIndex = question.options?.indexOf(mainOption);
+    const subOptions = question.subOptions?.[mainOptionKey];
+    const subIndex = subOptions?.indexOf(subSelection);
+
+    if (mainOptionIndex === undefined || subIndex === undefined || mainOptionIndex === -1 || subIndex === -1) {
+      return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
+    }
+
+    // Construct the unique key (e.g., '201-1-sub-0-0')
+    const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
+    const inlineValue = mainAnswer.inlineText?.[key] || '';
+    
+    // Replace the '___' with the user's text
+    const constructedString = getCleanOptionLabel(subSelection).replace('___', inlineValue);
+    
+    return `(${constructedString})`;
+  }
+  
+  // If the sub-option is simple (no '___'), just return its clean label.
+  return `(${getCleanOptionLabel(subSelection)})`;
 };
 </script>
 
@@ -564,42 +512,44 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
           </p>
         </div> -->
 
-       <div v-if="q.id === 207 && q.answer" class="answer-text">
-  <div v-if="(q.answer as any).radioSelection" class="q207-part">
-    <span style="color: red">Level of Development : </span
+        <div v-if="q.id === 207 && q.answer" class="answer-text">
+          <div v-if="(q.answer as any).radioSelection" class="q207-part">
+            <span style="color: red">Level of Development : </span>
+            {{
+              getConstructedAnswer(q, {
+                selectedOption: (q.answer as any).radioSelection,
+                inlineText: (q.answer as any).inlineText,
+              })
+            }}
+          </div>
+
+          <div
+            v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
+            class="q207-part"
           >
-    {{
-      getConstructedAnswer(q, {
-        selectedOption: (q.answer as any).radioSelection,
-        inlineText: (q.answer as any).inlineText,
-      })
-    }}
-  </div>
+            <span style="color: red">Pathogenesis Mechanisms : </span>
 
-  <div
-    v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
-    class="q207-part"
-  >
-    <span style="color: red">Pathogenesis Mechanisms : </span>
-
-<ul class="mechanism-list">
-  <li v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
+            <ul class="mechanism-list">
+              <li
+                v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
       const masterOptions = getQuestionById2(207)?.options || [];
       const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
       const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
       return indexA - indexB;
-    })" :key="mechanism">
-    {{
-      formatCheckboxAnswer(q, {
-        main: [mechanism],
-        subs: (q.answer as any).subs,
-        inlineText: (q.answer as any).inlineText,
-      })
-    }}
-  </li>
-</ul>
-  </div>
-</div>
+    })"
+                :key="mechanism"
+              >
+                {{
+                  formatCheckboxAnswer(q, {
+                    main: [mechanism],
+                    subs: (q.answer as any).subs,
+                    inlineText: (q.answer as any).inlineText,
+                  })
+                }}
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <div
           v-else-if="
@@ -612,11 +562,14 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
             {{ getConstructedAnswer(q, q.answer) }}
-            <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
+            <!-- <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
               ({{
                 Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
               }})
-            </span>
+            </span> -->
+            <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
+  {{ formatSubAnswer(q, q.answer, String(key)) }}
+</span>
           </p>
         </div>
 
@@ -639,15 +592,14 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
           class="sub-answer-block"
         >
           <strong>Attached Files:</strong>
-          <!-- <ul>
-            <li
+          <ul>
+            <template
               v-for="(fileInfo, key) in (q.answer as any).fileData"
               :key="key"
             >
-              <span
+              <li
                 v-for="file in normalizeFiles(fileInfo.files)"
                 :key="file.name"
-                style="margin-left: 8px"
               >
                 <a
                   v-if="'rehydrated' in file"
@@ -657,16 +609,22 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
                 >
                   {{ file.name }}
                 </a>
+
                 <a
-                  v-else
-                  :href="createObjectURL(file)"
+                  v-else-if="file instanceof File"
+                  :href="createObjectURL(file as File)"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
-              </span>
-            </li>
+
+                <span v-else class="unsaved-file-placeholder">
+                  {{ file.name }} (will be uploaded on save)
+                </span>
+              </li>
+            </template>
+
             <li
               v-for="file in normalizeFiles((q.answer as any).files)"
               :key="file.name"
@@ -680,70 +638,29 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
                 {{ file.name }}
               </a>
               <a
-                v-else
-                :href="createObjectURL(file)"
+                v-else-if="file instanceof File"
+                :href="createObjectURL(file as File)"
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 {{ file.name }}
               </a>
+              <span v-else class="unsaved-file-placeholder">
+                {{ file.name }} (will be uploaded on save)
+              </span>
             </li>
-          </ul> -->
-        <ul>
-  <template v-for="(fileInfo, key) in (q.answer as any).fileData" :key="key">
-    <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
-      <a
-        v-if="'rehydrated' in file"
-        :href="getFileDownloadUrl(file.id)"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {{ file.name }}
-      </a>
-      <a
-        v-else
-        :href="createObjectURL(file)"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {{ file.name }}
-      </a>
-    </li>
-  </template>
-  
-  <li
-    v-for="file in normalizeFiles((q.answer as any).files)"
-    :key="file.name"
-  >
-    <a
-      v-if="'rehydrated' in file"
-      :href="getFileDownloadUrl(file.id)"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ file.name }}
-    </a>
-    <a
-      v-else
-      :href="createObjectURL(file)"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ file.name }}
-    </a>
-  </li>
-</ul>
+          </ul>
         </div>
       </div>
-
-      <!-- <h3
+<!-- 
+       <h3
         v-if="suggestedRoutes.length > 0"
         style="margin-left: 8px; padding-top: 16px"
       >
         Road Map Suggestion:
         <span class="final-route-text">{{ finalDisplayRoute }}</span>
-      </h3> -->
-      <!-- <div
+      </h3>
+      <div
         v-if="suggestedRoutes.length > 0"
         class="route-suggestion-container"
         style="margin-left: 10px;"

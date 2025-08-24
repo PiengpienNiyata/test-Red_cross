@@ -386,26 +386,42 @@ const radioSelection = computed({
     }
     return answer || null;
   },
-  set(newValue) {
-    if (!currentQuestion.value || !newValue) return;
-    const questionId = currentQuestion.value.id;
+set(newValue) {
+  if (!currentQuestion.value || !newValue) return;
+  const questionId = currentQuestion.value.id;
+  const q = currentQuestion.value; // Get the full question object
 
-    const newAnswer: { [key: string]: any } = {
-      selectedOption: newValue,
-    };
+  const newAnswer: { [key: string]: any } = {
+    selectedOption: newValue,
+  };
 
-    if (hasSubOptions(newValue)) {
-      newAnswer.subs = {};
-    }
-    if (hasFileInput(newValue)) {
-      newAnswer.fileData = {};
-    }
-    if (String(newValue).includes("___")) {
-      newAnswer.inlineText = {};
-    }
+  // --- REVISED LOGIC ---
+  // Check if the main option itself has an inline input
+  let needsInlineText = String(newValue).includes("___");
 
-    answers.value[questionId] = newAnswer;
-  },
+  // Also check if the main option has sub-options that might need an inline input
+  if (hasSubOptions(newValue)) {
+    newAnswer.subs = {};
+    const mainLabel = getCleanOptionLabel(newValue);
+    const subOptions = q.subOptions?.[mainLabel];
+    // If any of the sub-options contain '___', we also need the inlineText object
+    if (subOptions?.some(subOpt => subOpt.includes('___'))) {
+      needsInlineText = true;
+    }
+  }
+
+  // If either of the above is true, create the inlineText property
+  if (needsInlineText) {
+    newAnswer.inlineText = {};
+  }
+
+  // Handle file inputs (no change to this part)
+  if (hasFileInput(newValue)) {
+    newAnswer.fileData = {};
+  }
+
+  answers.value[questionId] = newAnswer;
+},
 });
 
 const checkboxModel = computed({
@@ -537,26 +553,47 @@ watch(
 );
 
 const submitFinalResponse = async () => {
+  console.log("--- Starting file collection in QuestionnairesForm2.vue ---");
   const filesToPass: { questionId: string; file: File }[] = [];
+
   Object.entries(answers.value).forEach(([id, value]) => {
+    // We only care about answers that are objects, as that's where files can be.
     if (value && typeof value === "object") {
-      if (value.files instanceof FileList) {
-        Array.from(value.files).forEach((file: any) => {
-          filesToPass.push({ questionId: id, file: file as File });
-        });
-      }
+      // This handles files attached to radio/checkbox options (e.g., Q105)
       if (value.fileData) {
         Object.values(value.fileData).forEach((fileInfo: any) => {
-          if (fileInfo.files instanceof FileList) {
-            Array.from(fileInfo.files).forEach((file: any) => {
-              filesToPass.push({ questionId: id, file: file as File });
+          if (fileInfo && Array.isArray(fileInfo.files)) {
+            fileInfo.files.forEach((file: any) => {
+              if (file instanceof File) {
+                console.log(
+                  `SUCCESS: Found a live File object for Q${id}:`,
+                  file.name
+                );
+                filesToPass.push({ questionId: id, file: file });
+              }
             });
+          }
+        });
+      }
+
+      // This handles files from standalone file inputs (type: 'files')
+      if (Array.isArray(value.files)) {
+        value.files.forEach((file: any) => {
+          if (file instanceof File) {
+            console.log(
+              `SUCCESS: Found a top-level live File object for Q${id}:`,
+              file.name
+            );
+            filesToPass.push({ questionId: id, file: file });
           }
         });
       }
     }
   });
 
+  console.log(
+    `--- File collection finished. Found ${filesToPass.length} file(s) to pass. ---`
+  );
   store.setLiveFiles(filesToPass);
 
   saveResponsesToStore();
@@ -1031,13 +1068,17 @@ watch(
 );
 
 // Add this watch effect anywhere in your <script setup>
-watch(currentQuestion, (newQuestion) => {
-  if (newQuestion) {
-    store.setCurrentQuestionId(newQuestion.id);
-  } else {
-    store.setCurrentQuestionId(null);
-  }
-}, { immediate: true }); // immediate: true ensures it runs on component load
+watch(
+  currentQuestion,
+  (newQuestion) => {
+    if (newQuestion) {
+      store.setCurrentQuestionId(newQuestion.id);
+    } else {
+      store.setCurrentQuestionId(null);
+    }
+  },
+  { immediate: true }
+); // immediate: true ensures it runs on component load
 </script>
 
 <template>
@@ -1268,27 +1309,14 @@ watch(currentQuestion, (newQuestion) => {
             </div>
 
             <div v-if="radioSelection === option" class="sub-option-container">
-              <div
+              <!-- <div
                 v-if="
                   hasSubOptions(option) &&
                   currentQuestion.subOptions &&
                   currentQuestion.subOptions[getCleanOptionLabel(option)]
                 "
               >
-                <!-- <div
-                  v-for="subOpt in currentQuestion.subOptions[
-                    getCleanOptionLabel(option)
-                  ]"
-                  :key="subOpt"
-                  class="sub-radio-option"
-                >
-                  <input
-                    type="radio"
-                    :name="'sub-q' + currentQuestion.id"
-                    :value="subOpt"
-                  />
-                  <label>{{ subOpt }}</label>
-                </div> -->
+               
                 <div
                   v-for="subOpt in currentQuestion.subOptions[
                     getCleanOptionLabel(option)
@@ -1325,8 +1353,158 @@ watch(currentQuestion, (newQuestion) => {
                   />
                   <label>{{ subOpt }}</label>
                 </div>
-              </div>
+              </div> -->
+              <div
+                v-if="
+                  hasSubOptions(option) &&
+                  currentQuestion.subOptions &&
+                  currentQuestion.subOptions[getCleanOptionLabel(option)]
+                "
+              >
+                <div
+                  v-for="(subOpt, subIndex) in currentQuestion.subOptions[
+                    getCleanOptionLabel(option)
+                  ]"
+                  :key="subOpt"
+                  class="sub-option-wrapper"
+                >
+                  <div class="sub-radio-option">
+                    <input
+                      v-if="
+                        currentQuestion.subOptionsType?.[
+                          getCleanOptionLabel(option)
+                        ] === 'radio'
+                      "
+                      type="radio"
+                      :name="'sub-q-' + getCleanOptionLabel(option)"
+                      :value="subOpt"
+                      v-model="
+                        answers[currentQuestion.id].subs[
+                          getCleanOptionLabel(option)
+                        ]
+                      "
+                    />
+                    <input
+                      v-else
+                      type="checkbox"
+                      :value="subOpt"
+                      v-model="
+                        answers[currentQuestion.id].subs[
+                          getCleanOptionLabel(option)
+                        ]
+                      "
+                    />
 
+                    <label class="radio-label inline-input-label">
+                      <span
+                        v-for="(part, partIndex) in parseOptionForInline(
+                          getCleanOptionLabel(subOpt)
+                        )"
+                        :key="partIndex"
+                      >
+                        {{ part }}
+                        <DynamicInlineInput
+                          v-if="
+                            partIndex <
+                            parseOptionForInline(getCleanOptionLabel(subOpt))
+                              .length -
+                              1
+                          "
+                          v-model="
+                            inlineInputAnswers[
+                              `${currentQuestion.id}-${optionIndex}-sub-${subIndex}-${partIndex}`
+                            ]
+                          "
+                          :disabled="
+                            answers[currentQuestion.id].subs[
+                              getCleanOptionLabel(option)
+                            ] !== subOpt
+                          "
+                          @click.stop
+                        />
+                      </span>
+                    </label>
+                  </div>
+
+                  <div
+                    v-if="
+                      answers[currentQuestion.id].subs[
+                        getCleanOptionLabel(option)
+                      ] === subOpt && hasFileInput(subOpt)
+                    "
+                    class="file-input-wrapper"
+                  >
+                    <div class="file-list-container">
+                      <div
+                        v-for="(file, index) in (answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(subOpt)]?.files || []).filter((f: File | null) => f)"
+                        :key="file.name + index"
+                        class="file-preview"
+                      >
+                        <a
+                          v-if="file.rehydrated"
+                          :href="getFileDownloadUrl(file.id)"
+                          target="_blank"
+                          class="file-link"
+                          >{{ file.name }}</a
+                        >
+                        <a
+                          v-else-if="file instanceof File"
+                          :href="createObjectURL(file)"
+                          target="_blank"
+                          class="file-link"
+                          >{{ file.name }}</a
+                        >
+                        <span
+                          v-else-if="file.isNewUnsavedFile"
+                          class="unsaved-file-placeholder"
+                          >{{ file.name }}</span
+                        >
+                        <button
+                          @click="
+                            removeFile(
+                              currentQuestion.id,
+                              getCleanOptionLabel(subOpt),
+                              index
+                            )
+                          "
+                          class="remove-file-btn"
+                          type="button"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      v-if="
+                        !answers[currentQuestion.id]?.fileData?.[
+                          getCleanOptionLabel(subOpt)
+                        ]?.files ||
+                        answers[currentQuestion.id].fileData[
+                          getCleanOptionLabel(subOpt)
+                        ].files.length < 3
+                      "
+                    >
+                      <input
+                        type="file"
+                        multiple
+                        @change="
+                          handleFileChange(
+                            $event,
+                            currentQuestion.id,
+                            getCleanOptionLabel(subOpt)
+                          )
+                        "
+                        class="input-file-conditional"
+                        accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
+                      />
+                      <div class="file-format-text">
+                        (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt,
+                        xlsx)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <div v-if="hasFileInput(option)" class="file-input-wrapper">
                 <div class="file-list-container">
                   <div

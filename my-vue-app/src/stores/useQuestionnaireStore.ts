@@ -15,7 +15,7 @@ function stripFileObjects(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(stripFileObjects);
   }
-  if (obj && typeof obj === 'object') {
+  if (obj && typeof obj === "object") {
     const newObj: { [key: string]: any } = {};
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -26,6 +26,8 @@ function stripFileObjects(obj: any): any {
   }
   return obj;
 }
+
+// @ts-ignore
 export const useQuestionnaireStore = defineStore("questionnaire", {
   state: () => ({
     researcher: {
@@ -51,16 +53,18 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     showReviewerFeedback: true,
     versionHistory: [] as VersionHistoryItem[],
     latestVersion: 0 as number,
-     authToken: null as string | null,
-     currentQuestionId: null as number | null,
+    authToken: null as string | null,
+    currentQuestionId: null as number | null,
   }),
 
   actions: {
-    setAuthToken(token: string) { // <-- ADD THIS
-        this.authToken = token;
+    setAuthToken(token: string) {
+      // <-- ADD THIS
+      this.authToken = token;
     },
-    clearAuthToken() { // <-- ADD THIS
-        this.authToken = null;
+    clearAuthToken() {
+      // <-- ADD THIS
+      this.authToken = null;
     },
 
     setCurrentTokenAndVersion(token: string, version: number) {
@@ -102,9 +106,10 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       }
     },
 
-      setCurrentQuestionId(id: number | null) { // <-- ADD THIS ACTION
-    this.currentQuestionId = id;
-  },
+    setCurrentQuestionId(id: number | null) {
+      // <-- ADD THIS ACTION
+      this.currentQuestionId = id;
+    },
 
     hideReviewerFeedback() {
       this.showReviewerFeedback = false;
@@ -132,8 +137,8 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     },
     resetStore() {
       this.latestVersion = 0;
-    this.authToken = null;
-    
+      this.authToken = null;
+
       this.researcher = {
         name: "",
         project_name: "",
@@ -156,12 +161,11 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-        this.currentQuestionId = null; // <-- ADD THIS
-
+      this.currentQuestionId = null; // <-- ADD THIS
     },
-        resetQuestionnaire() {
+    resetQuestionnaire() {
       this.latestVersion = 0;
-    
+
       this.researcher = {
         name: "",
         project_name: "",
@@ -184,8 +188,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-        this.currentQuestionId = null; // <-- ADD THIS
-
+      this.currentQuestionId = null; // <-- ADD THIS
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {
@@ -197,25 +200,53 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.researcherID = null;
       // this.finalRoute = null;
       this.liveFileAnswers = [];
-  this.currentQuestionId = null; // <-- ADD THIS
+      this.currentQuestionId = null; // <-- ADD THIS
 
       this.suggestedRoutes = [];
     },
   },
-persist: {
-  storage: sessionStorage,
-  serializer: {
-    // Our custom function to SAVE the state
-    serialize: (state) => {
-      // Before saving, we create a clean version of the state with File objects removed
-      const cleanedState = stripFileObjects(state);
-      return JSON.stringify(cleanedState);
-    },
-    // The default function to LOAD the state
-    deserialize: (jsonString) => {
-      return JSON.parse(jsonString);
+  // persist: {
+  //   storage: sessionStorage,
+  //   serializer: {
+  //     // Our custom function to SAVE the state
+  //     serialize: (state) => {
+  //       // Before saving, we create a clean version of the state with File objects removed
+  //       const cleanedState = stripFileObjects(state);
+  //       return JSON.stringify(cleanedState);
+  //     },
+  //     // The default function to LOAD the state
+  //     deserialize: (jsonString) => {
+  //       return JSON.parse(jsonString);
+  //     },
+  //   },
+  // },
+
+  persist: {
+    storage: sessionStorage,
+    paths: [
+      "researcher",
+      "answers",
+      "previousAnswers",
+      "researcherID",
+      "suggestedRoutes",
+      "currentToken",
+      "currentVersion",
+      "currentRemark",
+      "currentStatus",
+      "showReviewerFeedback",
+      "versionHistory",
+      "latestVersion",
+      "authToken",
+      "currentQuestionId",
+    ],
+    serializer: {
+      serialize: (state: any) => {
+        const cleanedState = stripFileObjects(state);
+        return JSON.stringify(cleanedState);
+      },
+      deserialize: (jsonString: string) => {
+        return JSON.parse(jsonString);
+      },
     },
   },
-},
-
 });

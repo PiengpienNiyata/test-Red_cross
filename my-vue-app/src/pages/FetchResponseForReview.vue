@@ -70,43 +70,97 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
   }
 
   // 3. Now, iterate through the questions that have files and build the complex answer object
+  // Object.keys(filesByQuestionId).forEach(qIdStr => {
+  //   const qId = Number(qIdStr);
+  //   const question = getQuestionById2(qId);
+  //   const rawAnswerString = combinedAnswers[qId];
+  //   const allFilesForQuestion = filesByQuestionId[qIdStr];
+
+  //   if (question && typeof rawAnswerString === 'string') {
+  //     const originalOption = question.options?.find(opt => {
+  //       const cleanOpt = getCleanOptionLabel(opt);
+  //       if (cleanOpt.includes(':')) return rawAnswerString.startsWith(cleanOpt.split(':')[0]);
+  //       return rawAnswerString.startsWith(cleanOpt);
+  //     });
+
+  //     if (originalOption) {
+  //       const cleanOriginalOption = getCleanOptionLabel(originalOption);
+  //       const newAnswerObject = {
+  //         selectedOption: originalOption,
+  //         inlineText: {},
+  //         fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
+  //         subs: {}
+  //       };
+        
+  //       if (originalOption.includes('___')) {
+  //           const parts = originalOption.split('___');
+  //           const prefix = parts[0].split('||')[0];
+  //           const suffix = parts[1].split('||')[0];
+  //           let userText = rawAnswerString.split('||')[0];
+  //           userText = userText.replace(prefix, '').replace(suffix, '');
+  //           const optionIndex = question.options?.indexOf(originalOption);
+  //           if (optionIndex !== undefined && optionIndex > -1) {
+  //               newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
+  //           }
+  //       }
+  //       combinedAnswers[qId] = newAnswerObject;
+  //     }
+  //   }
+  // });
+
   Object.keys(filesByQuestionId).forEach(qIdStr => {
     const qId = Number(qIdStr);
     const question = getQuestionById2(qId);
-    const rawAnswerString = combinedAnswers[qId];
+    const answer = combinedAnswers[qId]; // This can be a string OR an object
     const allFilesForQuestion = filesByQuestionId[qIdStr];
 
-    if (question && typeof rawAnswerString === 'string') {
-      const originalOption = question.options?.find(opt => {
-        const cleanOpt = getCleanOptionLabel(opt);
-        if (cleanOpt.includes(':')) return rawAnswerString.startsWith(cleanOpt.split(':')[0]);
-        return rawAnswerString.startsWith(cleanOpt);
-      });
+    if (!question) return;
 
-      if (originalOption) {
-        const cleanOriginalOption = getCleanOptionLabel(originalOption);
-        const newAnswerObject = {
-          selectedOption: originalOption,
-          inlineText: {},
-          fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
-          subs: {}
-        };
+    // WHY: This is the new logic. It handles both cases.
+    if (typeof answer === 'object' && answer !== null) {
+        // CASE 1: The answer is already a complex object (like for Q201).
+        if (!answer.fileData) answer.fileData = {};
         
-        if (originalOption.includes('___')) {
-            const parts = originalOption.split('___');
-            const prefix = parts[0].split('||')[0];
-            const suffix = parts[1].split('||')[0];
-            let userText = rawAnswerString.split('||')[0];
-            userText = userText.replace(prefix, '').replace(suffix, '');
-            const optionIndex = question.options?.indexOf(originalOption);
-            if (optionIndex !== undefined && optionIndex > -1) {
-                newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
-            }
+        // Check if there is a sub-answer.
+        const mainLabel = getCleanOptionLabel(answer.selectedOption);
+        const subSelection = answer.subs?.[mainLabel];
+
+        if (subSelection && typeof subSelection === 'string') {
+            // If there's a sub-answer, use ITS label as the key.
+            const subLabel = getCleanOptionLabel(subSelection);
+            answer.fileData[subLabel] = { files: allFilesForQuestion };
+        } else {
+            // Otherwise, use the main answer's label as the key.
+            answer.fileData[mainLabel] = { files: allFilesForQuestion };
         }
-        combinedAnswers[qId] = newAnswerObject;
-      }
+
+    } else if (typeof answer === 'string') {
+        // CASE 2: The answer is a flattened string (older questions).
+        // This logic reconstructs the object.
+        const originalOption = question.options?.find(opt => answer.startsWith(getCleanOptionLabel(opt)));
+
+        if (originalOption) {
+            const cleanOriginalOption = getCleanOptionLabel(originalOption);
+            const newAnswerObject = {
+              selectedOption: originalOption,
+              inlineText: {},
+              fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
+              subs: {}
+            };
+            
+            if (originalOption.includes('___')) {
+                const parts = originalOption.split('___');
+                const prefix = parts[0].split('||')[0];
+                let userText = answer.split('||')[0].replace(prefix, '').trim();
+                const optionIndex = question.options?.indexOf(originalOption);
+                if (optionIndex !== undefined && optionIndex > -1) {
+                    newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
+                }
+            }
+            combinedAnswers[qId] = newAnswerObject;
+        }
     }
-  });
+});
 
   // 4. Rehydrate confidentiality level
   if (submissionData.confidentiality_level) {

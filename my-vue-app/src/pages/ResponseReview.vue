@@ -411,152 +411,152 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   return finalString.split("||")[0];
 };
 
-const summaryStep2 = computed(() => {
-  const answer201 = answers.value[201];
-  const answer202 = answers.value[202];
+// const summaryStep2 = computed(() => {
+//   const answer201 = answers.value[201];
+//   const answer202 = answers.value[202];
 
-  const q201 = getQuestionById2(201);
-  const q202 = getQuestionById2(202);
+//   const q201 = getQuestionById2(201);
+//   const q202 = getQuestionById2(202);
 
-  if (!answer201 || !answer202 || !q201 || !q202) {
-    return null;
-  }
+//   if (!answer201 || !answer202 || !q201 || !q202) {
+//     return null;
+//   }
 
-  let stagingTypingDesc = "";
-  if (typeof answer201 === "string") {
-    if (answer201.startsWith("Yes, both staging and typing")) {
-      const ref = answer201.split("ref : ")[1] || "not specified";
-      stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
-    } else if (answer201 === "Yes, staging only.") {
-      const answer201_5 = answers.value[201.5] || "details not provided";
-      stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
-    } else if (answer201.startsWith("Yes, typing only.")) {
-      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
-      stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
-    } else if (answer201 === "No") {
-      stagingTypingDesc = "that there are no staging or typing classifications";
-    } else if (answer201 === "Uncertain") {
-      stagingTypingDesc =
-        "that it is uncertain if staging or typing classifications exist";
-    }
-  }
+//   let stagingTypingDesc = "";
+//   if (typeof answer201 === "string") {
+//     if (answer201.startsWith("Yes, both staging and typing")) {
+//       const ref = answer201.split("ref : ")[1] || "not specified";
+//       stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+//     } else if (answer201 === "Yes, staging only.") {
+//       const answer201_5 = answers.value[201.5] || "details not provided";
+//       stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+//     } else if (answer201.startsWith("Yes, typing only.")) {
+//       const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+//       stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
+//     } else if (answer201 === "No") {
+//       stagingTypingDesc = "that there are no staging or typing classifications";
+//     } else if (answer201 === "Uncertain") {
+//       stagingTypingDesc =
+//         "that it is uncertain if staging or typing classifications exist";
+//     }
+//   }
 
-  let criteriaDesc = "";
-  if (typeof answer202 === "string") {
-    if (answer202.startsWith("Yes")) {
-      const criteriaText =
-        answer202.split(": ")[1]?.slice(0, -1) || "not provided";
-      criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
-    } else {
-      criteriaDesc = "you do not have defined diagnostic criteria";
-    }
-  }
+//   let criteriaDesc = "";
+//   if (typeof answer202 === "string") {
+//     if (answer202.startsWith("Yes")) {
+//       const criteriaText =
+//         answer202.split(": ")[1]?.slice(0, -1) || "not provided";
+//       criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
+//     } else {
+//       criteriaDesc = "you do not have defined diagnostic criteria";
+//     }
+//   }
 
-  return `From researcher's response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
-});
+//   return `From researcher's response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
+// });
 
-const summaryStep3 = computed(() => {
-  const answer101 = answers.value[101];
-  const q101 = getQuestionById2(101);
+// const summaryStep3 = computed(() => {
+//   const answer101 = answers.value[101];
+//   const q101 = getQuestionById2(101);
 
-  if (!answer101 || !q101) {
-    return null;
-  }
+//   if (!answer101 || !q101) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
-  let mechanismText = `<span class="dynamic-text">undefined</span>`;
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
+//   let mechanismText = `<span class="dynamic-text">undefined</span>`;
 
-  let finalAnswerString = "";
-  if (typeof answer101 === "object" && answer101.selectedOption) {
-    finalAnswerString = answer101.selectedOption;
-  } else if (typeof answer101 === "string") {
-    finalAnswerString = answer101;
-  }
+//   let finalAnswerString = "";
+//   if (typeof answer101 === "object" && answer101.selectedOption) {
+//     finalAnswerString = answer101.selectedOption;
+//   } else if (typeof answer101 === "string") {
+//     finalAnswerString = answer101;
+//   }
 
-  if (finalAnswerString.startsWith("Yes")) {
-    const match = finalAnswerString.match(/mechanism : (.*) and Attach/);
-    const extractedText = match ? match[1] : "";
+//   if (finalAnswerString.startsWith("Yes")) {
+//     const match = finalAnswerString.match(/mechanism : (.*) and Attach/);
+//     const extractedText = match ? match[1] : "";
 
-    if (extractedText && extractedText.trim() !== "") {
-      mechanismText = `<em>${extractedText}</em>`;
-    }
-  }
+//     if (extractedText && extractedText.trim() !== "") {
+//       mechanismText = `<em>${extractedText}</em>`;
+//     }
+//   }
 
-  return `From researcher's response to question - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
-});
+//   return `From researcher's response to question - "<em>${q101.question}</em>", the mechanism of ${diseaseName} is deduced as ${mechanismText}.`;
+// });
 
-const summaryStep4 = computed(() => {
-  const answer201 = answers.value[201];
-  const answer202 = answers.value[202];
+// const summaryStep4 = computed(() => {
+//   const answer201 = answers.value[201];
+//   const answer202 = answers.value[202];
 
-  if (!answer201 || !answer202) {
-    return null;
-  }
+//   if (!answer201 || !answer202) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
 
-  let stagingTypingDesc = "";
-  if (typeof answer201 === "string") {
-    if (answer201.startsWith("Yes, both staging and typing")) {
-      const ref = answer201.split("ref : ")[1] || "not specified";
-      stagingTypingDesc = `implying that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
-    } else if (answer201 === "Yes, staging only.") {
-      const answer201_5 = answers.value[201.5] || "details not provided";
-      stagingTypingDesc = `implying that there is staging only, specifically: "<em>${answer201_5}</em>"`;
-    } else if (answer201.startsWith("Yes, typing only.")) {
-      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
-      stagingTypingDesc = `implying that there is typing only, defined as: "<em>${typing}</em>"`;
-    } else {
-      stagingTypingDesc = `implying that there are no staging or typing classifications`;
-    }
-  }
+//   let stagingTypingDesc = "";
+//   if (typeof answer201 === "string") {
+//     if (answer201.startsWith("Yes, both staging and typing")) {
+//       const ref = answer201.split("ref : ")[1] || "not specified";
+//       stagingTypingDesc = `implying that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+//     } else if (answer201 === "Yes, staging only.") {
+//       const answer201_5 = answers.value[201.5] || "details not provided";
+//       stagingTypingDesc = `implying that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+//     } else if (answer201.startsWith("Yes, typing only.")) {
+//       const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+//       stagingTypingDesc = `implying that there is typing only, defined as: "<em>${typing}</em>"`;
+//     } else {
+//       stagingTypingDesc = `implying that there are no staging or typing classifications`;
+//     }
+//   }
 
-  let criteriaDesc = "";
-  if (typeof answer202 === "string") {
-    if (answer202.startsWith("Yes")) {
-      criteriaDesc = `implying that you have defined criteria`;
-    } else {
-      criteriaDesc = `implying that you do not have defined diagnostic criteria`;
-    }
-  }
+//   let criteriaDesc = "";
+//   if (typeof answer202 === "string") {
+//     if (answer202.startsWith("Yes")) {
+//       criteriaDesc = `implying that you have defined criteria`;
+//     } else {
+//       criteriaDesc = `implying that you do not have defined diagnostic criteria`;
+//     }
+//   }
 
-  const probableInducers = ["N/A", "N/A", "N/A"];
-  const n = probableInducers.length;
-  const inducedResult = `<span class="dynamic-text">N/A</span>`;
+//   const probableInducers = ["N/A", "N/A", "N/A"];
+//   const n = probableInducers.length;
+//   const inducedResult = `<span class="dynamic-text">N/A</span>`;
 
-  const inducersList = probableInducers.map((item) => `<br>• ${item}`).join("");
+//   const inducersList = probableInducers.map((item) => `<br>• ${item}`).join("");
 
-  return `By comparing molecular data associated with cell types involved in different stages and types (${stagingTypingDesc}) against molecules involved across all cell types listed in diagnostic criteria (${criteriaDesc}), it is inferred that the <strong>${n}</strong> probable initial inducers of ${diseaseName} are: ${inducersList}<br> All of these are capable of inducing ${inducedResult}.`;
-});
+//   return `By comparing molecular data associated with cell types involved in different stages and types (${stagingTypingDesc}) against molecules involved across all cell types listed in diagnostic criteria (${criteriaDesc}), it is inferred that the <strong>${n}</strong> probable initial inducers of ${diseaseName} are: ${inducersList}<br> All of these are capable of inducing ${inducedResult}.`;
+// });
 
-const summaryStep5 = computed(() => {
-  const answer103 = answers.value[103];
-  const q103 = getQuestionById2(103);
+// const summaryStep5 = computed(() => {
+//   const answer103 = answers.value[103];
+//   const q103 = getQuestionById2(103);
 
-  if (!answer103 || !q103) {
-    return null;
-  }
+//   if (!answer103 || !q103) {
+//     return null;
+//   }
 
-  const diseaseName = `<span class="dynamic-text">${
-    answers.value[1006] || "the disease"
-  }</span>`;
-  let title = "";
-  let body = "";
+//   const diseaseName = `<span class="dynamic-text">${
+//     answers.value[1006] || "the disease"
+//   }</span>`;
+//   let title = "";
+//   let body = "";
 
-  if (answer103 === "More than 80% efficiency") {
-    title = "Remission-Oriented Research Question";
-    body = `Given researcher's response to question - ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
-  } else {
-    title = "Exploratory Pre-Remission Research Question";
-    body = `Based on researcher's response to question - ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
-  }
+//   if (answer103 === "More than 80% efficiency") {
+//     title = "Remission-Oriented Research Question";
+//     body = `Given researcher's response to question - ("<em>${q103.question}</em>") was "<em>${answer103}</em>", the research question is focused on confirming that eliminating or controlling known factors can induce true remission in ${diseaseName}.`;
+//   } else {
+//     title = "Exploratory Pre-Remission Research Question";
+//     body = `Based on researcher's response to question - ("<em>${q103.question}</em>") where you indicated the efficiency is "<em>${answer103}</em>", the focus shifts to an exploratory question: To formulate a research question that identifies unknown factors which must be addressed before confirming remission-inducing therapies or control strategies.`;
+//   }
 
-  return `<strong>${title}:</strong> ${body}`;
-});
+//   return `<strong>${title}:</strong> ${body}`;
+// });
 
 // const summaryParagraphs = computed(() => {
 //   const paragraphs: { text: string }[] = [];
@@ -937,6 +937,46 @@ const reviewStatusText = computed(() => {
 
   return "This project has been reviewed.";
 });
+
+
+const getCleanOptionLabel = (option: string) => option.split("||")[0];
+
+// Add this entire new function to your <script setup>
+const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: string): string => {
+  const subSelection = mainAnswer.subs?.[mainOptionKey];
+
+  // If there is no sub-selection, or it's not a string, return nothing.
+  if (!subSelection || typeof subSelection !== 'string') {
+    return '';
+  }
+
+  // If the sub-option has an inline input, we need to build the final string.
+  if (subSelection.includes('___')) {
+    // Find the indexes needed to build the unique key for the inline text
+    const mainOption = question.options?.find(opt => getCleanOptionLabel(opt) === mainOptionKey);
+    if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
+
+    const mainOptionIndex = question.options?.indexOf(mainOption);
+    const subOptions = question.subOptions?.[mainOptionKey];
+    const subIndex = subOptions?.indexOf(subSelection);
+
+    if (mainOptionIndex === undefined || subIndex === undefined || mainOptionIndex === -1 || subIndex === -1) {
+      return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
+    }
+
+    // Construct the unique key (e.g., '201-1-sub-0-0')
+    const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
+    const inlineValue = mainAnswer.inlineText?.[key] || '';
+    
+    // Replace the '___' with the user's text
+    const constructedString = getCleanOptionLabel(subSelection).replace('___', inlineValue);
+    
+    return `(${constructedString})`;
+  }
+  
+  // If the sub-option is simple (no '___'), just return its clean label.
+  return `(${getCleanOptionLabel(subSelection)})`;
+};
 </script>
 
 <template>
@@ -1069,9 +1109,11 @@ const reviewStatusText = computed(() => {
                   v-for="(subAnswer, key) in (q.answer as any).subs"
                   :key="key"
                 >
-                  ({{
+                  <!-- ({{
                     Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-                  }})
+                  }}) -->
+  {{ formatSubAnswer(q, q.answer, String(key)) }}
+
                 </span>
               </p>
             </div>
@@ -1093,7 +1135,7 @@ const reviewStatusText = computed(() => {
                   v-for="(fileInfo, key) in (q.answer as any).fileData"
                   :key="key"
                 >
-                  <li
+                  <!-- <li
                     v-for="file in normalizeFiles(fileInfo.files)"
                     :key="file.name"
                   >
@@ -1113,7 +1155,12 @@ const reviewStatusText = computed(() => {
                     >
                       {{ file.name }}
                     </a>
-                  </li>
+                  </li> -->
+                  <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
+    <a v-if="'rehydrated' in file" :href="getFileDownloadUrl(file.id)" target="_blank" rel="noopener noreferrer">
+        {{ file.name }}
+    </a>
+</li>
                 </template>
 
                 <li
@@ -1608,22 +1655,6 @@ const reviewStatusText = computed(() => {
         </div>
       </div>
 
-      <!-- <button type="button" class="edit-btn" @click="editAnswers">
-        Edit answer
-      </button> -->
-      <!-- <button
-        v-if="!suggestedRoutes.includes('Route C')"
-        type="button"
-        class="submit-btn"
-        @click="submitFinalResponse"
-        :disabled="!isConfidentialFormComplete"
-      >
-        Save
-      </button> -->
-      <!-- 
-      <button v-else type="button" class="submit-btn" @click="startNewSurvey">
-        Reset form
-      </button> -->
       <div class="main-btn-container">
         <button type="button" class="export-btn" @click="exportToPdf">
           Export to pdf
