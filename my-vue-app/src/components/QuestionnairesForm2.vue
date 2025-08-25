@@ -17,6 +17,15 @@ const { answers } = storeToRefs(store);
 
 const router = useRouter();
 
+
+const getQuestionById2 = (id: number): Question2 | null => {
+  for (const section of props.questionnaire.sections) {
+    const foundQuestion = section.questions.find((q) => q.id === id);
+    if (foundQuestion) return foundQuestion;
+  }
+  return null;
+};
+
 const inlineInputAnswers = computed({
   get() {
     if (!currentQuestion.value) return {};
@@ -301,7 +310,7 @@ const recalculatedRoutes = computed(() => {
 
   // --- Route A ---
   if (
-    ans102.startsWith("Yes") &&
+    ans102.startsWith("Yes") ||
     ans103.startsWith("More than 80% efficiency")
   ) {
     return ["Route A"];
@@ -315,8 +324,7 @@ const recalculatedRoutes = computed(() => {
     getCritCount(ans202, getQuestionById2(202)!) <= 2;
 
   const meetsRouteB2 =
-    (ans103.startsWith("More than 80% efficiency") ||
-      ans103.startsWith("Close to 80% efficiency")) &&
+    !ans103.startsWith("More than 80% efficiency") &&
     getAnswerKey(ans204).startsWith("Yes") &&
     getCritCount(ans204, getQuestionById2(204)!) <= 2;
 
@@ -399,7 +407,7 @@ const nextQuestion = () => {
 
     if (meetsRouteC) {
       store.setSuggestedRoutes(["Route C"]);
-      isContradiction.value = true; // Trigger the contradiction page
+      router.push("/contradiction");       
       return; // Stop further navigation
     }
   }
@@ -892,13 +900,7 @@ const parseOption = (option: string) => {
 //   },
 // });
 
-const getQuestionById2 = (id: number): Question2 | null => {
-  for (const section of props.questionnaire.sections) {
-    const foundQuestion = section.questions.find((q) => q.id === id);
-    if (foundQuestion) return foundQuestion;
-  }
-  return null;
-};
+
 
 // const isSubOptionVisible = (questionId: number, option: string): boolean => {
 //   const q = getQuestionById2(questionId);
