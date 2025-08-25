@@ -162,6 +162,7 @@ const handleCloseContradictionPreamble = () => {
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 const hasSubOptions = (option: string) => option.includes("||sub");
 const hasFileInput = (option: string) => option.includes("||files");
+const hasCritInput = (option: string) => option.includes("||crit");
 const parseOptionForInline = (option: string) => option.split("___");
 const showPreResult = () => {
   isPreResult.value = true;
@@ -189,76 +190,176 @@ const getFileDownloadUrl = (fileId: number) => {
   return `${VITE_API_BASE_URL}/api/file/${fileId}`;
 };
 
-const getRouteForQuestion = (
-  questionId: number,
-  answer: any,
-  allAnswers: Record<number, any>
-): string | null => {
-  if (!answer) return null;
+// Add this new ref near your other state variables
+const isContradiction = ref(false);
 
-  const answerKey =
-    typeof answer === "object" && answer !== null && answer.selectedOption
-      ? answer.selectedOption
-      : String(answer);
-
-  let route: string | null = null;
-  switch (questionId) {
-    case 102:
-      if (
-        answerKey.startsWith("Yes, please explain the exact remission rate")
-      ) {
-        route = "Route A";
-      }
-      break;
-    case 201:
-      if (answerKey.startsWith("Yes, both staging and typing. ref :")) {
-        route = "Route H";
-      } else if (answerKey.startsWith("Yes, typing only.")) {
-        route = "Route G";
-      } else if (answerKey.startsWith("No")) {
-        route = "Route B";
-      }
-      break;
-    case 201.5:
-      if (answerKey.startsWith("Have 2 stages")) {
-        route = "Route E";
-      } else if (answerKey.startsWith("Have more than 2 stages")) {
-        route = "Route F";
-      }
-      break;
-    case 203:
-      const answer102 = allAnswers[102];
-      if (answerKey.startsWith("Yes (Please define the contradiction :")) {
-        route = "Route C";
-      } else if (answerKey === "No") {
-        if (answer102 === "No") {
-          route = "Route H, Route D";
-        } else {
-          route = "Route D";
-        }
-      }
-      break;
+// Add this new helper function alongside your others like getCleanOptionLabel
+const getCritCount = (answer: any, question: Question2): number => {
+  if (
+    !answer ||
+    typeof answer !== "object" ||
+    !answer.inlineText ||
+    !question.options
+  ) {
+    return 0;
   }
+  const optionIndex = question.options.findIndex(
+    (opt) => opt === answer.selectedOption
+  );
+  if (optionIndex === -1) return 0;
 
-  return route;
+  const count = answer.inlineText[`${question.id}-${optionIndex}-select`];
+  return Number(count) || 0;
 };
 
+// const getRouteForQuestion = (
+//   questionId: number,
+//   answer: any,
+//   allAnswers: Record<number, any>
+// ): string | null => {
+//   if (!answer) return null;
+
+//   const answerKey =
+//     typeof answer === "object" && answer !== null && answer.selectedOption
+//       ? answer.selectedOption
+//       : String(answer);
+
+//   let route: string | null = null;
+//   switch (questionId) {
+//     case 102:
+//       if (
+//         answerKey.startsWith("Yes, please explain the exact remission rate")
+//       ) {
+//         route = "Route A";
+//       }
+//       break;
+//     case 201:
+//       if (answerKey.startsWith("Yes, both staging and typing. ref :")) {
+//         route = "Route H";
+//       } else if (answerKey.startsWith("Yes, typing only.")) {
+//         route = "Route G";
+//       } else if (answerKey.startsWith("No")) {
+//         route = "Route B";
+//       }
+//       break;
+//     case 201.5:
+//       if (answerKey.startsWith("Have 2 stages")) {
+//         route = "Route E";
+//       } else if (answerKey.startsWith("Have more than 2 stages")) {
+//         route = "Route F";
+//       }
+//       break;
+//     case 203:
+//       const answer102 = allAnswers[102];
+//       if (answerKey.startsWith("Yes (Please define the contradiction :")) {
+//         route = "Route C";
+//       } else if (answerKey === "No") {
+//         if (answer102 === "No") {
+//           route = "Route H, Route D";
+//         } else {
+//           route = "Route D";
+//         }
+//       }
+//       break;
+//   }
+
+//   return route;
+// };
+
+// const recalculatedRoutes = computed(() => {
+//   const routes = new Set<string>();
+
+//   Object.keys(answers.value).forEach((idStr) => {
+//     const id = Number(idStr);
+//     const answer = answers.value[id];
+//     const routeStr = getRouteForQuestion(id, answer, answers.value);
+
+//     if (routeStr) {
+//       routeStr.split(",").forEach((r) => {
+//         if (r.trim()) routes.add(r.trim());
+//       });
+//     }
+//   });
+
+//   return Array.from(routes).sort();
+// });
+
 const recalculatedRoutes = computed(() => {
-  const routes = new Set<string>();
+  const getAnswerKey = (answer: any): string => {
+    if (!answer) return "";
+    return typeof answer === "object" && answer.selectedOption
+      ? answer.selectedOption
+      : String(answer);
+  };
 
-  Object.keys(answers.value).forEach((idStr) => {
-    const id = Number(idStr);
-    const answer = answers.value[id];
-    const routeStr = getRouteForQuestion(id, answer, answers.value);
+  const ans102 = getAnswerKey(answers.value[102]);
+  const ans103 = getAnswerKey(answers.value[103]);
+  const ans201 = answers.value[201]; // Keep as object for sub-option check
+  const ans202 = answers.value[202];
+  const ans203 = getAnswerKey(answers.value[203]);
+  const ans204 = answers.value[204];
 
-    if (routeStr) {
-      routeStr.split(",").forEach((r) => {
-        if (r.trim()) routes.add(r.trim());
-      });
+  // --- Route A ---
+  if (
+    ans102.startsWith("Yes") &&
+    ans103.startsWith("More than 80% efficiency")
+  ) {
+    return ["Route A"];
+  }
+
+  // --- Route B ---
+  const meetsRouteB1 =
+    !ans102.startsWith("Yes") &&
+    !ans103.startsWith("More than 80% efficiency") &&
+    getAnswerKey(ans202).startsWith("Yes") &&
+    getCritCount(ans202, getQuestionById2(202)!) <= 2;
+
+  const meetsRouteB2 =
+    (ans103.startsWith("More than 80% efficiency") ||
+      ans103.startsWith("Close to 80% efficiency")) &&
+    getAnswerKey(ans204).startsWith("Yes") &&
+    getCritCount(ans204, getQuestionById2(204)!) <= 2;
+
+  if (meetsRouteB1 || meetsRouteB2) {
+    return ["Route B"];
+  }
+
+  // --- Common Pre-conditions for Routes D, E, F, G, H ---
+  const meetsComplexRoutePreconditions =
+    !ans102.startsWith("Yes") &&
+    !ans103.startsWith("More than 80% efficiency") &&
+    getAnswerKey(ans202).startsWith("Yes") &&
+    getCritCount(ans202, getQuestionById2(202)!) > 2 &&
+    getAnswerKey(ans204).startsWith("Yes") &&
+    getCritCount(ans204, getQuestionById2(204)!) > 2;
+
+  if (meetsComplexRoutePreconditions) {
+    const key201 = getAnswerKey(ans201);
+    if (
+      key201.startsWith("No staging and no typing.") ||
+      key201.startsWith("Uncertain")
+    ) {
+      return ["Route D"];
     }
-  });
+    if (key201.startsWith("Yes, both staging and typing.")) {
+      return ["Route H"];
+    }
+    if (key201.startsWith("Yes, only typing.")) {
+      return ["Route G"];
+    }
+    if (key201.startsWith("Yes, only staging.")) {
+      const subSelection = ans201.subs?.["Yes, only staging."];
+      if (subSelection?.startsWith("Have 2 stages")) {
+        return ["Route E"];
+      }
+      if (subSelection?.startsWith("Have more than 2 stages")) {
+        return ["Route F"];
+      }
+    }
+  }
 
-  return Array.from(routes).sort();
+  // If no other route is matched, return an empty array
+  return [];
 });
 
 const nextQuestion = () => {
@@ -280,8 +381,28 @@ const nextQuestion = () => {
     "DEBUG: Answer object AFTER save:",
     JSON.parse(JSON.stringify(answers.value[questionId]))
   );
-
+  const getAnswerKey = (answer: any): string => {
+    if (!answer) return "";
+    return typeof answer === "object" && answer.selectedOption
+      ? answer.selectedOption
+      : String(answer);
+  };
   const currentAnswer = answers.value[questionId];
+
+  if (questionId === 203 && getAnswerKey(currentAnswer).startsWith("Yes")) {
+    const ans102 = getAnswerKey(answers.value[102]);
+    const ans103 = getAnswerKey(answers.value[103]);
+
+    const meetsRouteC =
+      !ans102.startsWith("Yes") &&
+      !ans103.startsWith("More than 80% efficiency");
+
+    if (meetsRouteC) {
+      store.setSuggestedRoutes(["Route C"]);
+      isContradiction.value = true; // Trigger the contradiction page
+      return; // Stop further navigation
+    }
+  }
 
   if (
     currentAnswer === undefined ||
@@ -386,42 +507,47 @@ const radioSelection = computed({
     }
     return answer || null;
   },
-set(newValue) {
-  if (!currentQuestion.value || !newValue) return;
-  const questionId = currentQuestion.value.id;
-  const q = currentQuestion.value; // Get the full question object
+  set(newValue) {
+    if (!currentQuestion.value || !newValue) return;
+    const questionId = currentQuestion.value.id;
+    const q = currentQuestion.value; // Get the full question object
 
-  const newAnswer: { [key: string]: any } = {
-    selectedOption: newValue,
-  };
+    const newAnswer: { [key: string]: any } = {
+      selectedOption: newValue,
+    };
 
-  // --- REVISED LOGIC ---
-  // Check if the main option itself has an inline input
-  let needsInlineText = String(newValue).includes("___");
+    // --- REVISED LOGIC ---
+    // Check if the main option itself has an inline input
+    let needsInlineText = String(newValue).includes("___");
 
-  // Also check if the main option has sub-options that might need an inline input
-  if (hasSubOptions(newValue)) {
-    newAnswer.subs = {};
-    const mainLabel = getCleanOptionLabel(newValue);
-    const subOptions = q.subOptions?.[mainLabel];
-    // If any of the sub-options contain '___', we also need the inlineText object
-    if (subOptions?.some(subOpt => subOpt.includes('___'))) {
-      needsInlineText = true;
+    // Also check if the main option has sub-options that might need an inline input
+    if (hasSubOptions(newValue)) {
+      newAnswer.subs = {};
+      const mainLabel = getCleanOptionLabel(newValue);
+      const subOptions = q.subOptions?.[mainLabel];
+      // If any of the sub-options contain '___', we also need the inlineText object
+      if (subOptions?.some((subOpt) => subOpt.includes("___"))) {
+        needsInlineText = true;
+      }
     }
-  }
 
-  // If either of the above is true, create the inlineText property
-  if (needsInlineText) {
-    newAnswer.inlineText = {};
-  }
+    if (hasCritInput(newValue)) {
+      needsInlineText = true;
+      newAnswer.fileData = {};
+    }
 
-  // Handle file inputs (no change to this part)
-  if (hasFileInput(newValue)) {
-    newAnswer.fileData = {};
-  }
+    // If either of the above is true, create the inlineText property
+    if (needsInlineText) {
+      newAnswer.inlineText = {};
+    }
 
-  answers.value[questionId] = newAnswer;
-},
+    // Handle file inputs (no change to this part)
+    if (hasFileInput(newValue)) {
+      newAnswer.fileData = {};
+    }
+
+    answers.value[questionId] = newAnswer;
+  },
 });
 
 const checkboxModel = computed({
@@ -680,6 +806,28 @@ const isNextDisabled = computed(() => {
       );
 
       if (!originalOption) return true;
+
+      if (hasCritInput(originalOption)) {
+        const optionIndex = q.options?.indexOf(originalOption);
+        const dropdownValue =
+          answer.inlineText?.[`${q.id}-${optionIndex}-select`];
+        // Rule 1: Dropdown must be selected
+        if (!dropdownValue) return true;
+
+        // Rule 2: All text inputs must be filled
+        const listCount = Number(dropdownValue);
+        for (let i = 1; i <= listCount; i++) {
+          const listInputValue =
+            answer.inlineText?.[`${q.id}-${optionIndex}-list-${i}`];
+          if (!listInputValue || String(listInputValue).trim() === "")
+            return true;
+        }
+
+        // Rule 3: A file must be attached
+        const fileData = answer.fileData?.[getCleanOptionLabel(originalOption)];
+        if (!fileData || !fileData.files || fileData.files.length === 0)
+          return true;
+      }
 
       if (hasSubOptions(originalOption)) {
         const mainLabel = getCleanOptionLabel(originalOption);
@@ -1303,9 +1451,130 @@ watch(
                   />
                 </span>
               </label>
+
+              <label v-else-if="hasCritInput(option)" class="radio-label">
+                <span
+                  >{{ getCleanOptionLabel(option) }} (Please select the number
+                  of criteria :
+                </span>
+                <select
+                  v-model="
+                    inlineInputAnswers[
+                      `${currentQuestion.id}-${optionIndex}-select`
+                    ]
+                  "
+                  :disabled="radioSelection !== option"
+                  class="inline-select"
+                  @click.stop
+                >
+                  <option disabled value="">Select</option>
+                  <option v-for="i in 5" :key="i" :value="i">{{ i }}</option>
+                </select>
+                <span>)</span>
+              </label>
+
               <label v-else class="radio-label">{{
                 getCleanOptionLabel(option)
               }}</label>
+            </div>
+
+            <div
+              v-if="
+                answers[currentQuestion.id]?.selectedOption === option &&
+                hasCritInput(option)
+              "
+              class="dynamic-list-container"
+            >
+              <div
+                v-for="i in Number(
+                  inlineInputAnswers[
+                    `${currentQuestion.id}-${optionIndex}-select`
+                  ] || 0
+                )"
+                :key="i"
+                class="dynamic-list-item"
+              >
+                <label>{{ i }}.</label>
+                <DynamicInlineInput
+                  v-model="
+                    inlineInputAnswers[
+                      `${currentQuestion.id}-${optionIndex}-list-${i}`
+                    ]
+                  "
+                  placeholder="Enter criteria..."
+                  :disabled="radioSelection !== option"
+                />
+              </div>
+
+              <div class="file-input-wrapper">
+                <div class="file-list-container">
+                  <div
+                    v-for="(file, index) in (answers[currentQuestion.id]?.fileData?.[getCleanOptionLabel(option)]?.files || []).filter((f: File | null) => f)"
+                    :key="file.name + index"
+                    class="file-preview"
+                  >
+                    <a
+                      v-if="file.rehydrated"
+                      :href="getFileDownloadUrl(file.id)"
+                      target="_blank"
+                      class="file-link"
+                      >{{ file.name }}</a
+                    >
+                    <a
+                      v-else-if="file instanceof File"
+                      :href="createObjectURL(file)"
+                      target="_blank"
+                      class="file-link"
+                      >{{ file.name }}</a
+                    >
+                    <span
+                      v-else-if="file.isNewUnsavedFile"
+                      class="unsaved-file-placeholder"
+                      >{{ file.name }}</span
+                    >
+                    <button
+                      @click="
+                        removeFile(
+                          currentQuestion.id,
+                          getCleanOptionLabel(option),
+                          index
+                        )
+                      "
+                      class="remove-file-btn"
+                      type="button"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                </div>
+                <div
+                  v-if="
+                    !answers[currentQuestion.id]?.fileData?.[
+                      getCleanOptionLabel(option)
+                    ]?.files ||
+                    answers[currentQuestion.id].fileData[
+                      getCleanOptionLabel(option)
+                    ].files.length < 3
+                  "
+                >
+                  <input
+                    type="file"
+                    multiple
+                    @change="
+                      handleFileChange(
+                        $event,
+                        currentQuestion.id,
+                        getCleanOptionLabel(option)
+                      )
+                    "
+                    class="input-file-conditional"
+                    accept=".pdf,.png,.jpeg,.jpg,.docx,.ppt,.pptx,.xlsx"
+                  />
+                  <div class="file-format-text">
+                    (Max 3 files. Allowed types: pdf, png, jpg, docx, ppt, xlsx)
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div v-if="radioSelection === option" class="sub-option-container">
@@ -2010,5 +2279,31 @@ watch(
   color: #6b7280; /* A muted grey color */
   font-style: italic;
   text-decoration: none;
+}
+
+/* --- Styles for the Dynamic Criteria Inputs --- */
+
+/* This styles the main container for the dropdown's sub-inputs */
+.dynamic-list-container {
+  margin-left: 42px; /* Indents the whole block under its parent radio button */
+  padding: 0 1rem; /* 16px */
+}
+
+/* This styles each row (e.g., "1. [input box]") */
+.dynamic-list-item {
+  display: flex;
+  align-items: center; /* This is the key to vertical alignment */
+  gap: 0.5rem; /* 8px space between the number and the input */
+  margin-bottom: 0.5rem; /* Space between each row */
+}
+
+.dynamic-list-item label {
+  font-size: 18px;
+  color: #333;
+}
+
+/* Adds a bit of space above the file upload section */
+.dynamic-list-container .file-input-wrapper {
+  margin-top: 1rem; /* 16px */
 }
 </style>

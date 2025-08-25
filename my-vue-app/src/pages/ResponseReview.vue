@@ -861,7 +861,7 @@ const handleStatusUpdate = async (status: number, remark: string) => {
     const token = store.authToken;
     if (!token) {
       alert("Authentication error. Please log in again.");
-      router.push('/login');
+      router.push("/login");
       isSubmitting.value = false;
       return;
     }
@@ -871,7 +871,7 @@ const handleStatusUpdate = async (status: number, remark: string) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        'Authorization': `Bearer ${token}` // <-- This is the crucial part
+        Authorization: `Bearer ${token}`, // <-- This is the crucial part
       },
       body: JSON.stringify({
         token: store.currentToken,
@@ -883,8 +883,8 @@ const handleStatusUpdate = async (status: number, remark: string) => {
     if (!response.ok) {
       // If the token is invalid/expired, redirect to login
       if (response.status === 401) {
-          store.clearAuthToken();
-          router.push('/login');
+        store.clearAuthToken();
+        router.push("/login");
       }
       throw new Error("Failed to update status");
     }
@@ -938,44 +938,102 @@ const reviewStatusText = computed(() => {
   return "This project has been reviewed.";
 });
 
-
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 
 // Add this entire new function to your <script setup>
-const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: string): string => {
+const formatSubAnswer = (
+  question: Question2,
+  mainAnswer: any,
+  mainOptionKey: string
+): string => {
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
   // If there is no sub-selection, or it's not a string, return nothing.
-  if (!subSelection || typeof subSelection !== 'string') {
-    return '';
+  if (!subSelection || typeof subSelection !== "string") {
+    return "";
   }
 
   // If the sub-option has an inline input, we need to build the final string.
-  if (subSelection.includes('___')) {
+  if (subSelection.includes("___")) {
     // Find the indexes needed to build the unique key for the inline text
-    const mainOption = question.options?.find(opt => getCleanOptionLabel(opt) === mainOptionKey);
+    const mainOption = question.options?.find(
+      (opt) => getCleanOptionLabel(opt) === mainOptionKey
+    );
     if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
 
     const mainOptionIndex = question.options?.indexOf(mainOption);
     const subOptions = question.subOptions?.[mainOptionKey];
     const subIndex = subOptions?.indexOf(subSelection);
 
-    if (mainOptionIndex === undefined || subIndex === undefined || mainOptionIndex === -1 || subIndex === -1) {
+    if (
+      mainOptionIndex === undefined ||
+      subIndex === undefined ||
+      mainOptionIndex === -1 ||
+      subIndex === -1
+    ) {
       return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
     }
 
     // Construct the unique key (e.g., '201-1-sub-0-0')
     const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
-    const inlineValue = mainAnswer.inlineText?.[key] || '';
-    
+    const inlineValue = mainAnswer.inlineText?.[key] || "";
+
     // Replace the '___' with the user's text
-    const constructedString = getCleanOptionLabel(subSelection).replace('___', inlineValue);
-    
+    const constructedString = getCleanOptionLabel(subSelection).replace(
+      "___",
+      inlineValue
+    );
+
     return `(${constructedString})`;
   }
-  
+
   // If the sub-option is simple (no '___'), just return its clean label.
   return `(${getCleanOptionLabel(subSelection)})`;
+};
+
+// Add this interface to define the shape of our formatted answer
+interface FormattedCritAnswer {
+  label: string;
+  count: number;
+  criteria: string[];
+}
+
+// Add this new function to process the complex '||crit' answer object
+const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
+  const answer = question.answer as any; // We can safely cast to 'any' inside this controlled function
+
+  // Safety checks to ensure we have all the data we need
+  if (
+    !answer ||
+    typeof answer !== "object" ||
+    !answer.selectedOption ||
+    !answer.inlineText ||
+    !question.options
+  ) {
+    return null;
+  }
+
+  const optionIndex = question.options.findIndex(
+    (opt) => opt === answer.selectedOption
+  );
+  if (optionIndex === -1) return null;
+
+  const count = Number(
+    answer.inlineText[`${question.id}-${optionIndex}-select`] || 0
+  );
+
+  const criteria: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    const criterionText =
+      answer.inlineText[`${question.id}-${optionIndex}-list-${i}`] || "...";
+    criteria.push(criterionText);
+  }
+
+  const label = `${
+    answer.selectedOption.split("||")[0]
+  } (Number of criteria: ${count})`;
+
+  return { label, count, criteria };
 };
 </script>
 
@@ -1101,7 +1159,7 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
               </div>
             </div>
 
-            <div v-else-if="'selectedOption' in q.answer">
+            <!-- <div v-else-if="'selectedOption' in q.answer">
               <p class="answer-text">
                 <span style="color: red">Answer : </span>
                 {{ getConstructedAnswer(q, q.answer) }}
@@ -1109,11 +1167,48 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
                   v-for="(subAnswer, key) in (q.answer as any).subs"
                   :key="key"
                 >
-                  <!-- ({{
-                    Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-                  }}) -->
-  {{ formatSubAnswer(q, q.answer, String(key)) }}
+                  {{ formatSubAnswer(q, q.answer, String(key)) }}
+                </span>
+              </p>
+            </div> -->
 
+            <div
+              v-else-if="
+                q.options?.some((opt) => opt.includes('||crit')) &&
+                typeof q.answer === 'object' &&
+                q.answer !== null
+              "
+            >
+              <template v-if="formatCritAnswer(q)">
+                <p class="answer-text">
+                  <span style="color: red">Answer : </span>
+                  {{ formatCritAnswer(q)?.label }}
+                </p>
+                <ol class="criteria-list">
+                  <li
+                    v-for="(criterion, index) in formatCritAnswer(q)?.criteria"
+                    :key="index"
+                  >
+                    {{ criterion }}
+                  </li>
+                </ol>
+              </template>
+            </div>
+
+            <div
+              v-else-if="
+                'selectedOption' in q.answer &&
+                !q.options?.some((opt) => opt.includes('||crit'))
+              "
+            >
+              <p class="answer-text">
+                <span style="color: red">Answer : </span>
+                {{ getConstructedAnswer(q, q.answer) }}
+                <span
+                  v-for="(subAnswer, key) in (q.answer as any).subs"
+                  :key="key"
+                >
+                  {{ formatSubAnswer(q, q.answer, String(key)) }}
                 </span>
               </p>
             </div>
@@ -1156,11 +1251,19 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
                       {{ file.name }}
                     </a>
                   </li> -->
-                  <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
-    <a v-if="'rehydrated' in file" :href="getFileDownloadUrl(file.id)" target="_blank" rel="noopener noreferrer">
-        {{ file.name }}
-    </a>
-</li>
+                  <li
+                    v-for="file in normalizeFiles(fileInfo.files)"
+                    :key="file.name"
+                  >
+                    <a
+                      v-if="'rehydrated' in file"
+                      :href="getFileDownloadUrl(file.id)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {{ file.name }}
+                    </a>
+                  </li>
                 </template>
 
                 <li
@@ -1326,43 +1429,57 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
               </ul>
             </div>
 
-<div 
-  v-if="
-    q.id === 201 && 
-    typeof previousAnswers[201] === 'string' &&
-    previousAnswers[201].startsWith('Yes, staging only.') &&
-    previousAnswers[201.5]
-  " 
-  class="orphaned-previous-answer"
->
-  <label class="question-label" style="font-style: italic; color: #757575;">
-    {{ getQuestionById2(201.5)?.question }}
-  </label>
-  <p class="previous-answer-text" style="margin-left: 16px;">
-    {{ getConstructedAnswer(getQuestionById2(201.5)!, previousAnswers[201.5]) }}
-  </p>
-  
-  <div
-    v-if="(previousAnswers[201.5] as any).fileData || (previousAnswers[201.5] as any).files"
-    class="sub-answer-block"
-  >
-    <strong style="color: #757575">Previous Files:</strong>
-    <ul class="previous-files-list">
-      <template v-for="(fileInfo, key) in (previousAnswers[201.5] as any).fileData" :key="key">
-        <li v-for="file in normalizeFiles(fileInfo.files)" :key="file.name">
-          <a
-            v-if="'rehydrated' in file"
-            :href="getFileDownloadUrl(file.id)"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {{ file.name }}
-          </a>
-        </li>
-      </template>
-    </ul>
-  </div>
-</div>
+            <div
+              v-if="
+                q.id === 201 &&
+                typeof previousAnswers[201] === 'string' &&
+                previousAnswers[201].startsWith('Yes, staging only.') &&
+                previousAnswers[201.5]
+              "
+              class="orphaned-previous-answer"
+            >
+              <label
+                class="question-label"
+                style="font-style: italic; color: #757575"
+              >
+                {{ getQuestionById2(201.5)?.question }}
+              </label>
+              <p class="previous-answer-text" style="margin-left: 16px">
+                {{
+                  getConstructedAnswer(
+                    getQuestionById2(201.5)!,
+                    previousAnswers[201.5]
+                  )
+                }}
+              </p>
+
+              <div
+                v-if="(previousAnswers[201.5] as any).fileData || (previousAnswers[201.5] as any).files"
+                class="sub-answer-block"
+              >
+                <strong style="color: #757575">Previous Files:</strong>
+                <ul class="previous-files-list">
+                  <template
+                    v-for="(fileInfo, key) in (previousAnswers[201.5] as any).fileData"
+                    :key="key"
+                  >
+                    <li
+                      v-for="file in normalizeFiles(fileInfo.files)"
+                      :key="file.name"
+                    >
+                      <a
+                        v-if="'rehydrated' in file"
+                        :href="getFileDownloadUrl(file.id)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
         <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">
@@ -2428,5 +2545,13 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px dotted #e0e0e0; /* A light dotted separator */
+}
+
+.criteria-list li,
+.answer-text,
+.previous-answer-text,
+.info-answer {
+  white-space: pre-wrap; /* This is the magic property that preserves newlines */
+  word-wrap: break-word;   /* This ensures long unbroken lines of text still wrap */
 }
 </style>

@@ -84,7 +84,6 @@ const secondFormAnswers = computed(
       .filter((q) => q !== null) as Question2[]
 );
 
-
 const normalizeFiles = (files: any): FileItem[] => {
   // If it's already a valid array, just return it.
   if (Array.isArray(files)) {
@@ -369,40 +368,99 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 
 // Add this entire new function to your <script setup>
-const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: string): string => {
+const formatSubAnswer = (
+  question: Question2,
+  mainAnswer: any,
+  mainOptionKey: string
+): string => {
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
   // If there is no sub-selection, or it's not a string, return nothing.
-  if (!subSelection || typeof subSelection !== 'string') {
-    return '';
+  if (!subSelection || typeof subSelection !== "string") {
+    return "";
   }
 
   // If the sub-option has an inline input, we need to build the final string.
-  if (subSelection.includes('___')) {
+  if (subSelection.includes("___")) {
     // Find the indexes needed to build the unique key for the inline text
-    const mainOption = question.options?.find(opt => getCleanOptionLabel(opt) === mainOptionKey);
+    const mainOption = question.options?.find(
+      (opt) => getCleanOptionLabel(opt) === mainOptionKey
+    );
     if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
 
     const mainOptionIndex = question.options?.indexOf(mainOption);
     const subOptions = question.subOptions?.[mainOptionKey];
     const subIndex = subOptions?.indexOf(subSelection);
 
-    if (mainOptionIndex === undefined || subIndex === undefined || mainOptionIndex === -1 || subIndex === -1) {
+    if (
+      mainOptionIndex === undefined ||
+      subIndex === undefined ||
+      mainOptionIndex === -1 ||
+      subIndex === -1
+    ) {
       return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
     }
 
     // Construct the unique key (e.g., '201-1-sub-0-0')
     const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
-    const inlineValue = mainAnswer.inlineText?.[key] || '';
-    
+    const inlineValue = mainAnswer.inlineText?.[key] || "";
+
     // Replace the '___' with the user's text
-    const constructedString = getCleanOptionLabel(subSelection).replace('___', inlineValue);
-    
+    const constructedString = getCleanOptionLabel(subSelection).replace(
+      "___",
+      inlineValue
+    );
+
     return `(${constructedString})`;
   }
-  
+
   // If the sub-option is simple (no '___'), just return its clean label.
   return `(${getCleanOptionLabel(subSelection)})`;
+};
+
+// Add this interface to define the shape of our formatted answer
+interface FormattedCritAnswer {
+  label: string;
+  count: number;
+  criteria: string[];
+}
+
+// Add this new function to process the complex answer object
+const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
+  const answer = question.answer as any; // We can safely cast to 'any' inside this controlled function
+
+  // Safety checks to ensure we have all the data we need
+  if (
+    !answer ||
+    typeof answer !== "object" ||
+    !answer.selectedOption ||
+    !answer.inlineText ||
+    !question.options
+  ) {
+    return null;
+  }
+
+  const optionIndex = question.options.findIndex(
+    (opt) => opt === answer.selectedOption
+  );
+  if (optionIndex === -1) return null;
+
+  const count = Number(
+    answer.inlineText[`${question.id}-${optionIndex}-select`] || 0
+  );
+
+  const criteria: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    const criterionText =
+      answer.inlineText[`${question.id}-${optionIndex}-list-${i}`] || "...";
+    criteria.push(criterionText);
+  }
+
+  const label = `${
+    answer.selectedOption.split("||")[0]
+  } (Number of criteria: ${count})`;
+
+  return { label, count, criteria };
 };
 </script>
 
@@ -474,6 +532,28 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
           <span style="color: red">Your answer : </span
           >{{ q.answer.join(", ") }}
         </p>
+        <div
+          v-else-if="
+            q.options?.some((opt) => opt.includes('||crit')) &&
+            typeof q.answer === 'object' &&
+            q.answer !== null
+          "
+        >
+          <template v-if="formatCritAnswer(q)">
+            <p class="answer-text">
+              <span style="color: red">Your answer : </span>
+              {{ formatCritAnswer(q)?.label }}
+            </p>
+            <ol class="criteria-list">
+              <li
+                v-for="(criterion, index) in formatCritAnswer(q)?.criteria"
+                :key="index"
+              >
+                {{ criterion }}
+              </li>
+            </ol>
+          </template>
+        </div>
         <!-- <div v-if="q.id === 207">
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
@@ -556,7 +636,8 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
             q.answer &&
             typeof q.answer === 'object' &&
             !Array.isArray(q.answer) &&
-            'selectedOption' in q.answer
+            'selectedOption' in q.answer &&
+            !q.options?.some((opt) => opt.includes('||crit'))
           "
         >
           <p class="answer-text">
@@ -568,8 +649,8 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
               }})
             </span> -->
             <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
-  {{ formatSubAnswer(q, q.answer, String(key)) }}
-</span>
+              {{ formatSubAnswer(q, q.answer, String(key)) }}
+            </span>
           </p>
         </div>
 
@@ -652,7 +733,7 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
           </ul>
         </div>
       </div>
-<!-- 
+      <!-- 
        <h3
         v-if="suggestedRoutes.length > 0"
         style="margin-left: 8px; padding-top: 16px"
@@ -956,6 +1037,7 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
     </div>
   </div>
 </template>
+
 <style scoped>
 .questionnaire {
   padding-left: 16px;
@@ -1441,5 +1523,21 @@ const formatSubAnswer = (question: Question2, mainAnswer: any, mainOptionKey: st
   margin-top: 0.25rem;
   padding-left: 20px; /* Indents the bulleted list */
   list-style-type: disc;
+}
+
+.criteria-list {
+  margin-left: 32px; /* Indent the list */
+  margin-top: 8px;
+  list-style-type: decimal;
+  color: #555;
+  font-size: 16px;
+}
+
+.criteria-list li,
+.answer-text,
+.previous-answer-text,
+.info-answer {
+  white-space: pre-wrap; /* This is the magic property that preserves newlines */
+  word-wrap: break-word; /* This ensures long unbroken lines of text still wrap */
 }
 </style>

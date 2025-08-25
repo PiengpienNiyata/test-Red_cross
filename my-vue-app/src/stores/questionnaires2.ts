@@ -116,7 +116,7 @@ export const questionnaireData: Questionnaire2[] = [
             subOptions: {
               "Yes, only staging.": [
                 "Have 2 stages  (Please explain : ___ )||files",
-                "Have more than 2 stages  (Please explain : ___ )||files",
+                "Have more than 2 stages (Please explain : ___ )||files",
               ],
             },
             next: {
@@ -158,8 +158,7 @@ export const questionnaireData: Questionnaire2[] = [
               "B-3: Are there any contradiction within the criteria for diagnosis? (see glossary: contradiction)",
             options: ["Yes (Please define the contradiction : ___)||files", "No"],
             next: {
-              "Yes (Please define the contradiction": "contradiction",
-              "No": 204,
+              all: 204,
             },
           },
           {

@@ -330,8 +330,10 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
 
       const isComplexObjectToKeep = (
         question.id === 207 ||
-        (question.subOptions && Object.keys(question.subOptions).length > 0)
+        (question.subOptions && Object.keys(question.subOptions).length > 0) ||
+        question.options?.some(opt => opt.includes('||crit'))
       );
+
       if (isComplexObjectToKeep) {
         // For these special cases, we save the entire object.
         otherAnswers[id] = value;
