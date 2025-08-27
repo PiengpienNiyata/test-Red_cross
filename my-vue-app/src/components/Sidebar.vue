@@ -48,8 +48,6 @@
             color: isActive('/instruction-1') ? '#EB4648' : '#A4A4A4',
           }"
         >
-          <!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
-
           <img
             :src="isActive('/instruction-1') ? icon1 : icon2"
             alt="icon"
@@ -97,23 +95,41 @@
           >
         </div>
       </div>
-      <!-- <div class="divider"></div>
+    </template>
+
+    <template v-else-if="isContradiction">
+      <div class="sidebar-item">
+        <div
+          class="sidebar-item-2"
+          :style="{
+            color: contradictionStep === 1 ? '#EB4648' : '#A4A4A4',
+          }"
+        >
+          <img
+            :src="contradictionStep === 1 ? icon1 : icon2"
+            alt="icon"
+            class="icon"
+          />
+          <span style="text-align: center">Contradiction Identified</span>
+        </div>
+      </div>
+      <div class="divider"></div>
 
       <div class="sidebar-item">
         <div
           class="sidebar-item-2"
-          :style="{ color: isActive('/summary') ? '#EB4648' : '#A4A4A4' }"
+          :style="{
+            color: contradictionStep === 2 ? '#EB4648' : '#A4A4A4',
+          }"
         >
           <img
-            :src="isActive('/summary') ? icon4 : icon3"
+            :src="contradictionStep === 2 ? icon4 : icon3"
             alt="icon"
             class="icon"
           />
-          <span style="display: inline-block; width: 80px; text-align: center"
-            >Steps of<br />extrapolation</span
-          >
+          <span style="text-align: center">Restudy Questionnaire </span>
         </div>
-      </div> -->
+      </div>
     </template>
 
     <template v-else>
@@ -126,8 +142,6 @@
               : '#A4A4A4',
           }"
         >
-          <!--@click="$router.push('/questionnairesResearcher')" @click="$router.push('/questionnairesResearcher2')" @click="$router.push('/questionnairesResearcher3')"-->
-
           <img
             :src="isActive('/questionnairesResearcher') ? icon1 : icon2"
             alt="icon"
@@ -141,11 +155,10 @@
       <div class="sidebar-item">
         <div
           class="sidebar-item-2"
-      :style="{ color: isSectionA_Active ? '#EB4648' : '#A4A4A4' }"
-
+          :style="{ color: isSectionA_Active ? '#EB4648' : '#A4A4A4' }"
         >
           <img
-        :src="isSectionA_Active ? icon1 : icon2"
+            :src="isSectionA_Active ? icon1 : icon2"
             alt="icon"
             class="icon"
           />
@@ -159,11 +172,10 @@
       <div class="sidebar-item">
         <div
           class="sidebar-item-2"
-      :style="{ color: isSectionB_Active ? '#EB4648' : '#A4A4A4' }"
-
+          :style="{ color: isSectionB_Active ? '#EB4648' : '#A4A4A4' }"
         >
           <img
-        :src="isSectionB_Active ? icon1 : icon2"
+            :src="isSectionB_Active ? icon1 : icon2"
             alt="icon"
             class="icon"
           />
@@ -249,12 +261,11 @@ import icon4 from "@/assets/icon4.png";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRoute, useRouter } from "vue-router";
 import { computed, ref } from "vue";
-import { storeToRefs } from "pinia"; // <-- 1. IMPORT
+import { storeToRefs } from "pinia";
 
 const showLogoutConfirmModal = ref(false);
 const showLogoutSuccessModal = ref(false);
 
-// --- INTERFACE (from the second script) ---
 interface VersionHistoryItem {
   id: number;
   version: number;
@@ -262,51 +273,46 @@ interface VersionHistoryItem {
   status: number;
 }
 
-// --- SETUP (from the first script) ---
 const router = useRouter();
 const store = useQuestionnaireStore();
 const route = useRoute();
-const { currentQuestionId } = storeToRefs(store); // <-- 2. GET from store
+const { currentQuestionId } = storeToRefs(store);
 
 const isReviewPage = computed(() => route.path === "/Review");
 const isAdminDashboard = computed(() => route.path === "/admin/dashboard");
 const isFetchingPage = computed(() => {
   return ["ReviewResponseByVersion", "ReviewResponse"].includes(
-    //, "Glossary"
     route.name as string
   );
 });
-// const isGlossaryPage = computed(() => route.path === "/glossary");
 const isInstruction = computed(() => {
   return ["Instruction1", "Instruction2", "Glossary"].includes(
     route.name as string
   );
 });
-// --- METHOD CONVERTED TO A FUNCTION (from the second script) ---
+
+const isContradiction = computed(() => route.path === "/contradiction");
+const { contradictionStep } = storeToRefs(store);
+
 const isActive = (path: string) => {
   return route.path === path;
 };
 
-// --- EXISTING FUNCTIONS AND DATA (from the first script) ---
 const selectVersion = (versionItem: VersionHistoryItem) => {
   if (store.currentVersion !== versionItem.version) {
     const token = store.currentToken;
     router.push(`/review-response/${token}/${versionItem.version}`);
   }
 };
-// REPLACE your existing isSectionA_Active computed property
 const isSectionA_Active = computed(() => {
-  // Only highlight if we are on the second questionnaire page
-  if (route.name !== 'QuestionnairesResearcher2') return false;
-  
+  if (route.name !== "QuestionnairesResearcher2") return false;
+
   if (!currentQuestionId.value) return false;
   return currentQuestionId.value >= 100 && currentQuestionId.value < 200;
 });
 
-// REPLACE your existing isSectionB_Active computed property
 const isSectionB_Active = computed(() => {
-  // Only highlight if we are on the second questionnaire page
-  if (route.name !== 'QuestionnairesResearcher2') return false;
+  if (route.name !== "QuestionnairesResearcher2") return false;
 
   if (!currentQuestionId.value) return false;
   return currentQuestionId.value >= 200 && currentQuestionId.value < 300;
@@ -356,7 +362,6 @@ const redirectToLogin = () => {
 }
 
 .sidebar-item {
-  /* cursor: pointer; */
   max-height: 100px;
   display: flex;
   width: 200px;
@@ -366,7 +371,6 @@ const redirectToLogin = () => {
 
 .sidebar-item-2 {
   max-width: 160px;
-  /* cursor: pointer; */
   cursor: default;
   max-height: 100px;
   display: flex;
@@ -398,7 +402,6 @@ const redirectToLogin = () => {
 }
 
 .version-title {
-  /* font-weight: 600; */
   margin-bottom: 1rem;
   color: #333;
 }
@@ -409,7 +412,7 @@ const redirectToLogin = () => {
   border-radius: 6px;
   margin-bottom: 0.5rem;
   background-color: #f9f9f9;
-  cursor: pointer; /* You can add click handlers later */
+  cursor: pointer;
   transition: background-color 0.2s;
 }
 
@@ -418,9 +421,8 @@ const redirectToLogin = () => {
 }
 
 .version-item.active-version {
-  background-color: #fee2e2; /* Light red */
+  background-color: #fee2e2;
   border-color: #eb4648;
-  /* font-weight: bold; */
   color: #eb4648;
 }
 
@@ -432,7 +434,6 @@ const redirectToLogin = () => {
   font-size: 0.8rem;
   color: #666;
 }
-/* ADD THESE STYLES for the status filter */
 .status-filter {
   width: 100%;
   padding: 16px;
@@ -440,7 +441,6 @@ const redirectToLogin = () => {
 }
 
 .status-title {
-  /* font-weight: 600; */
   margin-bottom: 1rem;
   color: #333;
 }
@@ -462,39 +462,18 @@ const redirectToLogin = () => {
 }
 
 .status-item.active-status {
-  background-color: #fee2e2; /* Light red */
+  background-color: #fee2e2;
   border-color: #eb4648;
-  /* font-weight: bold; */
   color: #eb4648;
 }
 
-/* .dashboard-btn {
-  height: 100%;
-  width: 190px;
-  background-color: #eb4648;
-  color: #ffffff;
-  padding: 8px;
-  border: 1px solid #eb4648;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-left: 8px;
-  margin-right: 16px;
-
-   margin-top: auto;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 16px;
-} */
-
-/* ADD this new rule */
 .sidebar-footer {
-  margin-top: auto; /* This pushes the footer to the bottom */
+  margin-top: auto;
   padding: 16px;
   text-align: center;
   width: 100%;
 }
 
-/* REPLACE this rule */
 .dashboard-btn {
   width: 188px;
   background-color: #eb4648;
@@ -528,7 +507,6 @@ const redirectToLogin = () => {
 
 .modal-content h3 {
   font-size: 1.5rem;
-  /* font-weight: 600; */
   margin-bottom: 1rem;
 }
 
@@ -556,24 +534,14 @@ const redirectToLogin = () => {
   border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
-  /* font-weight: 500; */
   min-width: 120px;
   transition: background-color 0.2s;
 }
 
-/* .cancel-btn {
-  background-color: #f3f4f6;
-  color: #374151;
-  border: 1px solid #d1d5db;
-} */
 .cancel-btn:hover {
   background-color: #c2c2c2;
 }
 
-/* .confirm-btn {
-  background-color: #eb4648;
-  color: white;
-} */
 .confirm-btn:hover,
 .dashboard-btn:hover {
   background-color: #c9302c;

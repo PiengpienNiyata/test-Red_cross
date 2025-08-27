@@ -23,10 +23,6 @@ const getCleanOptionLabel = (option: string): string => {
   return option.split("||")[0];
 };
 
-// --- REUSABLE REHYDRATION FUNCTION ---
-// This function takes raw data from the API and builds the complex answer object
-// REPLACE the entire rehydrateAnswers function with this one
-
 const rehydrateAnswers = (submissionData: any): Record<number, any> => {
   let combinedAnswers = { ...submissionData.answers };
 
@@ -42,7 +38,8 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
   combinedAnswers[1006] = submissionData.disease_name || "";
   combinedAnswers[1007] = submissionData.intervention || "";
   if (submissionData.research_context) {
-    const { research_questions, molecular_signaling } = submissionData.research_context;
+    const { research_questions, molecular_signaling } =
+      submissionData.research_context;
     if (research_questions) {
       combinedAnswers[1008] = research_questions.principle || "";
       combinedAnswers[1009] = research_questions.factual_statement || "";
@@ -55,8 +52,6 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
     }
   }
 
-  // --- NEW, ROBUST FILE REHYDRATION LOGIC ---
-
   // 2. First, group all uploaded files by their question ID
   const filesByQuestionId: Record<string, any[]> = {};
   if (submissionData.uploaded_files) {
@@ -65,50 +60,16 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
       if (!filesByQuestionId[qId]) {
         filesByQuestionId[qId] = [];
       }
-      filesByQuestionId[qId].push({ id: file.id, name: file.file_name, rehydrated: true });
+      filesByQuestionId[qId].push({
+        id: file.id,
+        name: file.file_name,
+        rehydrated: true,
+      });
     });
   }
 
   // 3. Now, iterate through the questions that have files and build the complex answer object
-  // Object.keys(filesByQuestionId).forEach(qIdStr => {
-  //   const qId = Number(qIdStr);
-  //   const question = getQuestionById2(qId);
-  //   const rawAnswerString = combinedAnswers[qId];
-  //   const allFilesForQuestion = filesByQuestionId[qIdStr];
-
-  //   if (question && typeof rawAnswerString === 'string') {
-  //     const originalOption = question.options?.find(opt => {
-  //       const cleanOpt = getCleanOptionLabel(opt);
-  //       if (cleanOpt.includes(':')) return rawAnswerString.startsWith(cleanOpt.split(':')[0]);
-  //       return rawAnswerString.startsWith(cleanOpt);
-  //     });
-
-  //     if (originalOption) {
-  //       const cleanOriginalOption = getCleanOptionLabel(originalOption);
-  //       const newAnswerObject = {
-  //         selectedOption: originalOption,
-  //         inlineText: {},
-  //         fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
-  //         subs: {}
-  //       };
-        
-  //       if (originalOption.includes('___')) {
-  //           const parts = originalOption.split('___');
-  //           const prefix = parts[0].split('||')[0];
-  //           const suffix = parts[1].split('||')[0];
-  //           let userText = rawAnswerString.split('||')[0];
-  //           userText = userText.replace(prefix, '').replace(suffix, '');
-  //           const optionIndex = question.options?.indexOf(originalOption);
-  //           if (optionIndex !== undefined && optionIndex > -1) {
-  //               newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
-  //           }
-  //       }
-  //       combinedAnswers[qId] = newAnswerObject;
-  //     }
-  //   }
-  // });
-
-  Object.keys(filesByQuestionId).forEach(qIdStr => {
+  Object.keys(filesByQuestionId).forEach((qIdStr) => {
     const qId = Number(qIdStr);
     const question = getQuestionById2(qId);
     const answer = combinedAnswers[qId]; // This can be a string OR an object
@@ -116,52 +77,76 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
 
     if (!question) return;
 
-    // WHY: This is the new logic. It handles both cases.
-    if (typeof answer === 'object' && answer !== null) {
-        // CASE 1: The answer is already a complex object (like for Q201).
-        if (!answer.fileData) answer.fileData = {};
-        
-        // Check if there is a sub-answer.
-        const mainLabel = getCleanOptionLabel(answer.selectedOption);
-        const subSelection = answer.subs?.[mainLabel];
+    if (typeof answer === "object" && answer !== null) {
+      // CASE 1: The answer is already a complex object (like for Q201).
+      if (!answer.fileData) answer.fileData = {};
 
-        if (subSelection && typeof subSelection === 'string') {
-            // If there's a sub-answer, use ITS label as the key.
-            const subLabel = getCleanOptionLabel(subSelection);
-            answer.fileData[subLabel] = { files: allFilesForQuestion };
-        } else {
-            // Otherwise, use the main answer's label as the key.
-            answer.fileData[mainLabel] = { files: allFilesForQuestion };
-        }
+      // Check if there is a sub-answer.
+      const mainLabel = getCleanOptionLabel(answer.selectedOption);
+      const subSelection = answer.subs?.[mainLabel];
 
-    } else if (typeof answer === 'string') {
-        // CASE 2: The answer is a flattened string (older questions).
-        // This logic reconstructs the object.
-        const originalOption = question.options?.find(opt => answer.startsWith(getCleanOptionLabel(opt)));
+      if (subSelection && typeof subSelection === "string") {
+        // If there's a sub-answer, use ITS label as the key.
+        const subLabel = getCleanOptionLabel(subSelection);
+        answer.fileData[subLabel] = { files: allFilesForQuestion };
+      } else {
+        // Otherwise, use the main answer's label as the key.
+        answer.fileData[mainLabel] = { files: allFilesForQuestion };
+      }
+    } else if (typeof answer === "string") {
+      // CASE 2: The answer is a flattened string (older questions).
+      // This logic reconstructs the object.
+      const originalOption = question.options?.find((opt) =>
+        answer.startsWith(getCleanOptionLabel(opt))
+      );
 
-        if (originalOption) {
-            const cleanOriginalOption = getCleanOptionLabel(originalOption);
-            const newAnswerObject = {
-              selectedOption: originalOption,
-              inlineText: {},
-              fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
-              subs: {}
+      if (originalOption) {
+        const cleanOriginalOption = getCleanOptionLabel(originalOption);
+        const newAnswerObject = {
+          selectedOption: originalOption,
+          inlineText: {},
+          fileData: { [cleanOriginalOption]: { files: allFilesForQuestion } },
+          subs: {},
+        };
+
+        if (originalOption.includes("___")) {
+          const parts = originalOption.split("___");
+          const prefix = parts[0].split("||")[0];
+          let userText = answer.split("||")[0].replace(prefix, "").trim();
+          const optionIndex = question.options?.indexOf(originalOption);
+          if (optionIndex !== undefined && optionIndex > -1) {
+            newAnswerObject.inlineText = {
+              [`${qId}-${optionIndex}-0`]: userText,
             };
-            
-            if (originalOption.includes('___')) {
-                const parts = originalOption.split('___');
-                const prefix = parts[0].split('||')[0];
-                let userText = answer.split('||')[0].replace(prefix, '').trim();
-                const optionIndex = question.options?.indexOf(originalOption);
-                if (optionIndex !== undefined && optionIndex > -1) {
-                    newAnswerObject.inlineText = { [`${qId}-${optionIndex}-0`]: userText };
-                }
-            }
-            combinedAnswers[qId] = newAnswerObject;
+          }
         }
+        combinedAnswers[qId] = newAnswerObject;
+      }
     }
-});
+  });
+  Object.keys(combinedAnswers).forEach((qIdStr) => {
+    const qId = Number(qIdStr);
+    const question = getQuestionById2(qId);
+    const answer = combinedAnswers[qId];
 
+    // If it's a simple string answer for a radio question, convert it back to an object.
+    if (question?.type === "radio" && typeof answer === "string") {
+      // Find the original option that matches the saved string answer
+      const originalOption = question.options?.find(
+        (opt) => getCleanOptionLabel(opt) === getCleanOptionLabel(answer)
+      );
+
+      if (originalOption) {
+        combinedAnswers[qId] = {
+          selectedOption: originalOption,
+          // Initialize other properties in case they are needed elsewhere
+          subs: {},
+          inlineText: {},
+          fileData: {},
+        };
+      }
+    }
+  });
   // 4. Rehydrate confidentiality level
   if (submissionData.confidentiality_level) {
     const confidentialityString = submissionData.confidentiality_level;
@@ -169,9 +154,15 @@ const rehydrateAnswers = (submissionData: any): Record<number, any> => {
     if (match) {
       const mainOption = match[1].trim();
       const subOption = match[2].trim();
-      combinedAnswers[3001] = { selectedOption: mainOption, subs: { [mainOption]: subOption } };
+      combinedAnswers[3001] = {
+        selectedOption: mainOption,
+        subs: { [mainOption]: subOption },
+      };
     } else {
-      combinedAnswers[3001] = { selectedOption: confidentialityString, subs: {} };
+      combinedAnswers[3001] = {
+        selectedOption: confidentialityString,
+        subs: {},
+      };
     }
   }
 
@@ -203,12 +194,11 @@ onMounted(async () => {
     };
 
     // --- FETCH CURRENT VERSION ---
-    // Note: The /api/response/edit/:token is public, but the review one is protected. We will add headers to all for consistency.
     const currentApiUrl = version
       ? `${VITE_API_BASE_URL}/api/response/review/${tokenFromUrl}/${version}`
       : `${VITE_API_BASE_URL}/api/response/edit/${tokenFromUrl}`;
 
-    const currentRes = await fetch(currentApiUrl, { headers }); // <-- Add headers
+    const currentRes = await fetch(currentApiUrl, { headers });
 
     if (currentRes.status === 401) {
       store.clearAuthToken();
@@ -225,7 +215,7 @@ onMounted(async () => {
       const prevApiUrl = `${VITE_API_BASE_URL}/api/response/review/${tokenFromUrl}/${
         currentVersionNumber - 1
       }`;
-      const prevRes = await fetch(prevApiUrl, { headers }); // <-- Add headers
+      const prevRes = await fetch(prevApiUrl, { headers });
       if (prevRes.ok) {
         const prevSubmissionData = await prevRes.json();
         const combinedPreviousAnswers = rehydrateAnswers(prevSubmissionData);
@@ -253,7 +243,7 @@ onMounted(async () => {
     const versionRes = await fetch(
       `${VITE_API_BASE_URL}/api/versions/${tokenFromUrl}`,
       { headers }
-    ); // <-- Add headers
+    );
     if (versionRes.ok) {
       const versionData = await versionRes.json();
       store.setVersionHistory(versionData);

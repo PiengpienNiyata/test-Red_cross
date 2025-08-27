@@ -15,148 +15,44 @@
         </li>
       </ul>
 
-      <h3>Step 2: Fill in general information</h3>
+<h3>Step 2: Fill in general information</h3>
+
+<ul>
+  <template v-for="item in step2Instructions" :key="item.id">
+    <li v-if="!item.isGroup" class="instruction-item">
+      <span>{{ instructions1[item.id] }}</span>
+    </li>
+    <li v-else class="instruction-item">
+      <span>{{ item.groupTitle }}</span>
       <ul>
-        <li>Specify the personal information.</li>
-        <li>
-          Identify the disease under investigation, or the target disease for
-          the intended intervention.
-        </li>
-        <li>
-          Specify the intended intervention being studied, or the most promising
-          intervention for the disease of interest.
-        </li>
-        <li>
-          Describe research questions in terms of:
-          <ul>
-            <li>
-              <strong>Principle:</strong> What is the conceptual or logical
-              foundation behind your research question? Why is this question
-              important to ask?
-            </li>
-            <li>
-              <strong>Factual Statement:</strong> What is already known,
-              observed, or published related to this question?
-            </li>
-            <li>
-              <strong>Implication:</strong> If this question is answered, what
-              could it lead to in terms of understanding or therapeutic
-              application?
-            </li>
-          </ul>
-        </li>
-        <li>
-          Describe molecular signaling principle in terms of:
-          <ul>
-            <li>
-              <strong>Principle:</strong> What general signaling mechanism or
-              rule does this pathway follow (e.g., receptor activation, cascade,
-              feedback)?
-            </li>
-            <li>
-              <strong>Factual Statement:</strong> What evidence supports this
-              pathway's activity or role (e.g., experimental data, literature)?
-            </li>
-            <li>
-              <strong>Implication:</strong> Why is this signaling important?
-              What are the biological or therapeutic consequences if it is
-              altered?
-            </li>
-          </ul>
+        <li v-for="subId in item.groupItems" :key="subId">
+          {{ instructions1[subId] }}
         </li>
       </ul>
+    </li>
+  </template>
+</ul>
 
-       <h3>Step 3: Complete Section A – Intervention-Related Information</h3>
-      <ul>
-        <li>
-          <strong>A-1:</strong> Describe the molecular mechanism of the
-          selected intervention.
-        </li>
-        <li>
-          <strong>A-2:</strong> Indicate whether the expected remission
-          efficiency of the designated intervention is approximately 80%.
-        </li>
-        <li>
-          <strong>A-3:</strong> Provide any reported therapeutic efficacy (or
-          remission rate, if available) of the intervention.
-        </li>
-        <li>
-          <strong>A-4:</strong> Provide evidence suggesting that the selected
-          treatment/intervention is effective across all clinical types of the
-          disease—supporting the hypothesis that these types share a common
-          molecular pathway, and differ only by initial triggers(s).
-        </li>
-        <li>
-          <strong>A-5:</strong> Evaluate whether the response time of the
-          intervention is significantly shorter than the national resolution
-          time.
-        </li>
-      </ul>
+<p style="font-style: italic; margin-top: 2rem; color: #555;">
+  Note: These instructions will also appear at the end of each relevant question as you fill out the form.
+</p>
 
-      <h3>Step 4: Complete Section B – Disease-Related Information</h3>
-      <ul>
-        <li>
-          <strong>B-1:</strong> Based on your understanding of the disease's
-          molecular signaling mechanisms (e.g., autocrine, paracrine, endocrine
-          interactions), how many distinct cell types are involved in
-          initiating or driving the disease process? (Refer to Glossary:
-          Autocrine / Paracrine / Endocrine signaling)
-          <ul>
-            <li>
-              <strong>B-1.1:</strong> Before answering, refer to the glossary on
-              “Molecular Stages” and “Molecular Types.” If more than one cell
-              type contributes to disease development, consider whether their
-              involvement reflects a disease progression (molecular stages), a
-              trigger-specific differentiation (molecular types), or neither.
-            </li>
-            <li>
-              <strong>B-1.2:</strong> If the disease doesn’t include both
-              molecular stages and types (see B-1.1), do any contradictions
-              exist in their natural courses? For example, do some lesions
-              appear self-limiting while others are progressive? If such
-              contradictions exist, consider whether the disease should be
-              separated into distinct conditions and revise your answers
-              accordingly.
-            </li>
-          </ul>
-        </li>
-        <li>
-          <strong>B-2:</strong> Refer to A-4 answer, please state the
-          diagnostic criteria used for the disease, particularly if the chosen
-          intervention is likely to induce remission.
-        </li>
-        <li>
-          <strong>B-3:</strong> Please assess whether the remission criteria
-          for this disease are clearly defined—either clinically, molecularly,
-          or both. Refer to the glossary entry for “Remission.”
-          <p style="margin-top: 0.5rem; margin-bottom: 0.5rem">Select one:</p>
-          <ul class="checkbox-list">
-            <li>◻ Yes — Both molecular and clinical remission criteria are clearly defined</li>
-            <li>◻ Yes — Clinical remission is defined, but molecular remission remains uncertain</li>
-            <li>◻ No — Remission criteria are not clearly defined</li>
-            <li>◻ No — Originating cell is unknown, so molecular remission cannot be assessed</li>
-          </ul>
-        </li>
-        <li>
-          <strong>B-4:</strong> Please indicate whether a natural endpoint
-          timeframe for the disease is known. This refers to the typical time it
-          takes for the disease to reach resolution or plateau without
-          intervention. Understanding this timeframe is essential for
-          determining whether a remission is stable and exceeds the disease’s
-          natural course (see Glossary: Remission).
-        </li>
-        <li>
-          <strong>B-5:</strong> Review the glossary. If the molecular cascade
-          matches all diagnostic criteria, select “completed”. You may select
-          multiple options if endocrine pathways are involved; otherwise, select
-          only one.
-        </li>
-        <li>
-          <strong>B-6:</strong> Multiple mechanisms may be selected
-          corresponding to symptoms and signs of the designated disease.
-        </li>
-      </ul>
+<div class="btn-container">
+  </div>
 
+<div v-for="section in instructionSections" :key="section.title">
+  <h3>{{ section.title }}</h3>
+  <ul>
+    <li v-for="q in section.questions" :key="q.id" class="instruction-item">
+      <strong>{{ q.label }}:</strong>
+      <span>{{ instructions2[q.id]?.substring(1).trim() }}</span>
+    </li>
+  </ul>
+</div>
+
+<p style="font-style: italic; margin-top: 2rem; color: #555;">
+  Note: These instructions will also appear at the end of each relevant question as you fill out the form.
+</p>
       <h3>Step 5: Verify Information</h3>
       <ul>
         <li>
@@ -184,6 +80,10 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { instructions as instructions1 } from '@/stores/instructions1';
+import { instructions as instructions2 } from '@/stores/instructions2';
+
+
 const router = useRouter();
 const goBack = () => {
   router.push("/instruction-1");
@@ -191,6 +91,50 @@ const goBack = () => {
 const goToNext = () => {
   router.push("/glossary");
 };
+
+
+const step2Instructions = [
+  { id: 1007 },
+  { id: 1006 },
+  { 
+    id: 1008,
+    isGroup: true,
+    groupTitle: "• Describe research questions in terms of:",
+    groupItems: [1008, 1009, 1010]
+  },
+  { 
+    id: 1011,
+    isGroup: true,
+    groupTitle: "• Describe molecular signaling principle in terms of:",
+    groupItems: [1011, 1012, 1013]
+  },
+];
+
+const instructionSections = [
+  {
+    title: 'Step 3: Complete Section A – Intervention-Related Information',
+    questions: [
+      { id: 101, label: 'A-1' },
+      { id: 102, label: 'A-2' },
+      { id: 103, label: 'A-3' },
+      { id: 104, label: 'A-4' },
+      { id: 105, label: 'A-5' },
+    ]
+  },
+  {
+    title: 'Step 4: Complete Section B – Disease-Related Information',
+    questions: [
+      { id: 201, label: 'B-1' },
+      { id: 202, label: 'B-2' },
+      { id: 203, label: 'B-3' },
+      { id: 204, label: 'B-4' },
+      { id: 205, label: 'B-5' },
+      { id: 206, label: 'B-6' },
+      { id: 207, label: 'B-7' },
+    ]
+  }
+];
+
 </script>
 
 <style scoped>
@@ -304,4 +248,14 @@ ul ul {
   background-color: #f9fafb;
   color: #374151;
 } */
+
+ /* Add this new style */
+.instruction-item {
+  white-space: pre-wrap; /* This preserves newlines from your data */
+  word-wrap: break-word;
+  margin-bottom: 1rem; /* Adds some space between each instruction */
+}
+.instruction-item span {
+  padding-left: 0.5rem;
+}
 </style>

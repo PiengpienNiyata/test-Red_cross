@@ -13,6 +13,7 @@ import SummaryPage from "@/pages/Summary.vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import InstructionPage1 from "@/pages/InstructionPage1.vue";
 import InstructionPage2 from "@/pages/InstructionPage2.vue";
+import ContradictionPage from "@/pages/ContradictionPage.vue";
 
 const routes = [
   { path: "/", redirect: "/instruction-1" },
@@ -65,6 +66,7 @@ const routes = [
   { path: "/review", name: "Review", component: Review, meta: { requiresAuth: true }, },
 
   { path: "/summary", name: "Summary", component: SummaryPage },
+  { path: "/contradiction", name: "Contradiction", component: ContradictionPage },
 ];
 const router = createRouter({
   history: createWebHistory(),
@@ -78,12 +80,9 @@ router.beforeEach((to, from, next) => {
   const store = useQuestionnaireStore();
   const isAuthenticated = !!store.authToken;
 
-  // If the route requires authentication and the user is not logged in
   if (to.meta.requiresAuth && !isAuthenticated) {
-    // Redirect to the login page
     next({ name: 'AdminLogin', query: { redirect: to.fullPath }  });
   } else {
-    // Otherwise, allow the navigation
     next();
   }
 });

@@ -10,6 +10,7 @@ import ConfidentialForm from "@/components/ConfidentialForm.vue";
 import { storeToRefs } from "pinia";
 import html2pdf from "html2pdf.js";
 import { formatPhoneNumber } from "@/utils/formatters";
+import { routeDefinitions } from "@/stores/routeDefinitions";
 
 const pdfContent = ref<HTMLElement | null>(null);
 const store = useQuestionnaireStore();
@@ -40,7 +41,6 @@ const getAnswerDifference = (questionId: number) => {
 
   if (prevAnswer === undefined || prevAnswer === null) return null;
 
-  // Use JSON.stringify for a reliable comparison of objects and primitives
   if (JSON.stringify(currentAnswer) !== JSON.stringify(prevAnswer)) {
     return prevAnswer;
   }
@@ -48,7 +48,6 @@ const getAnswerDifference = (questionId: number) => {
   return null;
 };
 const isLatestVersion = computed(() => {
-  // Check if there is a latest version defined and if it matches the current version
   return (
     store.latestVersion > 0 && store.currentVersion === store.latestVersion
   );
@@ -65,7 +64,6 @@ const exportToPdf = () => {
     return;
   }
 
-  // Safety check to ensure the answer for the project name exists.
   if (!answers.value[1002]) {
     console.error(
       "Project Name (answer 1002) is not available for the PDF filename."
@@ -73,7 +71,7 @@ const exportToPdf = () => {
   }
 
   const options = {
-    margin: [0.75, 0.5, 0.5, 0.7], // Use the project name directly from the answers ref.
+    margin: [0.75, 0.5, 0.5, 0.7],
     filename: `RIRM-Summary-${answers.value[1002] || "report"} (${
       answers.value[1001]
     }).pdf`,
@@ -82,8 +80,8 @@ const exportToPdf = () => {
     jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
     pagebreak: {
       mode: "css",
-      before: ".page-break-before", // Create a new page BEFORE any element with this class
-      avoid: ".summary-item", // AVOID creating a page break inside any element with this class
+      before: ".page-break-before",
+      avoid: ".summary-item",
     },
   };
 
@@ -198,7 +196,6 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
       return checkboxText.split("||")[0];
     });
 
-    // Add the formatted checkboxes with their label
     finalParts.push(
       `<span style="color: red">Pathogenesis Mechanisms:</span> ${mechanismParts.join(
         ", "
@@ -206,118 +203,35 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
     );
   }
 
-  // Join the two main parts with a line break for clarity
   return finalParts.join("<br>");
 };
-// const finalDisplayRoute = computed(() => {
-//   if (suggestedRoutes.value.includes("Route C")) {
-//     return "Route C";
-//   }
-//   return suggestedRoutes.value.join(", ");
-// });
 
-const routeDefinitions: {
-  [key: string]: { route: string; title: string; description: string };
-} = {
-  "Route A": {
-    route: "Route A",
-    title: "Known Remission: Single Target, All-Type",
-    description:
-      "A molecular intervention is known to achieve remission by targeting the originating cell.",
-  },
-  "Route B": {
-    route: "Route B",
-    title: "Single Cell Type Mechanism",
-    description:
-      "The disease's molecular mechanism involves only a single cell type.",
-  },
-  "Route C": {
-    route: "Route C",
+const interventionAspectDetails = computed(() => {
+  const answer102 = answers.value[102];
+  if (typeof answer102 !== "object" || !answer102.selectedOption) {
+    return null;
+  }
+  const selectedOption = answer102.selectedOption;
+  if (selectedOption.startsWith("Yes")) {
+    return routeDefinitions["Intervention_Yes"];
+  } else if (selectedOption.startsWith("No")) {
+    return routeDefinitions["Intervention_No"];
+  } else if (selectedOption.startsWith("Uncertain")) {
+    return routeDefinitions["Intervention_Uncertain"];
+  }
+  return null;
+});
 
-    title: "Contradiction Reveals Complexity",
-    description:
-      "The treatment fails broadly, or contradictions in the data suggest the diagnosis may group multiple distinct diseases under a single name. More than one cell type is involved, but without clear molecular staging or typing.",
-  },
-  "Route D": {
-    route: "Route D",
-
-    title: "Multiple Cell Types without Staging",
-    description:
-      "More than one cell type is involved, but there are no defined molecular stages or types and no obvious contradictions.",
-  },
-  "Route E": {
-    route: "Route E",
-
-    title: "Simple Molecular Staging (Two-Stage Model)",
-    description:
-      "The disease progresses through two simple molecular stages (e.g., early vs. late).",
-  },
-  "Route F": {
-    route: "Route F",
-
-    title: "Complex Molecular Staging (Multi-Stage or Branching Model)",
-    description:
-      "The disease involves more than two molecular stages, or its progression may branch into different paths.",
-  },
-  "Route G": {
-    route: "Route G",
-
-    title: "Multiple Molecular Types (Multiple Triggers)",
-    description:
-      "All variations of the disease arise from the same upstream signal, suggesting a unified origin despite clinical differences.",
-  },
-  "Route H": {
-    route: "Route H",
-
-    title: "Multiple Molecular Types with Progression (Staging + Typing)",
-    description:
-      "The disease presents with more than one type of lesion, and these lesions also change in severity or characteristics over time.",
-  },
-};
-
-// const suggestedRouteDetails = computed(() => {
-//   if (suggestedRoutes.value.includes("Route C")) {
-//     return [routeDefinitions["Route C"]];
-//   }
-//   return suggestedRoutes.value
-//     .map((route) => routeDefinitions[route])
-//     .filter(Boolean);
-// });
 const suggestedRouteDetails = computed(() => {
   if (suggestedRoutes.value.includes("Route C")) {
     return [routeDefinitions["Route C"]];
   }
-  // Create a copy with [...] before sorting to avoid changing the original order in the store.
-  // Then, sort it alphabetically.
   return [...suggestedRoutes.value]
     .sort()
     .map((route) => routeDefinitions[route])
     .filter(Boolean);
 });
-// const editAnswers = () => {
-//   store.resetServey();
-//   router.push("/questionnairesResearcher");
-// };
 
-// const formatCheckboxAnswer = (answer: any): string => {
-//   if (!answer || !Array.isArray(answer.main)) return "";
-
-//   const formattedParts = answer.main.map((mainOpt: string) => {
-//     const mainLabel = mainOpt.split("||")[0];
-//     const subAnswer = answer.subs?.[mainLabel];
-
-//     if (subAnswer && subAnswer.length > 0) {
-//       const subAnswerString = Array.isArray(subAnswer)
-//         ? subAnswer.join(", ")
-//         : subAnswer;
-//       return `${mainLabel} (${subAnswerString})`;
-//     }
-
-//     return mainLabel;
-//   });
-
-//   return formattedParts.join(", ");
-// };
 const formatCheckboxAnswer = (question: Question2, answer: any): string => {
   if (!answer || !Array.isArray(answer.main)) return "";
 
@@ -326,12 +240,9 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
       const parts = mainOpt.split("___");
       let constructed = parts[0].split("||")[0];
 
-      // --- THIS IS THE FIX ---
-      // Find the index by comparing the parsed label, not the raw option string
       const optionIndex = question.options?.findIndex(
         (opt) => parseOption(opt).label === mainOpt
       );
-      // --- END OF FIX ---
 
       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
         for (let i = 0; i < parts.length - 1; i++) {
@@ -372,10 +283,10 @@ const createObjectURL = (file: File) => {
 
 const normalizeFiles = (files: any): FileItem[] => {
   if (Array.isArray(files)) {
-    return files as FileItem[]; // Also added an assertion here for consistency
+    return files as FileItem[];
   }
   if (files instanceof FileList) {
-    return Array.from(files) as FileItem[]; // This assertion fixes the error
+    return Array.from(files) as FileItem[];
   }
   return [];
 };
@@ -392,12 +303,9 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
     const parts = finalString.split("___");
     let constructed = parts[0];
 
-    // --- THIS IS THE FIX ---
-    // Find the index by comparing the parsed label, not the raw option string
     const optionIndex = question.options?.findIndex(
       (opt) => parseOption(opt).label === finalString
     );
-    // --- END OF FIX ---
 
     if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
       for (let i = 0; i < parts.length - 1; i++) {
@@ -558,116 +466,22 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
 //   return `<strong>${title}:</strong> ${body}`;
 // });
 
-// const summaryParagraphs = computed(() => {
-//   const paragraphs: { text: string }[] = [];
-//   const diseaseName = `<span class="dynamic-text">${store.answers[1006] || "the disease"}</span>`;
-
-//   const buildDecisionSentence = (text: string, words: string, route: string) => {
-//     const styledText = text.replace(words, `<span class="decision-words">${words}</span>`);
-//     return `<span class="decision-sentence">${styledText.replace(route, `<span class="route-name">${route}</span>`)}</span>`;
-//   };
-
-//   // Helper to safely get the string value of an answer
-//   const getAnswerKey = (answer: any): string => {
-//     if (!answer) return "";
-//     return (typeof answer === 'object' && answer.selectedOption) ? answer.selectedOption : String(answer);
-//   };
-
-//   // Get all the answer keys we need at the top
-//   const key102 = getAnswerKey(store.answers[102]);
-//   const key201 = getAnswerKey(store.answers[201]);
-//   const key201_5 = getAnswerKey(store.answers[201.5]);
-//   const key203 = getAnswerKey(store.answers[203]);
-
-//   // --- Route A Logic ---
-//   if (store.answers[102]) {
-//     const q102_text = getQuestionById2(102)?.question || "";
-//     if (key102.startsWith("Yes, please explain the exact remission rate")) {
-//       paragraphs.push({
-//         text: `Based on your response to question - "<em>${q102_text}</em>", your assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence("This supports the decision to pursue Route A.", "to pursue", "Route A")}`,
-//       });
-//     } else {
-//       paragraphs.push({
-//         text: `Based on your response to question - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence("This supports the decision not to pursue Route A.", "not to pursue", "Route A")}`,
-//       });
-//     }
-//   }
-
-//   // --- Route B, G, H (from Q201) Logic ---
-//   if (store.answers[201]) {
-//     const q201_text = getQuestionById2(201)?.question || "";
-//     if (key201.startsWith("No")) { // Route B
-//       paragraphs.push({
-//         text: `From your response to question B-1 - "<em>${q201_text}</em>", you've indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence("This observation justifies choosing Route B.", "justifies choosing", "Route B")}`,
-//       });
-//     }
-//     if (key201.startsWith("Yes")) { // Not Route B
-//         paragraphs.push({
-//             text: `From your response to question - "<em>${q201_text}</em>", your acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence("This contradicts the core assumption of Route B, justifying the decision not to pursue this route.", "not to pursue this route", "Route B")}`,
-//         });
-//     }
-//     if (key201.startsWith("Yes, typing only")) { // Route G
-//       paragraphs.push({
-//         text: `By specifying that ${diseaseName} has typing but not staging (question 201), the investigation is focused on the molecular differences between subtypes. ${buildDecisionSentence("This makes Route G the logical next step.", "makes Route G the logical next step", "Route G")}`,
-//       });
-//     }
-//     if (key201.startsWith("Yes, both staging and typing")) { // Route H
-//       paragraphs.push({
-//         text: `Your confirmation of both staging and typing for ${diseaseName} (question 201) points to a complex pathogenesis. ${buildDecisionSentence("This supports Route H as the most appropriate and comprehensive approach.", "supports Route H as the most appropriate", "Route H")}`,
-//       });
-//     }
-//   }
-
-//   // --- Route C, D, H (from Q203) Logic ---
-//   if (store.answers[203]) {
-//     const q203_text = getQuestionById2(203)?.question || "";
-//     if (key203.startsWith("Yes")) { // Route C
-//       paragraphs.push({
-//         text: `By identifying a contradiction within the diagnostic criteria (question - "<em>${q203_text}</em>"), you suggest that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence("This critical insight directs the investigation towards Route C.", "directs the investigation towards", "Route C")}`,
-//       });
-//     } else if (key203 === "No") { // Route D or D+H
-//       paragraphs.push({
-//         text: `Your response to question - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence("This allows for the exploration of its pathway via Route D.", "allows for the exploration of its pathway via", "Route D")}`,
-//       });
-//       // if (key102 === "No") { // Special case for Route H
-//       //     paragraphs.push({
-//       //         text: `Additionally, because the intervention is unable to achieve a high rate of true remission (question A-2), this suggests the disease, while a single entity, has a complex pathogenesis that the current treatment does not fully address. ${buildDecisionSentence("This supports investigating its complexity via Route H.", "investigating its complexity via", "Route H")}`
-//       //     });
-//       // }
-//     }
-//   }
-
-//   // --- Route E, F (from Q201.5) Logic ---
-//   if (store.answers[201.5]) {
-//       if (key201_5.startsWith("Have 2 stages")) {
-//           paragraphs.push({
-//               text: `Your identification of two distinct stages (question B-1 | staging only) provides a clear framework for comparative analysis. ${buildDecisionSentence("This supports pursuing Route E to investigate the molecular transition between stages.", "supports pursuing", "Route E")}`
-//           });
-//       } else if (key201_5.startsWith("Have more than 2 stages")) {
-//           paragraphs.push({
-//               text: `The presence of more than two stages (question B-1 | more than 2 stages) suggests a complex, multi-step progression. ${buildDecisionSentence("This complexity warrants the detailed analysis provided by Route F.", "warrants the detailed analysis provided by", "Route F")}`
-//           });
-//       }
-//   }
-
-//   return paragraphs;
-// });
 const summaryParagraphs = computed(() => {
   const paragraphs: { text: string }[] = [];
+
+  if (!store.suggestedRoutes || store.suggestedRoutes.length === 0) {
+    paragraphs.push({
+      text: `<span class="dynamic-text">(No route could be determined from the provided answers. The submission may be incomplete or contain logical inconsistencies.)</span>`,
+    });
+    return paragraphs;
+  }
+
   const diseaseName = `<span class="dynamic-text">${
     store.answers[1006] || "the disease"
   }</span>`;
 
-  const buildDecisionSentence = (
-    text: string,
-    words: string,
-    route: string
-  ) => {
-    const styledText = text.replace(
-      words,
-      `<span class="decision-words">${words}</span>`
-    );
-    return `<span class="decision-sentence">${styledText.replace(
+  const buildDecisionSentence = (text: string, route: string) => {
+    return `<span class="decision-sentence">${text.replace(
       route,
       `<span class="route-name">${route}</span>`
     )}</span>`;
@@ -680,111 +494,83 @@ const summaryParagraphs = computed(() => {
       : String(answer);
   };
 
-  const key102 = getAnswerKey(store.answers[102]);
-  const key201 = getAnswerKey(store.answers[201]);
-  const key201_5 = getAnswerKey(store.answers[201.5]);
-  const key203 = getAnswerKey(store.answers[203]);
+  const getCritCount = (answer: any, question: Question2 | null): number => {
+    if (
+      !answer ||
+      typeof answer !== "object" ||
+      !answer.inlineText ||
+      !question?.options
+    )
+      return 0;
+    const optionIndex = question.options.findIndex(
+      (opt) => opt === answer.selectedOption
+    );
+    if (optionIndex === -1) return 0;
+    const count = answer.inlineText[`${question.id}-${optionIndex}-select`];
+    return Number(count) || 0;
+  };
 
-  if (store.answers[102]) {
-    const q102_text = getQuestionById2(102)?.question || "";
-    if (key102.startsWith("Yes, please explain the exact remission rate")) {
-      paragraphs.push({
-        text: `Based on the researcher's response to question - "<em>${q102_text}</em>", their assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence(
-          "This supports the decision to pursue Route A.",
-          "to pursue",
-          "Route A"
-        )}`,
-      });
-    } else {
-      paragraphs.push({
-        text: `Based on the researcher's response to question - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence(
-          "This supports the decision not to pursue Route A.",
-          "not to pursue",
-          "Route A"
-        )}`,
-      });
-    }
-  }
+  const finalRoute = store.suggestedRoutes[0];
+  let justificationText = "";
 
-  if (store.answers[201]) {
-    const q201_text = getQuestionById2(201)?.question || "";
-    if (key201.startsWith("No")) {
-      paragraphs.push({
-        text: `From the response to question B-1 - "<em>${q201_text}</em>", the researcher has indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence(
-          "This observation justifies choosing Route B.",
-          "justifies choosing",
-          "Route B"
-        )}`,
-      });
-    }
-    if (key201.startsWith("Yes")) {
-      paragraphs.push({
-        text: `From the response to question - "<em>${q201_text}</em>", the acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence(
-          "This contradicts the core assumption of Route B, justifying the decision not to pursue this route.",
-          "not to pursue this route",
-          "Route B"
-        )}`,
-      });
-    }
-    if (key201.startsWith("Yes, typing only")) {
-      paragraphs.push({
-        text: `By specifying that ${diseaseName} has typing but not staging (question 201), the investigation is focused on the molecular differences between subtypes. ${buildDecisionSentence(
-          "This makes Route G the logical next step.",
-          "makes Route G the logical next step",
-          "Route G"
-        )}`,
-      });
-    }
-    if (key201.startsWith("Yes, both staging and typing")) {
-      paragraphs.push({
-        text: `The confirmation of both staging and typing for ${diseaseName} (question 201) points to a complex pathogenesis. ${buildDecisionSentence(
-          "This supports Route H as the most appropriate and comprehensive approach.",
-          "supports Route H as the most appropriate",
-          "Route H"
-        )}`,
-      });
-    }
-  }
-
-  if (store.answers[203]) {
-    const q203_text = getQuestionById2(203)?.question || "";
-    if (key203.startsWith("Yes")) {
-      paragraphs.push({
-        text: `By identifying a contradiction within the diagnostic criteria (question - "<em>${q203_text}</em>"), the researcher suggests that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence(
-          "This critical insight directs the investigation towards Route C.",
-          "directs the investigation towards",
-          "Route C"
-        )}`,
-      });
-    } else if (key203 === "No") {
-      paragraphs.push({
-        text: `The response to question - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence(
-          "This allows for the exploration of its pathway via Route D.",
-          "allows for the exploration of its pathway via",
+  switch (finalRoute) {
+    case "Route A":
+      justificationText = `Based on the researcher's confirmation that the intervention achieves a high remission rate in both internal data (Question A-2) and published reports (Question A-3), the evidence points towards a well-understood and highly effective mechanism. ${buildDecisionSentence(
+        "This robust, positive data justifies pursuing Route A, focusing on a single, all-type remission target.",
+        "Route A"
+      )}`;
+      break;
+    case "Route B":
+      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2 or B-4) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
+        "Therefore, the investigation logically proceeds via Route B to define this single-cell mechanism.",
+        "Route B"
+      )}`;
+      break;
+    case "Route C":
+      justificationText = `The identification of a direct contradiction within the diagnostic criteria (Question B-3) is a pivotal finding. It suggests that the clinical presentation may be a syndrome of multiple, distinct molecular conditions rather than a single disease. ${buildDecisionSentence(
+        "This critical insight mandates a re-evaluation via Route C.",
+        "Route C"
+      )}`;
+      break;
+    case "Route D":
+    case "Route E":
+    case "Route F":
+    case "Route G":
+    case "Route H":
+      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2 and B-4), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
+      let specificReason = "";
+      if (finalRoute === "Route D") {
+        specificReason = `Given the absence of defined staging or typing (Question B-1), the appropriate path is ${buildDecisionSentence(
+          "Route D, aiming to characterize this complex, undifferentiated disease.",
           "Route D"
-        )}`,
-      });
-    }
+        )}`;
+      } else if (finalRoute === "Route E") {
+        specificReason = `Given the classification as a two-stage disease (Question B-1), the investigation should proceed via ${buildDecisionSentence(
+          "Route E to analyze the molecular transition between these defined stages.",
+          "Route E"
+        )}`;
+      } else if (finalRoute === "Route F") {
+        specificReason = `Given the classification as a multi-stage disease (Question B-1), the investigation requires the more detailed analysis provided by ${buildDecisionSentence(
+          "Route F.",
+          "Route F"
+        )}`;
+      } else if (finalRoute === "Route G") {
+        specificReason = `Given the classification by molecular types without distinct stages (Question B-1), the logical path is ${buildDecisionSentence(
+          "Route G, focusing on the divergent triggers for each subtype.",
+          "Route G"
+        )}`;
+      } else if (finalRoute === "Route H") {
+        specificReason = `Given the classification involving both staging and typing (Question B-1), a comprehensive approach is necessary. The investigation must therefore proceed via ${buildDecisionSentence(
+          "Route H to address this dual complexity.",
+          "Route H"
+        )}`;
+      }
+      justificationText = intro + specificReason;
+      break;
   }
 
-  if (store.answers[201.5]) {
-    if (key201_5.startsWith("Have 2 stages")) {
-      paragraphs.push({
-        text: `The identification of two distinct stages (question B-1 | staging only) provides a clear framework for comparative analysis. ${buildDecisionSentence(
-          "This supports pursuing Route E to investigate the molecular transition between stages.",
-          "supports pursuing",
-          "Route E"
-        )}`,
-      });
-    } else if (key201_5.startsWith("Have more than 2 stages")) {
-      paragraphs.push({
-        text: `The presence of more than two stages (question B-1 | more than 2 stages) suggests a complex, multi-step progression. ${buildDecisionSentence(
-          "This complexity warrants the detailed analysis provided by Route F.",
-          "warrants the detailed analysis provided by",
-          "Route F"
-        )}`,
-      });
-    }
+  if (justificationText) {
+    paragraphs.push({ text: justificationText });
   }
 
   return paragraphs;
@@ -817,40 +603,6 @@ const hasNonsenseContradiction = computed(() => {
   }
   return false;
 });
-
-// const handleStatusUpdate = async (status: number, remark: string) => {
-//   if (isSubmitting.value) return;
-//   isSubmitting.value = true;
-
-//   try {
-//     const response = await fetch(`${VITE_API_BASE_URL}/api/response/status`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         token: store.currentToken,
-//         status: status,
-//         remark: remark,
-//       }),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error("Failed to update status");
-//     }
-
-//     // Close all modals and show the success message
-//     showApproveModal.value = false;
-//     showReviseModal.value = false;
-//     showRejectModal.value = false;
-//     showSuccessModal.value = true;
-//   } catch (error) {
-//     console.error("Error updating status:", error);
-//     alert("There was an error updating the status. Please try again.");
-//   } finally {
-//     isSubmitting.value = false;
-//   }
-// };
-
-// REPLACE your existing handleStatusUpdate function with this one
 
 const handleStatusUpdate = async (status: number, remark: string) => {
   if (isSubmitting.value) return;
@@ -904,7 +656,7 @@ const handleStatusUpdate = async (status: number, remark: string) => {
 
 const openModal = (type: "approve" | "revise" | "reject") => {
   modalActionType.value = type;
-  remarkText.value = ""; // Reset remark text
+  remarkText.value = "";
   if (type === "approve") showApproveModal.value = true;
   if (type === "revise") showReviseModal.value = true;
   if (type === "reject") showRejectModal.value = true;
@@ -940,7 +692,6 @@ const reviewStatusText = computed(() => {
 
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 
-// Add this entire new function to your <script setup>
 const formatSubAnswer = (
   question: Question2,
   mainAnswer: any,
@@ -971,14 +722,12 @@ const formatSubAnswer = (
       mainOptionIndex === -1 ||
       subIndex === -1
     ) {
-      return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
+      return `(${getCleanOptionLabel(subSelection)})`;
     }
 
-    // Construct the unique key (e.g., '201-1-sub-0-0')
     const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
     const inlineValue = mainAnswer.inlineText?.[key] || "";
 
-    // Replace the '___' with the user's text
     const constructedString = getCleanOptionLabel(subSelection).replace(
       "___",
       inlineValue
@@ -986,23 +735,18 @@ const formatSubAnswer = (
 
     return `(${constructedString})`;
   }
-
-  // If the sub-option is simple (no '___'), just return its clean label.
   return `(${getCleanOptionLabel(subSelection)})`;
 };
 
-// Add this interface to define the shape of our formatted answer
 interface FormattedCritAnswer {
   label: string;
   count: number;
   criteria: string[];
 }
 
-// Add this new function to process the complex '||crit' answer object
 const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
-  const answer = question.answer as any; // We can safely cast to 'any' inside this controlled function
+  const answer = question.answer as any;
 
-  // Safety checks to ensure we have all the data we need
   if (
     !answer ||
     typeof answer !== "object" ||
@@ -1035,6 +779,28 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 
   return { label, count, criteria };
 };
+
+const countTotalFiles = (answer: any): number => {
+  if (!answer || typeof answer !== "object") {
+    return 0;
+  }
+
+  let count = 0;
+
+  if (answer.fileData) {
+    Object.values(answer.fileData).forEach((fileInfo: any) => {
+      if (fileInfo && Array.isArray(fileInfo.files)) {
+        count += fileInfo.files.length;
+      }
+    });
+  }
+
+  if (Array.isArray(answer.files)) {
+    count += answer.files.length;
+  }
+
+  return count;
+};
 </script>
 
 <template>
@@ -1065,12 +831,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
               :key="q.id"
               class="answer-item col-md-12"
             >
-              <!-- :class="{
-                'col-md-6': [1001, 1002, 1004, 1005, 1006, 1007].includes(q.id),
-                'col-md-12': [
-                  1003, 1008, 1009, 1010, 1011, 1012, 1013,
-                ].includes(q.id),
-              }" -->
               <span class="info-label"
                 >{{ q.question }}:
                 <span
@@ -1158,20 +918,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                 </ul>
               </div>
             </div>
-
-            <!-- <div v-else-if="'selectedOption' in q.answer">
-              <p class="answer-text">
-                <span style="color: red">Answer : </span>
-                {{ getConstructedAnswer(q, q.answer) }}
-                <span
-                  v-for="(subAnswer, key) in (q.answer as any).subs"
-                  :key="key"
-                >
-                  {{ formatSubAnswer(q, q.answer, String(key)) }}
-                </span>
-              </p>
-            </div> -->
-
             <div
               v-else-if="
                 q.options?.some((opt) => opt.includes('||crit')) &&
@@ -1179,7 +925,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                 q.answer !== null
               "
             >
-              <template v-if="formatCritAnswer(q)">
+              <template v-if="(q.answer as any).inlineText">
                 <p class="answer-text">
                   <span style="color: red">Answer : </span>
                   {{ formatCritAnswer(q)?.label }}
@@ -1193,6 +939,11 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                   </li>
                 </ol>
               </template>
+
+              <p v-else class="answer-text">
+                <span style="color: red">Answer : </span>
+                {{ (q.answer as any).selectedOption.split("||")[0] }}
+              </p>
             </div>
 
             <div
@@ -1225,13 +976,30 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
               class="sub-answer-block"
             >
               <strong>Attached Files:</strong>
-              <ul>
-                <template
-                  v-for="(fileInfo, key) in (q.answer as any).fileData"
-                  :key="key"
-                >
-                  <!-- <li
-                    v-for="file in normalizeFiles(fileInfo.files)"
+
+              <template v-if="countTotalFiles(q.answer) > 0">
+                <ul>
+                  <template
+                    v-for="(fileInfo, key) in (q.answer as any).fileData"
+                    :key="key"
+                  >
+                    <li
+                      v-for="file in normalizeFiles(fileInfo.files)"
+                      :key="file.name"
+                    >
+                      <a
+                        v-if="'rehydrated' in file"
+                        :href="getFileDownloadUrl(file.id)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                    </li>
+                  </template>
+
+                  <li
+                    v-for="file in normalizeFiles((q.answer as any).files)"
                     :key="file.name"
                   >
                     <a
@@ -1250,44 +1018,11 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                     >
                       {{ file.name }}
                     </a>
-                  </li> -->
-                  <li
-                    v-for="file in normalizeFiles(fileInfo.files)"
-                    :key="file.name"
-                  >
-                    <a
-                      v-if="'rehydrated' in file"
-                      :href="getFileDownloadUrl(file.id)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {{ file.name }}
-                    </a>
                   </li>
-                </template>
+                </ul>
+              </template>
 
-                <li
-                  v-for="file in normalizeFiles((q.answer as any).files)"
-                  :key="file.name"
-                >
-                  <a
-                    v-if="'rehydrated' in file"
-                    :href="getFileDownloadUrl(file.id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                  <a
-                    v-else
-                    :href="createObjectURL(file)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                </li>
-              </ul>
+              <p v-else class="no-files-text">No files were attached.</p>
             </div>
           </div>
 
@@ -1300,29 +1035,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
             <div class="previous-answer-heading">
               Previous Answer (version {{ currentVersion - 1 }})
             </div>
-
-            <!-- <pre
-              v-if="q.id === 201"
-              style="
-                font-size: 10px;
-                background: #eee;
-                padding: 5px;
-                white-space: pre-wrap;
-                word-break: break-all;
-                text-align: left;
-                color: black;
-              "
-            >
-  DEBUG INFO FOR Q201:
-  - Previous Answer for 201: {{ JSON.stringify(previousAnswers[201]) }}
-  - Previous Answer for 201.5: {{ JSON.stringify(previousAnswers[201.5]) }}
-  - Does prev 201 answer start with 'Yes, staging only.'? {{
-                (previousAnswers[201] as any)?.selectedOption?.startsWith(
-                  "Yes, staging only."
-                )
-              }}
-</pre
-            > -->
 
             <div v-if="q.id === 207" class="previous-answer-text">
               <div
@@ -1393,13 +1105,29 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
               class="sub-answer-block"
             >
               <strong style="color: #757575">Previous Files:</strong>
-              <ul class="previous-files-list">
-                <template
-                  v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
-                  :key="key"
-                >
+              <template v-if="countTotalFiles(getAnswerDifference(q.id)) > 0">
+                <ul class="previous-files-list">
+                  <template
+                    v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
+                    :key="key"
+                  >
+                    <li
+                      v-for="file in normalizeFiles(fileInfo.files)"
+                      :key="file.name"
+                    >
+                      <a
+                        v-if="'rehydrated' in file"
+                        :href="getFileDownloadUrl(file.id)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {{ file.name }}
+                      </a>
+                    </li>
+                  </template>
+
                   <li
-                    v-for="file in normalizeFiles(fileInfo.files)"
+                    v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
                     :key="file.name"
                   >
                     <a
@@ -1411,22 +1139,10 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                       {{ file.name }}
                     </a>
                   </li>
-                </template>
+                </ul>
+              </template>
 
-                <li
-                  v-for="file in normalizeFiles((getAnswerDifference(q.id) as any).files)"
-                  :key="file.name"
-                >
-                  <a
-                    v-if="'rehydrated' in file"
-                    :href="getFileDownloadUrl(file.id)"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {{ file.name }}
-                  </a>
-                </li>
-              </ul>
+              <p v-else class="no-files-text">none</p>
             </div>
 
             <div
@@ -1482,10 +1198,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
             </div>
           </div>
         </div>
-        <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-left: 8px">
-          Road Map Suggestion:
-          <span class="final-route-text">{{ finalDisplayRoute }}</span>
-        </h3> -->
+
         <div
           v-if="suggestedRoutes.length > 0"
           class="route-suggestion-container"
@@ -1495,11 +1208,12 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
             class="route-suggestion-header page-break-before"
             style="margin-bottom: 20px"
           >
-            Road Map Suggestion
+            Route of Suggestion
           </h3>
+
           <div
-            v-for="(route, index) in suggestedRouteDetails"
-            :key="index"
+            v-for="route in suggestedRouteDetails"
+            :key="route.route"
             class="route-item"
             style="margin-left: 16px; margin-bottom: 20px"
           >
@@ -1509,19 +1223,43 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                 style="
                   font-weight: 200;
                   font-style: italic;
-                  font-size: 24px;
+                  font-size: 1.1rem;
                   color: #333;
                   margin-left: 10px;
                 "
-                >: {{ route.title }}</span
               >
+                : {{ route.title }}
+              </span>
             </h4>
-            <li
-              class="route-description"
-              style="margin-left: 16px; color: grey"
+
+            <div
+              v-if="interventionAspectDetails?.interventionAspect"
+              class="aspect-section"
             >
-              {{ route.description }}
-            </li>
+              <h5 class="aspect-title">Intervention Aspect</h5>
+              <ul class="route-description">
+                <li
+                  v-for="(
+                    aspect, i
+                  ) in interventionAspectDetails.interventionAspect"
+                  :key="i"
+                >
+                  {{ aspect }}
+                </li>
+              </ul>
+            </div>
+
+            <div
+              v-if="route.diseaseAspect && route.diseaseAspect.length > 0"
+              class="aspect-section"
+            >
+              <h5 class="aspect-title">Disease Aspect</h5>
+              <ul class="route-description">
+                <li v-for="(aspect, i) in route.diseaseAspect" :key="i">
+                  {{ aspect }}
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1803,7 +1541,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
           <h3 class="h3">Data saved successfully.</h3>
           <p>Your information has been saved successfully.</p>
           <div class="modal-buttons">
-            <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
             <button @click="startNewSurvey" class="btn btn-primary">
               Submit another response.
             </button>
@@ -1811,8 +1548,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
         </div>
       </div>
 
-      <!-- ADD THIS ENTIRE MODAL SECTION AT THE END OF THE TEMPLATE -->
-      <!-- Approve Confirmation Modal -->
       <div v-if="showApproveModal" class="modal">
         <div class="modal-content">
           <h3>Confirm Approval</h3>
@@ -1888,12 +1623,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
         </div>
       </div>
     </div>
-    <!-- <a
-      style="color: #eb4648; cursor: pointer; margin-left: 24px"
-      @click="exportToPdf"
-    >
-      Export to .pdf here
-    </a> -->
   </div>
 </template>
 <style scoped>
@@ -2129,7 +1858,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   font-size: 16px;
   color: #555;
   margin-left: 16px;
-  white-space: pre-wrap; /* <-- ADD THIS LINE */
+  white-space: pre-wrap;
 }
 .sub-answer-block {
   margin-left: 32px;
@@ -2141,7 +1870,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
   font-weight: bold;
 }
-/* Other styles remain the same */
 .aa {
   font-size: 20px;
   font-weight: 400;
@@ -2149,52 +1877,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .btn-container {
   padding: 16px;
 }
-/* Add these styles to researcher's <style scoped> block */
 
-.summary-item {
-  display: flex; /* Aligns bullet and text */
-  gap: 8px;
-  padding-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.summary-bullet {
-  font-weight: bold;
-  color: #eb4648;
-}
-
-/* Class for dynamic text like the disease name */
-.dynamic-text {
-  color: #555;
-  font-style: italic;
-  font-weight: 500;
-}
-
-/* Class for the entire decision sentence */
-.decision-sentence {
-  color: #555;
-  display: block; /* Puts it on its own line */
-  margin-top: 4px;
-}
-
-/* Class for the route name itself */
-/* .route-name {
-  color: #d84315;
-  font-weight: bold;
-} */
-
-/* Class for positive decision words */
-.decision-words-positive {
-  color: #28a745; /* Green */
-  font-weight: bold;
-}
-
-/* Class for negative decision words */
-.decision-words-negative {
-  color: #d84315; /* Red */
-  font-weight: bold;
-}
-/* Styles for the dynamic summary paragraphs */
 .summary-item {
   display: flex;
   gap: 8px;
@@ -2207,36 +1890,63 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence */
 .decision-sentence {
-  color: #555; /* Gray color */
+  color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself */
-.route-name {
-  color: #d84315; /* Red */
+.decision-words-positive {
+  color: #28a745;
   font-weight: bold;
 }
 
-/* The decision words (e.g., "not to pursue", "justifies choosing") */
+.decision-words-negative {
+  color: #d84315;
+  font-weight: bold;
+}
+.summary-item {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.summary-bullet {
+  font-weight: bold;
+  color: #eb4648;
+}
+
+.dynamic-text {
+  color: #555;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.decision-sentence {
+  color: #555;
+  display: block;
+  margin-top: 4px;
+}
+
+.route-name {
+  color: #d84315;
+  font-weight: bold;
+}
+
 .decision-words {
-  color: #d84315; /* Red */
+  color: #d84315;
   font-weight: bold;
 }
 </style>
 
 <style>
-/* These are now global styles that can affect v-html content */
-
 .summary-item {
   display: flex;
   gap: 8px;
@@ -2249,27 +1959,23 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence will be gray */
 .decision-sentence {
   color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself will be red */
 .route-name {
   color: #d84315;
   font-weight: bold;
 }
 
-/* The decision words will be red */
 .decision-words {
   color: #d84315;
   font-weight: bold;
@@ -2278,18 +1984,17 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #fbe9e7; /* Light pink/red background */
-  color: #5d4037; /* Darker text for readability */
-  border: 1px solid #ffab91; /* Reddish border */
+  background-color: #fbe9e7;
+  color: #5d4037;
+  border: 1px solid #ffab91;
   border-radius: 8px;
   padding: 16px;
   margin: 0 8px 1.5rem 8px;
 }
 
 .preamble-icon {
-  /* margin-top: 2px; */
   flex-shrink: 0;
-  color: #d84315; /* Red icon color */
+  color: #d84315;
 }
 
 .preamble-text {
@@ -2307,7 +2012,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 }
 
 .info-label {
-  /* font-weight: 600; */
   color: #333;
   font-size: 18px;
 }
@@ -2317,7 +2021,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #555;
   margin-top: 4px;
   padding-left: 8px;
-  white-space: pre-wrap; /* This is important: it preserves line breaks */
+  white-space: pre-wrap;
   word-wrap: break-word;
 }
 
@@ -2325,10 +2029,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   margin-left: 20px;
 }
 
-/*
-  This targets the container for the "Explore the precision intervention"
-  answers to ensure they are also indented consistently.
-*/
 .answer-block {
   margin-left: 20px;
 }
@@ -2358,8 +2058,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   margin-right: 16px;
 }
 
-/* ADD THESE STYLES TO YOUR <style> OR <style scoped> BLOCK */
-
 .action-btn {
   height: 100%;
   width: 188px;
@@ -2375,26 +2073,25 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 
 .approve-btn {
   background-color: #22c55e;
-} /* Green */
+}
 .approve-btn:hover {
   background-color: #16a34a;
 }
 
 .revise-btn {
   background-color: #fbbf24;
-} /* Yellow */
+}
 .revise-btn:hover {
   background-color: #f59e0b;
 }
 
 .reject-btn {
   background-color: #ef4444;
-} /* Red */
+}
 .reject-btn:hover {
   background-color: #dc2626;
 }
 
-/* Modal Styles */
 .modal {
   position: fixed;
   top: 0;
@@ -2438,8 +2135,8 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 
 .modal-buttons {
   display: flex;
-  justify-content: flex-end; /* Align buttons to the right */
-  gap: 1rem; /* Add space between the buttons */
+  justify-content: flex-end;
+  gap: 1rem;
   margin-top: 1.5rem;
 }
 
@@ -2475,28 +2172,25 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .main-btn-container {
   display: flex;
   align-items: center;
-  gap: 0.1rem; /* Adjust the space between buttons */
-  padding: 16px; /* Your existing btn-container padding */
+  gap: 0.1rem;
+  padding: 16px;
 }
 
 .approve-btn {
-  /* This is the key part. It pushes this button and everything after it to the right. */
   margin-left: auto;
 }
 
-/* ADD THIS STYLE */
 .status-display-box {
-  margin-left: auto; /* Keeps the box pushed to the right */
+  margin-left: auto;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   color: #4b5563;
   font-weight: 500;
   font-style: italic;
 
-  /* --- ADD THESE LINES --- */
   display: flex;
-  align-items: center; /* Vertically centers the text */
-  justify-content: flex-end; /* Horizontally aligns the text to the end */
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .previous-answer-block {
@@ -2507,51 +2201,56 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 
 .previous-answer-text {
   font-size: 15px;
-  color: #757575; /* Grey text */
+  color: #757575;
   font-style: italic;
 }
 
-/* ADD THIS CSS */
 .previous-files-list {
   font-style: italic;
-  color: #757575; /* Grey text */
+  color: #757575;
 }
 
 .previous-files-list a {
-  color: #8a8a8a; /* A slightly dimmer link color for old files */
+  color: #8a8a8a;
 }
 
 .q207-part {
-  margin-bottom: 0.75rem; /* Adds space between the two parts of the answer */
+  margin-bottom: 0.75rem;
 }
 .q207-part:last-child {
   margin-bottom: 0;
 }
 .mechanism-list {
   margin-top: 0.25rem;
-  padding-left: 20px; /* Indents the bulleted list */
+  padding-left: 20px;
   list-style-type: disc;
 }
 
 .answer-block.changed-answer {
-  background-color: #fffdf5; /* Light yellow background */
-  border: 1px solid #fde68a; /* Slightly darker yellow border */
+  background-color: #fffdf5;
+  border: 1px solid #fde68a;
   border-radius: 8px;
   padding: 1rem;
-  margin-left: 0; /* Override the default margin-left for a full-width highlight */
+  margin-left: 0;
 }
 
 .orphaned-previous-answer {
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px dotted #e0e0e0; /* A light dotted separator */
+  border-top: 1px dotted #e0e0e0;
 }
 
 .criteria-list li,
 .answer-text,
 .previous-answer-text,
 .info-answer {
-  white-space: pre-wrap; /* This is the magic property that preserves newlines */
-  word-wrap: break-word;   /* This ensures long unbroken lines of text still wrap */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.no-files-text {
+  margin-left: 16px;
+  font-style: italic;
+  color: #555;
 }
 </style>

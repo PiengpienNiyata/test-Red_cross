@@ -1,28 +1,29 @@
 <script setup lang="ts">
 import { defineProps, defineEmits, computed } from "vue";
 
-const props = defineProps<{ route: string, lastQuestion?: string }>();
+const props = defineProps<{ route: string; lastQuestion?: string }>();
 const emit = defineEmits(["save"]);
 
-// This computed property will split, sort, and join the route string
 const sortedRoute = computed(() => {
-  // Check if it's a valid route string before trying to sort
-  if (!props.route || !props.route.includes('Route')) {
+  if (!props.route || !props.route.includes("Route")) {
     return props.route;
   }
-  return props.route.split(', ').sort().join(', ');
+  return props.route.split(", ").sort().join(", ");
 });
 </script>
 
 <template>
   <div class="final-result">
     <p class="p" v-if="props.route.includes('Route')">
-      Road Map Suggestions :
-<span :style="{ color: '#EB4648' }">{{ props.route }}</span>
+      Route Suggestions :
+      <span :style="{ color: '#EB4648' }">{{ props.route }}</span>
     </p>
-    <p class="p" v-else>
-      Suggestion: <span :style="{ color: '#EB4648' }">{{ props.lastQuestion }}</span>
-    </p>
+    <div class="p" v-else>
+      <div :style="{ color: '#EB4648' }">No route available.</div>
+      <div style="font-style: italic; color: #6c757d">
+        (click "Show summary" button to see the explanation)
+      </div>
+    </div>
     <button class="btn" @click="emit('save')">Show summary</button>
   </div>
 </template>

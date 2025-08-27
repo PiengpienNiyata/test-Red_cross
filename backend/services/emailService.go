@@ -6,9 +6,7 @@ import (
 	"os"
 )
 
-// SendSubmissionNotification sends emails to the user and admin after a submission.
 func SendSubmissionNotification(researcherName, researcherEmail, projectName, token string, version int) {
-	// Read SMTP configuration from environment variables
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	fromEmail := os.Getenv("SMTP_EMAIL")
@@ -22,7 +20,7 @@ func SendSubmissionNotification(researcherName, researcherEmail, projectName, to
 	userBody := ""
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "http://localhost:5173" // A fallback for local development
+		frontendURL = "http://localhost:5173"
 	}
 	editURL := fmt.Sprintf("%s/edit-response/%s", frontendURL, token)
 
@@ -39,18 +37,11 @@ func SendSubmissionNotification(researcherName, researcherEmail, projectName, to
 		"\r\n" +
 		userBody + "\r\n")
 
-	// Send the email to the user
 	go smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{researcherEmail}, userMsg)
 
 	reviewURL := fmt.Sprintf("%s/review-response/%s", frontendURL, token)
 	dashboardURL := fmt.Sprintf("%s/admin/dashboard", frontendURL)
 
-	// adminSubject := fmt.Sprintf("New Submission (Version %d): %s", version, projectName)
-	// // 2. Add the reviewURL to the email body
-	// adminBody := fmt.Sprintf(
-	// 	"A submission has been received:\n\nProject: %s\nResearcher: %s\nEmail: %s\nVersion: %d\nToken: %s\n\nClick here to review the submission:\n%s",
-	// 	projectName, researcherName, researcherEmail, version, token, reviewURL,
-	// )
 	adminSubject := fmt.Sprintf("New Submission (Version %d): %s", version, projectName)
 	adminBody := fmt.Sprintf(
 		"A submission has been received:\n\nProject: %s\nResearcher: %s\nEmail: %s\nVersion: %d\n\nClick here to review this specific submission:\n%s\n\nOr go to the main dashboard to see all submissions:\n%s",
@@ -61,11 +52,9 @@ func SendSubmissionNotification(researcherName, researcherEmail, projectName, to
 		"\r\n" +
 		adminBody + "\r\n")
 
-	// Send the email to the admin
 	go smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{adminEmail}, adminMsg)
 }
 
-// --- ADD THIS ENTIRE NEW FUNCTION ---
 func SendStatusUpdateEmail(researcherName, researcherEmail, projectName string, status int, remark, token string) {
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
@@ -76,7 +65,7 @@ func SendStatusUpdateEmail(researcherName, researcherEmail, projectName string, 
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "http://localhost:5173" // Fallback for local dev
+		frontendURL = "http://localhost:5173"
 	}
 	editURL := fmt.Sprintf("%s/edit-response/%s", frontendURL, token)
 
@@ -105,9 +94,7 @@ func SendStatusUpdateEmail(researcherName, researcherEmail, projectName string, 
 	smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{researcherEmail}, msg)
 }
 
-// SendCancellationNotificationToAdmin sends an email to the reviewer when a project is canceled.
 func SendCancellationNotificationToAdmin(researcherName, projectName, token string) {
-	// Read SMTP configuration from environment variables
 	smtpHost := "smtp.gmail.com"
 	smtpPort := "587"
 	fromEmail := os.Getenv("SMTP_EMAIL")
@@ -118,7 +105,7 @@ func SendCancellationNotificationToAdmin(researcherName, projectName, token stri
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
-		frontendURL = "http://localhost:5173" // A fallback for local development
+		frontendURL = "http://localhost:5173"
 	}
 	reviewURL := fmt.Sprintf("%s/review-response/%s", frontendURL, token)
 
@@ -136,6 +123,5 @@ func SendCancellationNotificationToAdmin(researcherName, projectName, token stri
 		"\r\n" +
 		body + "\r\n")
 
-	// Send the email to the admin
 	smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{adminEmail}, msg)
 }

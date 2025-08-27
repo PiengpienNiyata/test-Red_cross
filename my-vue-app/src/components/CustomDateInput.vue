@@ -6,74 +6,40 @@ const emit = defineEmits(["update:modelValue"]);
 
 const hiddenDateInput = ref<HTMLInputElement | null>(null);
 
-// Formats the date from YYYY-MM-DD to DD/MM/YYYY for display
-// const formattedDisplayDate = computed(() => {
-//   if (!props.modelValue) return "";
-//   const [year, month, day] = props.modelValue.split("-");
-//   return `${day}/${month}/${year}`;
-// });
-
-// When the user selects a date from the hidden picker, update the v-model
 const onDateSelected = (event: Event) => {
   const target = event.target as HTMLInputElement;
   emit("update:modelValue", target.value);
 };
 
-// When the user clicks the calendar icon, open the hidden date picker
 const openDatePicker = () => {
   hiddenDateInput.value?.showPicker();
 };
 
-// --- ADD THIS NEW FUNCTION ---
-// When the user types in the visible input, parse the date
-// const handleTextInput = (event: Event) => {
-//   const target = event.target as HTMLInputElement;
-//   const typedValue = target.value;
-
-//   // Use regex to check if the input is a valid DD/MM/YYYY date
-//   const match = typedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-
-//   if (match) {
-//     const [_, day, month, year] = match;
-//     // If it matches, convert it to YYYY-MM-DD and update the model
-//     emit("update:modelValue", `${year}-${month}-${day}`);
-//   }
-//   // If it doesn't match, you might want to handle it (e.g., clear the model if invalid)
-//   // For now, it will just not update if the format is wrong.
-// };
 const handleTextInput = (event: Event) => {
   const input = event.target as HTMLInputElement;
   let typedValue = input.value;
 
-  // Remove any character that is not a digit or a slash
   typedValue = typedValue.replace(/[^0-9/]/g, "");
 
-  // Auto-add slash after the day (2 digits)
   if (typedValue.length === 2 && !typedValue.includes("/")) {
     typedValue += "/";
   }
 
-  // Auto-add slash after the month (5 characters: DD/)
   if (typedValue.length === 5 && typedValue.split("/").length === 2) {
     typedValue += "/";
   }
 
-  // Limit the total length to 10 characters (DD/MM/YYYY)
   if (typedValue.length > 10) {
     typedValue = typedValue.substring(0, 10);
   }
 
-  // Update the input's visual value
   input.value = typedValue;
 
-  // Now, check if it's a complete date to update the v-model
   const match = typedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (match) {
     const [_, day, month, year] = match;
-    // Emit the update in the standard YYYY-MM-DD format
     emit("update:modelValue", `${year}-${month}-${day}`);
   } else {
-    // If the date is not complete, emit an empty string so the filter clears
     emit("update:modelValue", "");
   }
 };
@@ -107,17 +73,15 @@ const handleTextInput = (event: Event) => {
 }
 
 .visible-date-input {
-  /* Inherit the styles from your .filter-select class */
   height: 2.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
-  padding: 0 2.5rem 0 0.75rem; /* Make space for the icon */
+  padding: 0 2.5rem 0 0.75rem;
   width: 220px;
   background-color: white;
-  cursor: text; /* Change cursor to text */
+  cursor: text;
 }
 
-/* --- ADD: Style for the clickable calendar icon --- */
 .calendar-icon {
   position: absolute;
   right: 0.75rem;
@@ -145,7 +109,6 @@ const handleTextInput = (event: Event) => {
   width: 100%;
   height: 100%;
   opacity: 0;
-  /* Make the hidden input ignore mouse clicks so they pass through to the visible input */
   pointer-events: none;
 }
 </style>

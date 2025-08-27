@@ -9,6 +9,8 @@ import GlossaryModal from "@/components/GlossaryModal.vue";
 import DynamicInlineInput from "@/components/DynamicInlineInput.vue";
 import { storeToRefs } from "pinia";
 import { VITE_API_BASE_URL } from "@/stores/config";
+import { instructions } from "@/stores/instructions2";
+
 const File = window.File;
 
 const props = defineProps<{ questionnaire: Questionnaire2 }>();
@@ -17,7 +19,6 @@ const { answers } = storeToRefs(store);
 
 const router = useRouter();
 
-
 const getQuestionById2 = (id: number): Question2 | null => {
   for (const section of props.questionnaire.sections) {
     const foundQuestion = section.questions.find((q) => q.id === id);
@@ -25,6 +26,10 @@ const getQuestionById2 = (id: number): Question2 | null => {
   }
   return null;
 };
+const currentInstruction = computed(() => {
+  if (!currentQuestion.value) return null;
+  return instructions[currentQuestion.value.id] || null;
+});
 
 const inlineInputAnswers = computed({
   get() {
@@ -51,8 +56,6 @@ const currentQuestion = ref<Question2 | null>(
 const isPreResult = ref(false);
 const isFinalResult = ref(false);
 const lastAnsweredQuestion = ref<Question2 | null>(null);
-// const finalRoute = ref<string>("");
-// const suggestedRoutes = ref<string[]>([]);
 
 const isGlossaryVisible = ref(false);
 
@@ -72,7 +75,7 @@ const contradictionText = {
   title: "Contradiction",
   body: `If different types or stages of a disease show contradictory responses (exhibit divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that: What we call one disease might represent separate disease entities with converging symptoms, or the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.`,
   frameworkTitle:
-    "In the RIRM framework, a contradiction between treatment response and expected shared pathway is a critical signal to:",
+    "Within the RIRM framework, this contradiction prompts three actions:",
   actions: [
     "Re-examine treatment effects in each subtype to map precisely which molecular nodes are altered.",
     "Interrogate divergent triggers, cells of origin, and signalling cascades that might account for the split response.",
@@ -87,26 +90,19 @@ const preambleData: Record<number, { term: string; definition: string }[]> = {
     {
       term: "Molecular Types of the Disease",
       definition:
-        "Distinct clusters of disease characteristics that share common molecular origins—driven by the same originating cell and signal—but are further influenced by additional distinct signals.",
+        "Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.",
     },
   ],
   201: [
     {
       term: "Molecular Stages of the Disease",
       definition:
-        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
+        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and core signal, differing only in intensity and duration over time.",
     },
     {
       term: "Molecular Types of the Disease",
       definition:
-        "Distinct clusters of disease characteristics that share common molecular origins—driven by the same originating cell and signal—but are further influenced by additional distinct signals.",
-    },
-  ],
-  201.5: [
-    {
-      term: "Molecular Stages of the Disease",
-      definition:
-        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and signal, differing only in intensity and duration.",
+        "Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.",
     },
   ],
   204: [
@@ -115,37 +111,34 @@ const preambleData: Record<number, { term: string; definition: string }[]> = {
       definition:
         "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.",
     },
+  ],
+  205: [
     {
-      term: "True remission",
+      term: "True Remission",
       definition:
-        "The occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease.",
-    },
-    {
-      term: "Unstable remission",
-      definition:
-        "The status in which true remission has occurred while the source of the causative signal still persists.",
+        "True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, accompanied by the complete disappearance of clinical signs and symptoms sustained for a duration longer than the onset timeframe of the designated disease.",
     },
   ],
   206: [
     {
-      term: "Molecular Clinico-pathological Cascade (Molecular Cascade)",
+      term: "Molecular Clinico-Pathological Cascade (Molecular Cascade)",
       definition:
-        "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.",
+        "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics.",
     },
     {
-      term: "Autocrine",
+      term: "Autocrine Signaling",
       definition:
-        "A cell signaling mechanism where a cell secretes a molecule that binds to receptors on the same cell, leading to a response within that cell.",
+        "A signaling mechanism in which a single cell produces and responds to its own signaling molecules.",
     },
     {
-      term: "Paracrine",
+      term: "Paracrine Signaling",
       definition:
-        "A cell signaling mechanism where a cell signals to neighboring cells.",
+        "A mechanism which one cell secretes signaling molecules that act on neighboring or nearby cells.",
     },
     {
-      term: "Endocrine",
+      term: "Endocrine Signaling",
       definition:
-        "A cell signaling mechanism where a cell signals to distant cells, such as through the bloodstream.",
+        "A long-distance communication method where a cell releases hormones into the bloodstream, which travel to and affect distant cells.",
     },
   ],
 };
@@ -199,10 +192,8 @@ const getFileDownloadUrl = (fileId: number) => {
   return `${VITE_API_BASE_URL}/api/file/${fileId}`;
 };
 
-// Add this new ref near your other state variables
 const isContradiction = ref(false);
 
-// Add this new helper function alongside your others like getCleanOptionLabel
 const getCritCount = (answer: any, question: Question2): number => {
   if (
     !answer ||
@@ -221,78 +212,6 @@ const getCritCount = (answer: any, question: Question2): number => {
   return Number(count) || 0;
 };
 
-// const getRouteForQuestion = (
-//   questionId: number,
-//   answer: any,
-//   allAnswers: Record<number, any>
-// ): string | null => {
-//   if (!answer) return null;
-
-//   const answerKey =
-//     typeof answer === "object" && answer !== null && answer.selectedOption
-//       ? answer.selectedOption
-//       : String(answer);
-
-//   let route: string | null = null;
-//   switch (questionId) {
-//     case 102:
-//       if (
-//         answerKey.startsWith("Yes, please explain the exact remission rate")
-//       ) {
-//         route = "Route A";
-//       }
-//       break;
-//     case 201:
-//       if (answerKey.startsWith("Yes, both staging and typing. ref :")) {
-//         route = "Route H";
-//       } else if (answerKey.startsWith("Yes, typing only.")) {
-//         route = "Route G";
-//       } else if (answerKey.startsWith("No")) {
-//         route = "Route B";
-//       }
-//       break;
-//     case 201.5:
-//       if (answerKey.startsWith("Have 2 stages")) {
-//         route = "Route E";
-//       } else if (answerKey.startsWith("Have more than 2 stages")) {
-//         route = "Route F";
-//       }
-//       break;
-//     case 203:
-//       const answer102 = allAnswers[102];
-//       if (answerKey.startsWith("Yes (Please define the contradiction :")) {
-//         route = "Route C";
-//       } else if (answerKey === "No") {
-//         if (answer102 === "No") {
-//           route = "Route H, Route D";
-//         } else {
-//           route = "Route D";
-//         }
-//       }
-//       break;
-//   }
-
-//   return route;
-// };
-
-// const recalculatedRoutes = computed(() => {
-//   const routes = new Set<string>();
-
-//   Object.keys(answers.value).forEach((idStr) => {
-//     const id = Number(idStr);
-//     const answer = answers.value[id];
-//     const routeStr = getRouteForQuestion(id, answer, answers.value);
-
-//     if (routeStr) {
-//       routeStr.split(",").forEach((r) => {
-//         if (r.trim()) routes.add(r.trim());
-//       });
-//     }
-//   });
-
-//   return Array.from(routes).sort();
-// });
-
 const recalculatedRoutes = computed(() => {
   const getAnswerKey = (answer: any): string => {
     if (!answer) return "";
@@ -303,9 +222,8 @@ const recalculatedRoutes = computed(() => {
 
   const ans102 = getAnswerKey(answers.value[102]);
   const ans103 = getAnswerKey(answers.value[103]);
-  const ans201 = answers.value[201]; // Keep as object for sub-option check
+  const ans201 = answers.value[201];
   const ans202 = answers.value[202];
-  const ans203 = getAnswerKey(answers.value[203]);
   const ans204 = answers.value[204];
 
   // --- Route A ---
@@ -371,24 +289,11 @@ const recalculatedRoutes = computed(() => {
 });
 
 const nextQuestion = () => {
-  console.log('--- "Next" button clicked ---');
   if (!currentQuestion.value) {
     console.error("DEBUG: No current question. Aborting.");
     return;
   }
-
   const questionId = currentQuestion.value.id;
-  console.log(`DEBUG: Current Question ID is ${questionId}`);
-
-  console.log(
-    "DEBUG: Answer object BEFORE save:",
-    JSON.parse(JSON.stringify(answers.value[questionId]))
-  );
-
-  console.log(
-    "DEBUG: Answer object AFTER save:",
-    JSON.parse(JSON.stringify(answers.value[questionId]))
-  );
   const getAnswerKey = (answer: any): string => {
     if (!answer) return "";
     return typeof answer === "object" && answer.selectedOption
@@ -407,8 +312,9 @@ const nextQuestion = () => {
 
     if (meetsRouteC) {
       store.setSuggestedRoutes(["Route C"]);
-      router.push("/contradiction");       
-      return; // Stop further navigation
+      store.setContradictionStep(1);
+      router.push("/contradiction");
+      return;
     }
   }
 
@@ -518,22 +424,18 @@ const radioSelection = computed({
   set(newValue) {
     if (!currentQuestion.value || !newValue) return;
     const questionId = currentQuestion.value.id;
-    const q = currentQuestion.value; // Get the full question object
+    const q = currentQuestion.value;
 
     const newAnswer: { [key: string]: any } = {
       selectedOption: newValue,
     };
 
-    // --- REVISED LOGIC ---
-    // Check if the main option itself has an inline input
     let needsInlineText = String(newValue).includes("___");
 
-    // Also check if the main option has sub-options that might need an inline input
     if (hasSubOptions(newValue)) {
       newAnswer.subs = {};
       const mainLabel = getCleanOptionLabel(newValue);
       const subOptions = q.subOptions?.[mainLabel];
-      // If any of the sub-options contain '___', we also need the inlineText object
       if (subOptions?.some((subOpt) => subOpt.includes("___"))) {
         needsInlineText = true;
       }
@@ -544,12 +446,10 @@ const radioSelection = computed({
       newAnswer.fileData = {};
     }
 
-    // If either of the above is true, create the inlineText property
     if (needsInlineText) {
       newAnswer.inlineText = {};
     }
 
-    // Handle file inputs (no change to this part)
     if (hasFileInput(newValue)) {
       newAnswer.fileData = {};
     }
@@ -588,48 +488,6 @@ const checkboxModel = computed({
   },
 });
 
-// const handleFileChange = (
-//   event: Event,
-//   questionId: number,
-//   optionKey?: string
-// ) => {
-//   const target = event.target as HTMLInputElement;
-//   if (!target.files || target.files.length === 0) return;
-
-//   const fileData = { files: target.files };
-
-//   if (optionKey) {
-//     const existingAnswer = answers.value[questionId];
-
-//     if (typeof existingAnswer !== "object" || existingAnswer === null) {
-//       return;
-//     }
-
-//     existingAnswer.fileData = {
-//       ...existingAnswer.fileData,
-//       [optionKey]: fileData,
-//     };
-
-//     answers.value[questionId] = { ...existingAnswer };
-//   } else {
-//     answers.value[questionId] = fileData;
-//   }
-// };
-
-// const removeFile = (questionId: number, optionKey: string) => {
-//   const answer = answers.value[questionId];
-//   if (
-//     answer &&
-//     typeof answer === "object" &&
-//     answer.fileData &&
-//     answer.fileData[optionKey]
-//   ) {
-//     delete answer.fileData[optionKey];
-//     answers.value[questionId] = { ...answer };
-//   }
-// };
-
-// REPLACE this function
 const handleFileChange = (
   event: Event,
   questionId: number,
@@ -662,13 +520,11 @@ const handleFileChange = (
   answers.value[questionId] = { ...existingAnswer };
 };
 
-// REPLACE this function
 const removeFile = (
   questionId: number,
   optionKey: string | undefined,
   fileIndex: number
 ) => {
-  // Use a default key for standalone file questions
   const key = optionKey || "main";
   const answer = answers.value[questionId];
 
@@ -687,22 +543,15 @@ watch(
 );
 
 const submitFinalResponse = async () => {
-  console.log("--- Starting file collection in QuestionnairesForm2.vue ---");
   const filesToPass: { questionId: string; file: File }[] = [];
 
   Object.entries(answers.value).forEach(([id, value]) => {
-    // We only care about answers that are objects, as that's where files can be.
     if (value && typeof value === "object") {
-      // This handles files attached to radio/checkbox options (e.g., Q105)
       if (value.fileData) {
         Object.values(value.fileData).forEach((fileInfo: any) => {
           if (fileInfo && Array.isArray(fileInfo.files)) {
             fileInfo.files.forEach((file: any) => {
               if (file instanceof File) {
-                console.log(
-                  `SUCCESS: Found a live File object for Q${id}:`,
-                  file.name
-                );
                 filesToPass.push({ questionId: id, file: file });
               }
             });
@@ -710,14 +559,9 @@ const submitFinalResponse = async () => {
         });
       }
 
-      // This handles files from standalone file inputs (type: 'files')
       if (Array.isArray(value.files)) {
         value.files.forEach((file: any) => {
           if (file instanceof File) {
-            console.log(
-              `SUCCESS: Found a top-level live File object for Q${id}:`,
-              file.name
-            );
             filesToPass.push({ questionId: id, file: file });
           }
         });
@@ -725,9 +569,6 @@ const submitFinalResponse = async () => {
     }
   });
 
-  console.log(
-    `--- File collection finished. Found ${filesToPass.length} file(s) to pass. ---`
-  );
   store.setLiveFiles(filesToPass);
 
   saveResponsesToStore();
@@ -742,7 +583,7 @@ const isNextDisabled = computed(() => {
 
   if (!answer) return true;
   if (q.id === 207) {
-    const ans207 = answer; // It's already the complex object
+    const ans207 = answer;
 
     // Rule 1: Must select one of the radio buttons
     if (!ans207.radioSelection) {
@@ -832,23 +673,65 @@ const isNextDisabled = computed(() => {
         }
 
         // Rule 3: A file must be attached
-        const fileData = answer.fileData?.[getCleanOptionLabel(originalOption)];
-        if (!fileData || !fileData.files || fileData.files.length === 0)
-          return true;
+        // const fileData = answer.fileData?.[getCleanOptionLabel(originalOption)];
+        // if (!fileData || !fileData.files || fileData.files.length === 0)
+        //   return true;
       }
 
+      // if (hasSubOptions(originalOption)) {
+      //   const mainLabel = getCleanOptionLabel(originalOption);
+      //   const subAnswer = answer.subs?.[mainLabel];
+      //   if (!subAnswer || subAnswer.length === 0) return true;
+      // }
       if (hasSubOptions(originalOption)) {
         const mainLabel = getCleanOptionLabel(originalOption);
-        const subAnswer = answer.subs?.[mainLabel];
-        if (!subAnswer || subAnswer.length === 0) return true;
+        const subSelection = answer.subs?.[mainLabel];
+
+        // Rule 1: A sub-option must be selected.
+        if (!subSelection || subSelection.length === 0) return true;
+
+        // This handles both radio and checkbox sub-options
+        const selectedSubOptionString = Array.isArray(subSelection)
+          ? subSelection[0]
+          : subSelection;
+
+        // Rule 2: If the selected sub-option requires a file, check that it's attached.
+        // (This is now optional based on your last request, so this block can be removed if files are not required)
+        // if (hasFileInput(selectedSubOptionString)) {
+        //     const subLabel = getCleanOptionLabel(selectedSubOptionString);
+        //     const fileData = answer.fileData?.[subLabel];
+        //     if (!fileData || !fileData.files || fileData.files.length === 0) return true;
+        // }
+
+        // Rule 3: If the selected sub-option requires inline text, check if it's filled.
+        if (selectedSubOptionString.includes("___")) {
+          const subOptions = q.subOptions?.[mainLabel];
+          if (subOptions) {
+            const optionIndex = q.options?.indexOf(originalOption);
+            const subIndex = subOptions.indexOf(selectedSubOptionString);
+
+            if (
+              optionIndex !== undefined &&
+              subIndex !== undefined &&
+              optionIndex > -1 &&
+              subIndex > -1
+            ) {
+              const key = `${q.id}-${optionIndex}-sub-${subIndex}-0`;
+
+              if (!answer.inlineText || !answer.inlineText[key]?.trim()) {
+                return true;
+              }
+            }
+          }
+        }
       }
 
-      if (hasFileInput(originalOption)) {
-        const mainLabel = getCleanOptionLabel(originalOption);
-        const fileData = answer.fileData?.[mainLabel];
-        if (!fileData || !fileData.files || fileData.files.length === 0)
-          return true;
-      }
+      // if (hasFileInput(originalOption)) {
+      //   const mainLabel = getCleanOptionLabel(originalOption);
+      //   const fileData = answer.fileData?.[mainLabel];
+      //   if (!fileData || !fileData.files || fileData.files.length === 0)
+      //     return true;
+      // }
 
       if (originalOption.includes("___")) {
         const placeholderCount = (originalOption.match(/___/g) || []).length;
@@ -874,61 +757,11 @@ const parseOption = (option: string) => {
   return { type: "checkbox", group: null, label: option };
 };
 
-// const q207AnswerModel = computed({
-//   get() {
-//     const currentAnswer = answers.value[207];
-//     if (typeof currentAnswer !== "object" || currentAnswer === null) {
-//       return { radioSelection: "", checkboxes: [], subs: {}, inlineText: {} };
-//     }
-//     return {
-//       radioSelection: currentAnswer.radioSelection || "",
-//       checkboxes: Array.isArray(currentAnswer.checkboxes)
-//         ? currentAnswer.checkboxes
-//         : [],
-//       subs: currentAnswer.subs || {},
-//       inlineText: currentAnswer.inlineText || {},
-//     };
-//   },
-//   set(newValue) {
-//     answers.value[207] = {
-//       ...answers.value[207],
-//       radioSelection: newValue.radioSelection,
-//       checkboxes: newValue.checkboxes,
-//       subs: newValue.subs,
-//       inlineText: newValue.inlineText,
-//     };
-//   },
-// });
-
-
-
-// const isSubOptionVisible = (questionId: number, option: string): boolean => {
-//   const q = getQuestionById2(questionId);
-//   const answer = answers.value[questionId];
-//   if (!q || !answer) return false;
-
-//   const optionLabel = option.split("||")[0];
-//   const hasSubOptions = q.subOptions && q.subOptions[optionLabel];
-//   if (!hasSubOptions) return false;
-
-//   if (questionId === 207) {
-//     return q207AnswerModel.value.checkboxes.some((selected: string) =>
-//       selected.startsWith(optionLabel)
-//     );
-//   }
-
-//   if (answer.main && Array.isArray(answer.main)) {
-//     return answer.main.includes(option);
-//   }
-
-//   return false;
-// };
 watch(
   currentQuestion,
   (q) => {
     if (q && q.id === 207) {
       const currentAnswer = answers.value[207];
-      // If the answer for Q207 isn't a correctly structured object, create it.
       if (
         typeof currentAnswer !== "object" ||
         currentAnswer === null ||
@@ -1088,7 +921,6 @@ watch(
     if (newAnswerFor201 !== "Yes, staging only.") {
       if (answers.value[201.5]) {
         delete answers.value[201.5];
-        console.log("DEBUG: Cleared orphaned answer for question 201.5");
       }
     }
   }
@@ -1162,9 +994,6 @@ watch(
   { deep: true }
 );
 
-// ADD THESE TWO WATCHERS. DELETE THE OLD watch for answers.value[207].
-
-// Watcher for the Q207 RADIO BUTTON selection
 watch(
   () => answers.value[207]?.radioSelection,
   (newRadio, oldRadio) => {
@@ -1175,7 +1004,6 @@ watch(
       if (oldOptionIndex !== undefined && oldOptionIndex > -1) {
         const key = `207-${oldOptionIndex}-0`;
         if (answers.value[207]?.inlineText?.[key]) {
-          // Use delete to remove the property from the object
           delete answers.value[207].inlineText[key];
         }
       }
@@ -1183,7 +1011,6 @@ watch(
   }
 );
 
-// Watcher for the Q207 CHECKBOX selections
 watch(
   () => answers.value[207]?.checkboxes,
   (newBoxes, oldBoxes) => {
@@ -1193,7 +1020,6 @@ watch(
       (opt: string) => !newBoxes.includes(opt)
     );
     deselected.forEach((deselectedOpt: string) => {
-      // Clean up inline text for deselected checkboxes
       if (deselectedOpt.includes("___")) {
         const oldOptionIndex = currentQuestion.value?.options?.findIndex(
           (opt) => parseOption(opt).label === deselectedOpt
@@ -1205,7 +1031,6 @@ watch(
           }
         }
       }
-      // Clean up sub-options for deselected "Inflammation"
       if (
         deselectedOpt.startsWith("Inflammation") &&
         answers.value[207]?.subs?.["Inflammation"]
@@ -1217,7 +1042,6 @@ watch(
   { deep: true }
 );
 
-// Add this watch effect anywhere in your <script setup>
 watch(
   currentQuestion,
   (newQuestion) => {
@@ -1228,7 +1052,7 @@ watch(
     }
   },
   { immediate: true }
-); // immediate: true ensures it runs on component load
+);
 </script>
 
 <template>
@@ -1320,6 +1144,9 @@ watch(
         </div>
 
         <label class="question-label">{{ currentQuestion.question }}</label>
+        <div v-if="currentInstruction" class="question-instruction">
+          {{ currentInstruction }}
+        </div>
 
         <input
           v-if="currentQuestion.type === 'text'"
@@ -1327,22 +1154,6 @@ watch(
           type="text"
           class="input-text"
         />
-
-        <!-- <div v-if="currentQuestion.type === 'files'">
-          <input
-            type="file"
-            @change="handleFileChange($event, currentQuestion.id)"
-            class="input-file"
-            accept=".pdf,.png,.jpeg,.jpg,.docx,.xlsx"
-            style="margin-left: 50px"
-          />
-          <div
-            v-if="
-              answers[currentQuestion.id] && answers[currentQuestion.id].files
-            "
-            class="saved-files"
-          ></div>
-        </div> -->
 
         <div v-if="currentQuestion.type === 'files'" class="file-input-wrapper">
           <div class="file-list-container">
@@ -1419,23 +1230,6 @@ watch(
                   )"
                   :key="index"
                 >
-                  <!-- {{ part }}
-                  <input
-                    v-if="
-                      index <
-                      parseOptionForInline(getCleanOptionLabel(option)).length -
-                        1
-                    "
-                    type="text"
-                    v-model="
-                      inlineInputAnswers[
-                        `${currentQuestion.id}-${optionIndex}-${index}`
-                      ]
-                    "
-                    :disabled="radioSelection !== option"
-                    class="inline-input"
-                    @click.stop
-                  /> -->
                   {{ part }}
                   <DynamicInlineInput
                     v-if="
@@ -1580,51 +1374,6 @@ watch(
             </div>
 
             <div v-if="radioSelection === option" class="sub-option-container">
-              <!-- <div
-                v-if="
-                  hasSubOptions(option) &&
-                  currentQuestion.subOptions &&
-                  currentQuestion.subOptions[getCleanOptionLabel(option)]
-                "
-              >
-               
-                <div
-                  v-for="subOpt in currentQuestion.subOptions[
-                    getCleanOptionLabel(option)
-                  ]"
-                  :key="subOpt"
-                  class="sub-radio-option"
-                  style="margin-top: 8px"
-                >
-                  <input
-                    v-if="
-                      currentQuestion.subOptionsType &&
-                      currentQuestion.subOptionsType[
-                        getCleanOptionLabel(option)
-                      ] === 'radio'
-                    "
-                    type="radio"
-                    :name="'sub-q-' + getCleanOptionLabel(option)"
-                    :value="subOpt"
-                    v-model="
-                      answers[currentQuestion.id].subs[
-                        getCleanOptionLabel(option)
-                      ]
-                    "
-                  />
-                  <input
-                    v-else
-                    type="checkbox"
-                    :value="subOpt"
-                    v-model="
-                      answers[currentQuestion.id].subs[
-                        getCleanOptionLabel(option)
-                      ]
-                    "
-                  />
-                  <label>{{ subOpt }}</label>
-                </div>
-              </div> -->
               <div
                 v-if="
                   hasSubOptions(option) &&
@@ -1639,7 +1388,7 @@ watch(
                   :key="subOpt"
                   class="sub-option-wrapper"
                 >
-                  <div class="sub-radio-option">
+                  <div class="sub-radio-option" style="align-items: center">
                     <input
                       v-if="
                         currentQuestion.subOptionsType?.[
@@ -2077,7 +1826,7 @@ watch(
   font-size: 18px;
   padding: 0px 8px 0px 32px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   margin: 12px 0px;
   gap: 10px;
   accent-color: #eb4648;
@@ -2088,19 +1837,12 @@ watch(
 .checkbox-input {
   accent-color: #eb4648;
   cursor: pointer;
-  margin-top: 8px; /* Change to this */
+  margin-top: 8px;
 }
 
-/* .btn-container {
-  display: flex;
-  position: absolute;
-  margin-top: 30vh;
-  gap: 14px;
-} */
 .btn-container {
   display: flex;
-  /* position: absolute; has been removed to keep it in the document flow */
-  margin-top: 40px; /* A fixed margin provides consistent spacing after the options */
+  margin-top: 40px;
   gap: 14px;
 }
 
@@ -2118,12 +1860,6 @@ watch(
   color: #eb4648;
   border: 1px solid #eb4648;
 }
-/* .back-btn :disabled{
-  background-color: #d6d6d6;
-  color: white;
-  margin-right: 14px;
-  border: none;
-} */
 
 .next-btn {
   background-color: #eb4648;
@@ -2134,12 +1870,7 @@ watch(
   background-color: #c9302c;
 }
 
-/* .back-btn:hover {
-  background-color: #ffffff;
-} */
-
 .back-btn:disabled {
-  /* background-color: #e0e0e0; */
   cursor: not-allowed;
 }
 .next-btn:disabled {
@@ -2149,18 +1880,17 @@ watch(
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #fbe9e7; /* Light pink/red background */
-  color: #5d4037; /* Darker text for readability */
-  border: 1px solid #ffab91; /* Reddish border */
+  background-color: #fbe9e7;
+  color: #5d4037;
+  border: 1px solid #ffab91;
   border-radius: 8px;
   padding: 16px;
   margin: 0 8px 1.5rem 8px;
 }
 
 .preamble-icon {
-  /* margin-top: 2px; */
   flex-shrink: 0;
-  color: #d84315; /* Red icon color */
+  color: #d84315;
 }
 
 .preamble-text {
@@ -2172,25 +1902,15 @@ watch(
   font-weight: 600;
 }
 
-/* ADD THESE STYLES */
-
 .file-input-wrapper {
-  /* Reduce the left margin to bring it closer to the radio button */
   margin-left: 30px;
-  /* Remove the top margin to tighten the vertical space */
   margin-top: 0;
 }
 
 .file-preview {
   display: flex;
-  /* This is the key for vertical alignment */
   align-items: center;
   gap: 10px;
-  /* Remove the background and border to make it look cleaner */
-  /* padding: 8px; */
-  /* background-color: #f8f9fa; */
-  /* border: 1px solid #dee2e6; */
-  /* border-radius: 4px; */
 }
 
 .file-link {
@@ -2203,18 +1923,14 @@ watch(
   text-decoration: underline;
 }
 
-/* This is the new style for your remove button */
 .remove-file-btn {
-  /* Use your existing inline styles here */
-  font-size: 36px; /* Reduced size slightly */
+  font-size: 36px;
   color: #eb4648;
   background: none;
   border: none;
   cursor: pointer;
-
-  /* Add padding and line-height to help with centering */
   padding: 0;
-  line-height: 1; /* Aligns the '×' character better */
+  line-height: 1;
 }
 
 .file-format-text {
@@ -2225,78 +1941,71 @@ watch(
 }
 .sub-radio-option input,
 .sub-checkbox-option input {
-  margin-top: 8px; /* Adjust this value if needed */
+  margin-top: 8px;
 }
 
 .checkbox-option-container {
-  /* This ensures each option block (including sub-options) is a distinct block */
   display: block;
   width: 100%;
 }
 
 .option-item {
   display: flex;
-  align-items: flex-start; /* Aligns checkbox/radio with the start of the text */
-  gap: 10px; /* Creates space between the checkbox/radio and the label */
-  width: 100%; /* Ensures the flex container takes full width */
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
 }
 
 .sub-options-panel {
-  padding-left: 42px; /* Indents the entire sub-option block (input width + gap) */
-  margin-top: 8px; /* Adds some space below the parent option */
+  padding-left: 42px;
+  margin-top: 8px;
 }
 
 .sub-option {
   display: flex;
-  align-items: center; /* Aligns the radio and its label */
+  align-items: center;
   gap: 10px;
-  margin-bottom: 12px; /* Space between each sub-option */
-  font-size: 18px; /* Matches the parent option font size */
+  margin-bottom: 12px;
+  font-size: 18px;
 }
 
 .option-group-title {
-  /* font-size: 1rem; */
-  /* font-weight: 600; */
-  color: #374151; /* A dark grey */
+  color: #374151;
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid #e5e7eb; /* A light separator line */
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .file-list-container {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.5rem; /* Adds a small space between each file in the list */
-  margin-bottom: 0.5rem; /* Adds space below the list before the next input */
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .input-file-conditional {
-  display: block; /* Forces the input onto its own line */
-  margin-top: 0.5rem; /* Adds a bit of space above it */
+  display: block;
+  margin-top: 0.5rem;
 }
 
 .unsaved-file-placeholder {
-  color: #6b7280; /* A muted grey color */
+  color: #6b7280;
   font-style: italic;
   text-decoration: none;
 }
 
-/* --- Styles for the Dynamic Criteria Inputs --- */
-
-/* This styles the main container for the dropdown's sub-inputs */
 .dynamic-list-container {
-  margin-left: 42px; /* Indents the whole block under its parent radio button */
-  padding: 0 1rem; /* 16px */
+  margin-left: 42px;
+  padding: 0 1rem;
 }
 
-/* This styles each row (e.g., "1. [input box]") */
 .dynamic-list-item {
   display: flex;
-  align-items: center; /* This is the key to vertical alignment */
-  gap: 0.5rem; /* 8px space between the number and the input */
-  margin-bottom: 0.5rem; /* Space between each row */
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .dynamic-list-item label {
@@ -2304,8 +2013,16 @@ watch(
   color: #333;
 }
 
-/* Adds a bit of space above the file upload section */
 .dynamic-list-container .file-input-wrapper {
-  margin-top: 1rem; /* 16px */
+  margin-top: 1rem;
+}
+
+.question-instruction {
+  font-style: italic;
+  color: #6c757d;
+  font-size: 16px;
+  margin: 0 0 0.5rem 32px;
+  white-space: pre-wrap;
+  line-height: 1.6;
 }
 </style>

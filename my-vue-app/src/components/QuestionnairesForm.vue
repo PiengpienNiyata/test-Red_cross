@@ -5,6 +5,7 @@ import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { questionnaireData } from "@/stores/questionnaires1";
 import { toRefs } from "vue";
 import GlossaryModal from "@/components/GlossaryModal.vue";
+import { instructions } from "@/stores/instructions1";
 
 const store = useQuestionnaireStore();
 const questionnaire = ref(questionnaireData[0]);
@@ -368,6 +369,9 @@ onMounted(() => {
                 <span class="asterisk">*</span>
               </span>
             </div>
+            <div v-if="instructions[q.id]" class="question-instruction">
+              {{ instructions[q.id] }}
+            </div>
             <!-- phone input -->
             <input
               v-if="q.type === 'text' && q.id === 1004"
@@ -675,7 +679,8 @@ input.error-border {
   display: inline; /* This brings it onto the same line as the label */
   font-size: 24px;
   color: #6c757d;
-  margin-left: 4px;}
+  margin-left: 4px;
+}
 
 .optional-remark .asterisk {
   color: #eb4648; /* Your theme's red color */
@@ -684,5 +689,16 @@ input.error-border {
   display: flex;
   align-items: baseline; /* Vertically aligns the text nicely */
   padding: 8px; /* Move padding from the label to the wrapper */
+}
+.question-instruction {
+  font-style: italic;
+  color: #6c757d; /* A lighter grey color */
+  font-size: 16px;
+  margin: 0 0 0.5rem 4px; /* Adds space around the instruction */
+  /* padding: 12px; */
+  /* background-color: #f8f9fa; A very light grey background */
+  /* border-left: 3px solid #dee2e6; A subtle left accent border */
+  white-space: pre-wrap; /* This is critical for showing the line breaks */
+  line-height: 1.6;
 }
 </style>

@@ -1,5 +1,3 @@
-// src/stores/glossary.ts
-
 export interface GlossaryTerm {
   term: string;
   definition: string;
@@ -8,17 +6,14 @@ export interface GlossaryTerm {
 export const glossaryData: GlossaryTerm[] = [
   {
     term: "Remission",
-    definition: `In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.`,
+    definition: `<p>In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.</p>`,
   },
   {
     term: "True Remission",
-    definition: `True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, combined with the complete disappearance of clinical signs and symptoms for a duration exceeding the onset timeframe of the designated disease.
-    <br/><br/>
-    When the signs and symptoms of the disease have completely disappeared — and they stay gone for a longer period than it normally takes for the disease to develop or appear in the first place.
-    <ul>
-        <li>It helps distinguish between a temporary improvement (e.g., symptom relief) and true remission (deep recovery)</li>
-        <li>It sets a minimum benchmark to prove stability</li>
-    </ul>
+    definition: `<p>True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, accompanied by the complete disappearance of clinical signs and symptoms sustained for a duration longer than the onset timeframe of the designated disease.</p>
+    <p>When the signs and symptoms of the disease have completely disappeared — and last for a longer period than it normally takes for the disease to evolve.</p>
+    <p>It helps in distinguishing between other type of remission (e.g., symptom relief) and true remission.</p>
+    
     <strong>Example: Melasma</strong>
     <ul>
         <li><strong>Onset timeframe:</strong> Pigment develops within 1–2 months after UV exposure or hormonal trigger.</li>
@@ -33,49 +28,56 @@ export const glossaryData: GlossaryTerm[] = [
   },
   {
     term: "Unstable Remission",
-    definition: `The unstable remission is defined as the status in which the occurrence of the true remission being happened while the source of causative signal persisted.`,
+    definition: `<p>The unstable remission is defined as the status in which the occurrence of the true remission being happened while the source of causative signal persisted.</p>`,
   },
   {
     term: "Molecular Stages / Types",
     definition: `
     <strong>Molecular Stages of the Disease:</strong>
-    <ul>
-        <li>The natural progression of a disease in which all stages are molecularly driven by the same originating cell and core signal, differing only in intensity and duration over time.</li>
-        <li>Example: Early vs late lesions, acute vs fibrotic phases.</li>
-    </ul>
+    <p>The natural progression of a disease in which all stages are molecularly driven by the same originating cell and core signal, differing only in intensity and duration over time.</p>
+    <p><em>Example: Early vs late lesions, acute vs fibrotic phases.</em></p>
+    <br/>
     <strong>Molecular Types of the Disease:</strong>
-    <ul>
-        <li>Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.</li>
-    </ul>`,
+    <p>Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.</p>`,
   },
   {
-    term: "Molecular Clinico-pathological Cascade (Molecular Cascade)",
+    term: "Molecular Clinico-Pathological Cascade (Molecular Cascade)",
     definition:
-      "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.",
+      "<p>A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics. This cascade may also trigger subsequent signals, aligning with diagnostic criteria based on clinical or histological features.</p>",
   },
   {
-    term: "Signaling Types (Autocrine, Paracrine, Endocrine)",
+    term: "Autocrine Signaling",
     definition: `
-    <strong>Autocrine Signaling</strong>
-    <p>A signaling mechanism in which a single cell produces and responds to its own signaling molecules. The signal binds to receptors on the same cell that secreted it. This typically involves only one cell type in both signal emission and response.</p>
-    <p><em>Example: A tumor cell releasing growth factors that act back on itself to promote proliferation.</em></p>
-    <br/>
-    <strong>Paracrine Signaling</strong>
-    <p>A mechanism where one cell secretes signaling molecules that act on neighboring or nearby cells of a different type. Involves two or more distinct cell types within the same tissue or microenvironment. Signals usually act over short distances.</p>
-    <p><em>Example: Immune cells secreting cytokines that activate nearby endothelial or stromal cells.</em></p>
-    <br/>
-    <strong>Endocrine Signaling</strong>
-    <p>A long-distance communication method where a cell (often in a gland) releases hormones into the bloodstream, which travel to and affect distant cells of different types. Involves two or more cell types, typically in separate organs or tissues.</p>
-    <p><em>Example: Pituitary cells releasing hormones that affect liver or reproductive tissues.</em></p>
+      <p>A signaling mechanism in which a single cell produces and responds to its own signaling molecules.</p>
+      <p>The signal binds to receptors on the same cell that secreted it.</p>
+      <p>This typically involves only one cell type in both signal emission and response.</p>
+      <br/>
+      <p><em>Example: A tumor cell releasing growth factors that act back on itself to promote proliferation.</em></p>
+    `,
+  },
+  {
+    term: "Paracrine Signaling",
+    definition: `
+      <p>A mechanism which one cell secretes signaling molecules that act on neighboring or nearby cells.</p>
+      <p>Involves one or more cell type(s) within the same tissue or microenvironment.</p>
+      <p>Signals usually act over adjacent cell(s).</p>
+      <br/>
+      <p><em>Example: Immune cells secreting cytokines that activate nearby endothelial or stromal cells.</em></p>
+    `,
+  },
+  {
+    term: "Endocrine Signaling",
+    definition: `
+      <p>A long-distance communication method where a cell (often in a gland) releases hormones into the bloodstream, which travel to and affect distant cells of different types.</p>
+      <p>Involves two or more cell types, typically in separate organs or tissues.</p>
+      <br/>
+      <p><em>Example: Pituitary cells releasing hormones that affect liver or reproductive tissues.</em></p>
     `,
   },
   {
     term: "Contradiction",
-    definition: `If different types or stages of a disease show contradictory responses (exhibit divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that:
-    <br/><br/>
-    What we call one disease might represent separate disease entities with converging symptoms, or the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.
-    <br/><br/>
-    Within the RIRM framework, this contradiction prompts three actions:
+    definition: `<p>If different types or stages of a disease show contradictory responses (exhibit divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that: What we call one disease might represent separate disease entities with converging symptoms, or the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.</p>
+    <p>Within the RIRM framework, this contradiction prompts three actions:</p>
     <ol>
         <li>Re-examine treatment effects in each subtype to map precisely which molecular nodes are altered.</li>
         <li>Interrogate divergent triggers, cells of origin, and signalling cascades that might account for the split response.</li>

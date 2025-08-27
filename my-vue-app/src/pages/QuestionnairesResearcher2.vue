@@ -1,5 +1,3 @@
-<!-- 2 -->
-
 <script setup lang="ts">
 import QuestionnairesForm from "@/components/QuestionnairesForm2.vue";
 import { questionnaireData } from "@/stores/questionnaires2";

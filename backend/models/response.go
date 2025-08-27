@@ -22,6 +22,5 @@ type Response struct {
 	Status               int            `json:"status" gorm:"default:0"`
 	Version              int            `json:"version" gorm:"default:1"`
 	Token                string         `json:"token" gorm:"uniqueIndex:idx_token_version"`
-	// ResearcherData       ResearcherData `json:"researcher_data" gorm:"foreignKey:ResearcherID"`
-	Remark string `json:"remark" gorm:"type:text"` // For reviewer feedback
+	Remark               string         `json:"remark" gorm:"type:text"`
 }

@@ -15,7 +15,6 @@ const router = useRouter();
 const showCancelModal = ref(false);
 const projectNameVerification = ref("");
 const isCancelling = ref(false);
-// Add these new state variables for your modals
 const showCancelSuccessModal = ref(false);
 const showCancelErrorModal = ref(false);
 
@@ -26,11 +25,10 @@ const {
   showReviewerFeedback,
   currentStatus,
 } = storeToRefs(store);
-console.log("Current Status:", currentStatus.value);
 type FileItem =
   | File
   | { id: number; name: string; rehydrated: true }
-  | { name: string; isNewUnsavedFile: true }; //
+  | { name: string; isNewUnsavedFile: true }; 
 
 const getFileDownloadUrl = (fileId: number) => {
   return `${VITE_API_BASE_URL}/api/file/${fileId}`;
@@ -85,23 +83,14 @@ const secondFormAnswers = computed(
 );
 
 const normalizeFiles = (files: any): FileItem[] => {
-  // If it's already a valid array, just return it.
   if (Array.isArray(files)) {
     return files;
   }
-  // If it's a FileList from a live upload, convert it to an array.
   if (files instanceof FileList) {
     return Array.from(files);
   }
   return [];
 };
-
-// const finalDisplayRoute = computed(() => {
-//   if (suggestedRoutes.value.includes("Route C")) {
-//     return "Route C";
-//   }
-//   return suggestedRoutes.value.join(", ");
-// });
 
 const parseOption = (option: string) => {
   if (option.includes("|/|")) {
@@ -181,7 +170,6 @@ const suggestedRouteDetails = computed(() => {
 
 const editAnswers = () => {
   store.hideReviewerFeedback();
-  // store.resetServey();
   router.push("/questionnairesResearcher");
 };
 
@@ -193,12 +181,9 @@ const formatCheckboxAnswer = (question: Question2, answer: any): string => {
       const parts = mainOpt.split("___");
       let constructed = parts[0].split("||")[0];
 
-      // --- THIS IS THE FIX ---
-      // Find the index by comparing the parsed label, not the raw option string
       const optionIndex = question.options?.findIndex(
         (opt) => parseOption(opt).label === mainOpt
       );
-      // --- END OF FIX ---
 
       if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
         for (let i = 0; i < parts.length - 1; i++) {
@@ -273,7 +258,6 @@ const goToSummary = () => {
 
 const isSubmissionLocked = computed(() => {
   const status = store.currentStatus;
-  // Locked if status is Approved (2), Rejected (-2), or Canceled (-1)
   return status === 2 || status === -2 || status === -1;
 });
 
@@ -291,13 +275,11 @@ const lockedStatusText = computed(() => {
   }
 });
 const openCancelModal = () => {
-  projectNameVerification.value = ""; // Reset verification text
+  projectNameVerification.value = "";
   showCancelModal.value = true;
 };
 
-// --- ADD: Function to handle the final cancellation ---
 const handleCancelProject = async () => {
-  // Double-check verification
   if (projectNameVerification.value !== store.answers[1002]) {
     alert("Project name does not match.");
     return;
@@ -306,12 +288,11 @@ const handleCancelProject = async () => {
   isCancelling.value = true;
   try {
     const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, {
-      // <-- CHANGE THIS URL
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: store.currentToken,
-        status: -1, // -1 for Canceled
+        status: -1,
         remark: "Canceled by researcher.",
       }),
     });
@@ -320,7 +301,6 @@ const handleCancelProject = async () => {
       throw new Error("Failed to cancel project");
     }
 
-    // Update the local store to reflect the change immediately
     store.setCurrentStatus(-1);
     showCancelModal.value = false;
     showCancelSuccessModal.value = true;
@@ -331,8 +311,6 @@ const handleCancelProject = async () => {
     isCancelling.value = false;
   }
 };
-
-// --- ADD THIS HELPER FUNCTION ---
 
 const getConstructedAnswer = (question: Question2, answer: any): string => {
   if (typeof answer !== "object" || !answer.selectedOption) {
@@ -346,12 +324,9 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
     const parts = finalString.split("___");
     let constructed = parts[0];
 
-    // --- THIS IS THE FIX ---
-    // Find the index by comparing the parsed label, not the raw option string
     const optionIndex = question.options?.findIndex(
       (opt) => parseOption(opt).label === finalString
     );
-    // --- END OF FIX ---
 
     if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
       for (let i = 0; i < parts.length - 1; i++) {
@@ -367,7 +342,6 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
 
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 
-// Add this entire new function to your <script setup>
 const formatSubAnswer = (
   question: Question2,
   mainAnswer: any,
@@ -375,14 +349,11 @@ const formatSubAnswer = (
 ): string => {
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
-  // If there is no sub-selection, or it's not a string, return nothing.
   if (!subSelection || typeof subSelection !== "string") {
     return "";
   }
 
-  // If the sub-option has an inline input, we need to build the final string.
   if (subSelection.includes("___")) {
-    // Find the indexes needed to build the unique key for the inline text
     const mainOption = question.options?.find(
       (opt) => getCleanOptionLabel(opt) === mainOptionKey
     );
@@ -398,14 +369,12 @@ const formatSubAnswer = (
       mainOptionIndex === -1 ||
       subIndex === -1
     ) {
-      return `(${getCleanOptionLabel(subSelection)})`; // Fallback if indexes aren't found
+      return `(${getCleanOptionLabel(subSelection)})`; 
     }
 
-    // Construct the unique key (e.g., '201-1-sub-0-0')
     const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
     const inlineValue = mainAnswer.inlineText?.[key] || "";
 
-    // Replace the '___' with the user's text
     const constructedString = getCleanOptionLabel(subSelection).replace(
       "___",
       inlineValue
@@ -414,22 +383,17 @@ const formatSubAnswer = (
     return `(${constructedString})`;
   }
 
-  // If the sub-option is simple (no '___'), just return its clean label.
   return `(${getCleanOptionLabel(subSelection)})`;
 };
 
-// Add this interface to define the shape of our formatted answer
 interface FormattedCritAnswer {
   label: string;
   count: number;
   criteria: string[];
 }
 
-// Add this new function to process the complex answer object
 const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
-  const answer = question.answer as any; // We can safely cast to 'any' inside this controlled function
-
-  // Safety checks to ensure we have all the data we need
+  const answer = question.answer as any;
   if (
     !answer ||
     typeof answer !== "object" ||
@@ -461,6 +425,34 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   } (Number of criteria: ${count})`;
 
   return { label, count, criteria };
+};
+
+const hasNoValidRoute = computed(() => {
+  if (suggestedRoutes.value.length === 0) return true;
+
+  return suggestedRoutes.value.some((route) => !route.startsWith("Route"));
+});
+
+const countTotalFiles = (answer: any): number => {
+  if (!answer || typeof answer !== "object") {
+    return 0;
+  }
+
+  let count = 0;
+
+  if (answer.fileData) {
+    Object.values(answer.fileData).forEach((fileInfo: any) => {
+      if (fileInfo && Array.isArray(fileInfo.files)) {
+        count += fileInfo.files.length;
+      }
+    });
+  }
+
+  if (Array.isArray(answer.files)) {
+    count += answer.files.length;
+  }
+
+  return count;
 };
 </script>
 
@@ -539,7 +531,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
             q.answer !== null
           "
         >
-          <template v-if="formatCritAnswer(q)">
+          <template v-if="(q.answer as any).inlineText">
             <p class="answer-text">
               <span style="color: red">Your answer : </span>
               {{ formatCritAnswer(q)?.label }}
@@ -553,44 +545,12 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
               </li>
             </ol>
           </template>
-        </div>
-        <!-- <div v-if="q.id === 207">
-          <p class="answer-text">
+
+          <p v-else class="answer-text">
             <span style="color: red">Your answer : </span>
-            <span v-html="formatQ207Answer(q, q.answer)"></span>
+            {{ (q.answer as any).selectedOption.split("||")[0] }}
           </p>
         </div>
-        <div
-          v-else-if="
-            q.answer &&
-            typeof q.answer === 'object' &&
-            !Array.isArray(q.answer) &&
-            'selectedOption' in q.answer
-          "
-        >
-          <p class="answer-text">
-            <span style="color: red">Your answer : </span>
-            {{ getConstructedAnswer(q, q.answer) }}
-            <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
-              ({{
-                Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-              }})
-            </span>
-          </p>
-        </div>
-        <div
-          v-else-if="
-            q.answer &&
-            typeof q.answer === 'object' &&
-            !Array.isArray(q.answer) &&
-            'main' in q.answer
-          "
-        >
-          <p class="answer-text">
-            <span style="color: red">Your answer : </span>
-            {{ formatCheckboxAnswer(q, q.answer) }}
-          </p>
-        </div> -->
 
         <div v-if="q.id === 207 && q.answer" class="answer-text">
           <div v-if="(q.answer as any).radioSelection" class="q207-part">
@@ -643,11 +603,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
           <p class="answer-text">
             <span style="color: red">Your answer : </span>
             {{ getConstructedAnswer(q, q.answer) }}
-            <!-- <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
-              ({{
-                Array.isArray(subAnswer) ? subAnswer.join(", ") : subAnswer
-              }})
-            </span> -->
             <span v-for="(subAnswer, key) in (q.answer as any).subs" :key="key">
               {{ formatSubAnswer(q, q.answer, String(key)) }}
             </span>
@@ -673,13 +628,43 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
           class="sub-answer-block"
         >
           <strong>Attached Files:</strong>
-          <ul>
-            <template
-              v-for="(fileInfo, key) in (q.answer as any).fileData"
-              :key="key"
-            >
+
+          <template v-if="countTotalFiles(q.answer) > 0">
+            <ul>
+              <template
+                v-for="(fileInfo, key) in (q.answer as any).fileData"
+                :key="key"
+              >
+                <li
+                  v-for="file in normalizeFiles(fileInfo.files)"
+                  :key="file.name"
+                >
+                  <a
+                    v-if="'rehydrated' in file"
+                    :href="getFileDownloadUrl(file.id)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+
+                  <a
+                    v-else-if = "file instanceof File"
+                    :href="createObjectURL(file as File)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {{ file.name }}
+                  </a>
+
+                  <span v-else class="unsaved-file-placeholder">
+                    {{ file.name }} (will be uploaded on save)
+                  </span>
+                </li>
+              </template>
+
               <li
-                v-for="file in normalizeFiles(fileInfo.files)"
+                v-for="file in normalizeFiles((q.answer as any).files)"
                 :key="file.name"
               >
                 <a
@@ -690,87 +675,24 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
                 >
                   {{ file.name }}
                 </a>
-
                 <a
-                  v-else-if="file instanceof File"
+                  v-else-if= "file instanceof File"
                   :href="createObjectURL(file as File)"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
-
                 <span v-else class="unsaved-file-placeholder">
                   {{ file.name }} (will be uploaded on save)
                 </span>
               </li>
-            </template>
+            </ul>
+          </template>
 
-            <li
-              v-for="file in normalizeFiles((q.answer as any).files)"
-              :key="file.name"
-            >
-              <a
-                v-if="'rehydrated' in file"
-                :href="getFileDownloadUrl(file.id)"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {{ file.name }}
-              </a>
-              <a
-                v-else-if="file instanceof File"
-                :href="createObjectURL(file as File)"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {{ file.name }}
-              </a>
-              <span v-else class="unsaved-file-placeholder">
-                {{ file.name }} (will be uploaded on save)
-              </span>
-            </li>
-          </ul>
+          <p v-else class="no-files-text">No files were attached.</p>
         </div>
       </div>
-      <!-- 
-       <h3
-        v-if="suggestedRoutes.length > 0"
-        style="margin-left: 8px; padding-top: 16px"
-      >
-        Road Map Suggestion:
-        <span class="final-route-text">{{ finalDisplayRoute }}</span>
-      </h3>
-      <div
-        v-if="suggestedRoutes.length > 0"
-        class="route-suggestion-container"
-        style="margin-left: 10px;"
-      >
-        <h3 class="route-suggestion-header" style=" margin-bottom: 20px;">Road Map Suggestion</h3>
-        <div
-          v-for="(route, index) in suggestedRouteDetails"
-          :key="index"
-          class="route-item"
-          style="margin-left: 16px; margin-bottom: 20px"
-        >
-          <h4 class="route-title">
-            <span class="final-route-text">{{ route.route }}</span>
-            <span
-              style="
-                font-weight: 200;
-                font-style: italic;
-                font-size: 24px;
-                color: #333;
-                margin-left: 10px;
-              "
-              >: {{ route.title }}</span
-            >
-          </h4>
-          <li class="route-description" style="margin-left: 16px; color: grey">
-            {{ route.description }}
-          </li>
-        </div>
-      </div> -->
 
       <div class="btn-container">
         <div
@@ -909,6 +831,48 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
           </div>
         </div>
 
+        <div v-if="hasNoValidRoute" class="preamble-inline">
+          <div class="preamble-icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+              />
+            </svg>
+          </div>
+          <div class="preamble-text-group">
+            <p>
+              <strong
+                >Your answers cannot be classified into Routes A–H.</strong
+              >
+            </p>
+            <p>
+              This usually means you did not apply the research diagnosis or
+              remission criteria correctly.
+            </p>
+            <p style="margin-top: 1rem"><strong>Please check again:</strong></p>
+            <ul>
+              <li>Does the disease have at least 2–3 diagnostic criteria?</li>
+              <li>
+                Are remission criteria clearly defined in clinical research?
+              </li>
+              <li>Is natural remission (or lack of it) already known?</li>
+            </ul>
+            <p style="margin-top: 1rem">
+              Every disease can be classified into a Route once correct criteria
+              are applied. Please go back and review your answers before
+              proceeding.
+            </p>
+          </div>
+        </div>
+
+        <div v-if="!isSubmissionLocked" class="action-bar"></div>
+
         <div v-if="!isSubmissionLocked" class="action-bar">
           <div class="action-bar-group">
             <button type="button" class="edit-btn" @click="editAnswers">
@@ -916,6 +880,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
             </button>
             <button
               v-if="
+                !hasNoValidRoute &&
                 !suggestedRoutes.includes('Route C') &&
                 !hasNonsenseStagingTyping &&
                 !hasNonsenseContradiction
@@ -1269,7 +1234,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   font-size: 16px;
   color: #555;
   margin-left: 16px;
-  white-space: pre-wrap; /* <-- ADD THIS LINE */
+  white-space: pre-wrap;
 }
 .sub-answer-block {
   margin-left: 32px;
@@ -1281,7 +1246,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
   font-weight: 500;
 }
-/* Other styles remain the same */
 .aa {
   font-size: 20px;
   font-weight: 400;
@@ -1289,10 +1253,9 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .btn-container {
   padding-top: 16px;
 }
-/* Add these styles to your <style scoped> block */
 
 .summary-item {
-  display: flex; /* Aligns bullet and text */
+  display: flex; 
   gap: 8px;
   padding-bottom: 1rem;
   line-height: 1.6;
@@ -1303,38 +1266,28 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
 }
 
-/* Class for dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* Class for the entire decision sentence */
 .decision-sentence {
   color: #555;
-  display: block; /* Puts it on its own line */
+  display: block;
   margin-top: 4px;
 }
 
-/* Class for the route name itself */
-/* .route-name {
+
+.decision-words-positive {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.decision-words-negative {
   color: #d84315;
   font-weight: bold;
-} */
-
-/* Class for positive decision words */
-.decision-words-positive {
-  color: #28a745; /* Green */
-  font-weight: bold;
 }
-
-/* Class for negative decision words */
-.decision-words-negative {
-  color: #d84315; /* Red */
-  font-weight: bold;
-}
-/* Styles for the dynamic summary paragraphs */
 .summary-item {
   display: flex;
   gap: 8px;
@@ -1347,36 +1300,30 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence */
 .decision-sentence {
-  color: #555; /* Gray color */
+  color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself */
 .route-name {
-  color: #d84315; /* Red */
+  color: #d84315;
   font-weight: bold;
 }
 
-/* The decision words (e.g., "not to pursue", "justifies choosing") */
 .decision-words {
-  color: #d84315; /* Red */
+  color: #d84315;
   font-weight: bold;
 }
 </style>
 
 <style>
-/* These are now global styles that can affect v-html content */
-
 .summary-item {
   display: flex;
   gap: 8px;
@@ -1389,27 +1336,23 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence will be gray */
 .decision-sentence {
   color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself will be red */
 .route-name {
   color: #d84315;
   font-weight: bold;
 }
 
-/* The decision words will be red */
 .decision-words {
   color: #d84315;
   font-weight: bold;
@@ -1418,18 +1361,17 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #fbe9e7; /* Light pink/red background */
-  color: #5d4037; /* Darker text for readability */
-  border: 1px solid #ffab91; /* Reddish border */
+  background-color: #fbe9e7; 
+  color: #5d4037; 
+  border: 1px solid #ffab91; 
   border-radius: 8px;
   padding: 16px;
   margin: 0 8px 1.5rem 8px;
 }
 
 .preamble-icon {
-  /* margin-top: 2px; */
   flex-shrink: 0;
-  color: #d84315; /* Red icon color */
+  color: #d84315;
 }
 
 .preamble-text {
@@ -1440,10 +1382,9 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .preamble-text strong {
   font-weight: 600;
 }
-/* ADD THESE STYLES */
 .feedback-panel {
-  border: 1px solid #fbbf24; /* Yellow border */
-  background-color: #fffbeb; /* Light yellow background */
+  border: 1px solid #fbbf24; 
+  background-color: #fffbeb; 
   border-radius: 8px;
   padding: 1rem;
   margin: 0 8px 1.5rem 8px;
@@ -1452,21 +1393,20 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .feedback-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #d97706; /* Darker yellow */
+  color: #d97706; 
   margin-bottom: 0.5rem;
 }
 
 .feedback-text {
   font-size: 1rem;
   color: #374151;
-  white-space: pre-wrap; /* This respects line breaks in the remark text */
+  white-space: pre-wrap;
 }
 .status-display-box {
   width: 100%;
   text-align: center;
   padding: 0.75rem 1rem;
   margin: 0 8px;
-  /* background-color: #F3F4F6; */
   border-radius: 6px;
   color: #4b5563;
   font-weight: 500;
@@ -1480,9 +1420,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   align-content: end;
   text-align: end;
   font-size: 20px;
-  /* padding: 0.75rem 1rem; */
-  /* margin: 0 8px; */
-  /* background-color: #F3F4F6; */
   border-radius: 6px;
   color: #4b5563;
   font-weight: 500;
@@ -1491,7 +1428,6 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
   padding-right: 1%;
 }
 
-/* ADD THIS STYLE */
 .verification-input {
   width: 100%;
   padding: 8px;
@@ -1504,7 +1440,7 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 
 .action-bar {
   display: flex;
-  justify-content: space-between; /* This pushes the two groups apart */
+  justify-content: space-between; 
   align-items: center;
   width: 100%;
 }
@@ -1514,20 +1450,19 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 }
 
 .q207-part {
-  margin-bottom: 0.75rem; /* Adds space between the two parts of the answer */
+  margin-bottom: 0.75rem; 
 }
 .q207-part:last-child {
   margin-bottom: 0;
 }
 .mechanism-list {
   margin-top: 0.25rem;
-  padding-left: 20px; /* Indents the bulleted list */
+  padding-left: 20px; 
   list-style-type: disc;
 }
 
 .criteria-list {
-  margin-left: 32px; /* Indent the list */
-  margin-top: 8px;
+  margin-left: 32px;
   list-style-type: decimal;
   color: #555;
   font-size: 16px;
@@ -1537,7 +1472,12 @@ const formatCritAnswer = (question: Question2): FormattedCritAnswer | null => {
 .answer-text,
 .previous-answer-text,
 .info-answer {
-  white-space: pre-wrap; /* This is the magic property that preserves newlines */
-  word-wrap: break-word; /* This ensures long unbroken lines of text still wrap */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.no-files-text {
+  margin-left: 16px;
+  font-style: italic;
+  color: #555;
 }
 </style>

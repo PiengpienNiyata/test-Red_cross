@@ -6,10 +6,8 @@ interface VersionHistoryItem {
   status: number;
 }
 
-// REPLACE this function
 function stripFileObjects(obj: any): any {
   if (obj instanceof File) {
-    // Instead of returning null, return a placeholder object with the filename.
     return { name: obj.name, isNewUnsavedFile: true };
   }
   if (Array.isArray(obj)) {
@@ -44,7 +42,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     liveFileAnswers: [] as { questionId: string; file: File }[],
 
     researcherID: null as number | null,
-    // finalRoute: null as string | null,
     suggestedRoutes: [] as string[],
     currentToken: null as string | null,
     currentVersion: 0 as number,
@@ -55,15 +52,14 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     latestVersion: 0 as number,
     authToken: null as string | null,
     currentQuestionId: null as number | null,
+    contradictionStep: 1 as number,
   }),
 
   actions: {
     setAuthToken(token: string) {
-      // <-- ADD THIS
       this.authToken = token;
     },
     clearAuthToken() {
-      // <-- ADD THIS
       this.authToken = null;
     },
 
@@ -76,7 +72,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.answers = { ...this.answers, ...data };
     },
     setPreviousAnswers(data: Record<number, any>) {
-      // <-- ADD THIS ACTION
       this.previousAnswers = data;
     },
     setLiveFiles(files: { questionId: string; file: File }[]) {
@@ -100,14 +95,12 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
     },
     setVersionHistory(versions: VersionHistoryItem[]) {
       this.versionHistory = versions;
-      // The first version in the sorted list is the latest one
       if (versions.length > 0) {
         this.latestVersion = versions[0].version;
       }
     },
 
     setCurrentQuestionId(id: number | null) {
-      // <-- ADD THIS ACTION
       this.currentQuestionId = id;
     },
 
@@ -150,7 +143,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       };
       this.answers = {};
       this.researcherID = null;
-      // this.finalRoute = null;
       this.liveFileAnswers = [];
       this.previousAnswers = {};
       this.suggestedRoutes = [];
@@ -161,7 +153,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-      this.currentQuestionId = null; // <-- ADD THIS
+      this.currentQuestionId = null;
     },
     resetQuestionnaire() {
       this.latestVersion = 0;
@@ -177,7 +169,6 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       };
       this.answers = {};
       this.researcherID = null;
-      // this.finalRoute = null;
       this.liveFileAnswers = [];
       this.previousAnswers = {};
       this.suggestedRoutes = [];
@@ -188,7 +179,7 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
       this.showReviewerFeedback = true;
       this.versionHistory = [];
       this.latestVersion = 0;
-      this.currentQuestionId = null; // <-- ADD THIS
+      this.currentQuestionId = null;
     },
     resetServey() {
       Object.keys(this.answers).forEach((key) => {
@@ -198,28 +189,16 @@ export const useQuestionnaireStore = defineStore("questionnaire", {
         }
       });
       this.researcherID = null;
-      // this.finalRoute = null;
       this.liveFileAnswers = [];
-      this.currentQuestionId = null; // <-- ADD THIS
+      this.currentQuestionId = null;
 
       this.suggestedRoutes = [];
     },
+
+    setContradictionStep(step: number) {
+      this.contradictionStep = step;
+    },
   },
-  // persist: {
-  //   storage: sessionStorage,
-  //   serializer: {
-  //     // Our custom function to SAVE the state
-  //     serialize: (state) => {
-  //       // Before saving, we create a clean version of the state with File objects removed
-  //       const cleanedState = stripFileObjects(state);
-  //       return JSON.stringify(cleanedState);
-  //     },
-  //     // The default function to LOAD the state
-  //     deserialize: (jsonString) => {
-  //       return JSON.parse(jsonString);
-  //     },
-  //   },
-  // },
 
   persist: {
     storage: sessionStorage,

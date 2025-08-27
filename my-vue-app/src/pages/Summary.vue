@@ -10,6 +10,7 @@ import ConfidentialForm from "@/components/ConfidentialForm.vue";
 import { storeToRefs } from "pinia";
 import html2pdf from "html2pdf.js";
 import { formatPhoneNumber } from "@/utils/formatters";
+import { routeDefinitions } from "@/stores/routeDefinitions";
 
 const pdfContent = ref<HTMLElement | null>(null);
 const store = useQuestionnaireStore();
@@ -17,7 +18,6 @@ const router = useRouter();
 const showCancelModal = ref(false);
 const projectNameVerification = ref("");
 const isCancelling = ref(false);
-// Add these new state variables for your modals
 const showCancelSuccessModal = ref(false);
 const showCancelErrorModal = ref(false);
 
@@ -35,7 +35,6 @@ const exportToPdf = () => {
     return;
   }
 
-  // Safety check to ensure the answer for the project name exists.
   if (!answers.value[1002]) {
     console.error(
       "Project Name (answer 1002) is not available for the PDF filename."
@@ -43,7 +42,7 @@ const exportToPdf = () => {
   }
 
   const options = {
-    margin: [0.75, 0.5, 0.5, 0.7], // Use the project name directly from the answers ref.
+    margin: [0.75, 0.5, 0.5, 0.7],
     filename: `RIRM-Summary-${answers.value[1002] || "report"} (${
       answers.value[1001]
     }).pdf`,
@@ -52,16 +51,12 @@ const exportToPdf = () => {
     jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
     pagebreak: {
       mode: "css",
-      before: ".page-break-before", // Create a new page BEFORE any element with this class
-      avoid: ".summary-item", // AVOID creating a page break inside any element with this class
+      before: ".page-break-before",
+      avoid: ".summary-item",
     },
   };
 
   html2pdf().from(pdfContent.value).set(options).save();
-};
-
-const getFileDownloadUrl = (fileId: number) => {
-  return `${VITE_API_BASE_URL}/api/file/${fileId}`;
 };
 
 const getQuestionById = (id: number): Question2 | null => {
@@ -92,19 +87,6 @@ const firstFormAnswers = computed(
       .filter((q) => q !== null) as Question2[]
 );
 
-const secondFormAnswers = computed(
-  () =>
-    Object.entries(store.answers)
-      .filter(
-        ([id]) => (Number(id) < 600 || Number(id) > 1100) && Number(id) < 1001
-      )
-      .map(([id, answer]) => {
-        const question = getQuestionById2(Number(id));
-        return question ? { ...question, answer } : null;
-      })
-      .filter((q) => q !== null) as Question2[]
-);
-
 const canCancelProject = computed(() => {
   return (
     (store.currentStatus === 0 || store.currentStatus === 1) &&
@@ -112,18 +94,9 @@ const canCancelProject = computed(() => {
   );
 });
 
-// const finalDisplayRoute = computed(() => {
-//   if (suggestedRoutes.value.includes("Route C")) {
-//     return "Route C";
-//   }
-//   return suggestedRoutes.value.join(", ");
-// });
-
-// --- ADD THIS HELPER FUNCTION ---
-
 const getConstructedAnswer = (question: Question2, answer: any): string => {
   if (typeof answer !== "object" || !answer.selectedOption) {
-    return answer; // Return as-is if it's not a complex object
+    return answer;
   }
 
   let finalString = answer.selectedOption;
@@ -132,7 +105,6 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
     const parts = finalString.split("___");
     let constructed = parts[0];
 
-    // Find the original option index to build the key for inlineText
     const optionIndex = question.options?.findIndex(
       (opt) => opt === finalString
     );
@@ -149,88 +121,34 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
   return finalString;
 };
 
-const routeDefinitions: {
-  [key: string]: { route: string; title: string; description: string };
-} = {
-  "Route A": {
-    route: "Route A",
-    title: "Known Remission: Single Target, All-Type",
-    description:
-      "A molecular intervention is known to achieve remission by targeting the originating cell.",
-  },
-  "Route B": {
-    route: "Route B",
-    title: "Single Cell Type Mechanism",
-    description:
-      "The disease's molecular mechanism involves only a single cell type.",
-  },
-  "Route C": {
-    route: "Route C",
+const interventionAspectDetails = computed(() => {
+  const answer102 = answers.value[102];
+  if (typeof answer102 !== "object" || !answer102.selectedOption) return null;
 
-    title: "Contradiction Reveals Complexity",
-    description:
-      "The treatment fails broadly, or contradictions in the data suggest the diagnosis may group multiple distinct diseases under a single name. More than one cell type is involved, but without clear molecular staging or typing.",
-  },
-  "Route D": {
-    route: "Route D",
+  const selectedOption = answer102.selectedOption;
 
-    title: "Multiple Cell Types without Staging",
-    description:
-      "More than one cell type is involved, but there are no defined molecular stages or types and no obvious contradictions.",
-  },
-  "Route E": {
-    route: "Route E",
+  if (selectedOption.startsWith("Yes")) {
+    return routeDefinitions["Intervention_Yes"];
+  } else if (selectedOption.startsWith("No")) {
+    return routeDefinitions["Intervention_No"];
+  } else if (selectedOption.startsWith("Uncertain")) {
+    return routeDefinitions["Intervention_Uncertain"];
+  }
+  return null;
+});
 
-    title: "Simple Molecular Staging (Two-Stage Model)",
-    description:
-      "The disease progresses through two simple molecular stages (e.g., early vs. late).",
-  },
-  "Route F": {
-    route: "Route F",
-
-    title: "Complex Molecular Staging (Multi-Stage or Branching Model)",
-    description:
-      "The disease involves more than two molecular stages, or its progression may branch into different paths.",
-  },
-  "Route G": {
-    route: "Route G",
-
-    title: "Multiple Molecular Types (Multiple Triggers)",
-    description:
-      "All variations of the disease arise from the same upstream signal, suggesting a unified origin despite clinical differences.",
-  },
-  "Route H": {
-    route: "Route H",
-
-    title: "Multiple Molecular Types with Progression (Staging + Typing)",
-    description:
-      "The disease presents with more than one type of lesion, and these lesions also change in severity or characteristics over time.",
-  },
-};
-
-// const suggestedRouteDetails = computed(() => {
-//   if (suggestedRoutes.value.includes("Route C")) {
-//     return [routeDefinitions["Route C"]];
-//   }
-//   return suggestedRoutes.value
-//     .map((route) => routeDefinitions[route])
-//     .filter(Boolean);
-// });
 const suggestedRouteDetails = computed(() => {
   if (suggestedRoutes.value.includes("Route C")) {
     return [routeDefinitions["Route C"]];
   }
-  // Create a copy with [...] before sorting to avoid changing the original order in the store.
-  // Then, sort it alphabetically.
   return [...suggestedRoutes.value]
     .sort()
     .map((route) => routeDefinitions[route])
     .filter(Boolean);
 });
+
 const editAnswers = () => {
   store.hideReviewerFeedback();
-
-  // store.resetServey();
   router.push("/questionnairesResearcher");
 };
 
@@ -258,36 +176,35 @@ const submissionSuccess = ref(false);
 const submissionError = ref(false);
 
 const submitFinalResponse = async () => {
-    console.log('DEBUG: Data received by submit function:', JSON.stringify(store.answers, null, 2));
-
   try {
-    // --- Step 1 & 2: Validate and create researcher (No changes here) ---
     store.processResearcherInfo(store.answers as Record<string, string>);
-    const { name, project_name, branch_info, phone_number, email } = store.researcher;
+    const { name, project_name, branch_info, phone_number, email } =
+      store.researcher;
     if (!name || !project_name || !branch_info || !phone_number || !email) {
       alert("Please fill in all researcher details before submitting!");
       return;
     }
     let researcherID = store.researcherID;
     if (!researcherID) {
-      const researcherResponse = await fetch(`${VITE_API_BASE_URL}/api/researcher`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(store.researcher),
-      });
+      const researcherResponse = await fetch(
+        `${VITE_API_BASE_URL}/api/researcher`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(store.researcher),
+        }
+      );
       const researcherResult = await researcherResponse.json();
       if (!researcherResponse.ok) throw new Error("Failed to save researcher");
       researcherID = researcherResult.researcher.id;
       store.setResearcherID(researcherID!);
     }
 
-    // --- Step 3: NEW LOGIC to correctly find all files ---
-console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(store.liveFileAnswers));
     const newFilesToUpload = store.liveFileAnswers;
 
     const existingFileIds: number[] = [];
     Object.entries(answers.value).forEach(([id, value]) => {
-      if (value && typeof value === 'object') {
+      if (value && typeof value === "object") {
         const findRehydratedFiles = (files: any[]) => {
           if (files && Array.isArray(files)) {
             files.forEach((file: any) => {
@@ -298,7 +215,9 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
           }
         };
         if (value.fileData) {
-          Object.values(value.fileData).forEach((fileInfo: any) => findRehydratedFiles(fileInfo.files));
+          Object.values(value.fileData).forEach((fileInfo: any) =>
+            findRehydratedFiles(fileInfo.files)
+          );
         }
         if (value.files) {
           findRehydratedFiles(value.files);
@@ -306,61 +225,69 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
       }
     });
 
-    // 🎯 DEBUG #2: Check the array of existing file IDs.
-    console.log('🎯 DEBUG #2: Found existing (rehydrated) file IDs to keep:', existingFileIds);
-
-
-    // --- Step 4: Flatten answers for the database ---
     const otherAnswers: Record<string, any> = {};
-    const researchContext: Record<string, any> = { research_questions: {}, molecular_signaling: {} };
+    const researchContext: Record<string, any> = {
+      research_questions: {},
+      molecular_signaling: {},
+    };
     let confidentialityLevel = "";
 
     Object.entries(answers.value).forEach(([id, value]) => {
       const numericId = Number(id);
       const question = getQuestionById2(numericId);
 
-      if (question && (question.type === "radio" || question.type === "checkbox") && typeof value === "object" && value !== null) {
-          if (question.id === 207) {
-            otherAnswers[id] = value; // Keep Q207 as a complex object
-          } else if (value.selectedOption) {
-            otherAnswers[id] = getConstructedAnswer(question, value); // Flatten other radio buttons
-          } else {
-            otherAnswers[id] = value; // Keep other complex objects as is
-          }
+      if (
+        question &&
+        (question.type === "radio" || question.type === "checkbox") &&
+        typeof value === "object" &&
+        value !== null
+      ) {
+        if (question.id === 207) {
+          otherAnswers[id] = value;
+        } else if (value.selectedOption) {
+          otherAnswers[id] = getConstructedAnswer(question, value);
+        } else {
+          otherAnswers[id] = value;
+        }
 
-      const isComplexObjectToKeep = (
-        question.id === 207 ||
-        (question.subOptions && Object.keys(question.subOptions).length > 0) ||
-        question.options?.some(opt => opt.includes('||crit'))
-      );
+        const isComplexObjectToKeep =
+          question.id === 207 ||
+          (question.subOptions &&
+            Object.keys(question.subOptions).length > 0) ||
+          question.options?.some((opt) => opt.includes("||crit"));
 
-      if (isComplexObjectToKeep) {
-        // For these special cases, we save the entire object.
-        otherAnswers[id] = value;
-      } else if (value.selectedOption) {
-        // For all OTHER simple radio buttons, we flatten them.
-        otherAnswers[id] = getConstructedAnswer(question, value);
-      } else {
-        // This handles complex checkboxes.
-        otherAnswers[id] = value;
-      }
-
+        if (isComplexObjectToKeep) {
+          otherAnswers[id] = value;
+        } else if (value.selectedOption) {
+          otherAnswers[id] = getConstructedAnswer(question, value);
+        } else {
+          otherAnswers[id] = value;
+        }
       } else if (numericId >= 1008 && numericId <= 1010) {
-        const keyMap: Record<string, string> = { "1008": "principle", "1009": "factual_statement", "1010": "implication" };
+        const keyMap: Record<string, string> = {
+          "1008": "principle",
+          "1009": "factual_statement",
+          "1010": "implication",
+        };
         researchContext.research_questions[keyMap[id]] = value;
       } else if (numericId >= 1011 && numericId <= 1013) {
-        const keyMap: Record<string, string> = { "1011": "principle", "1012": "factual_statement", "1013": "implication" };
+        const keyMap: Record<string, string> = {
+          "1011": "principle",
+          "1012": "factual_statement",
+          "1013": "implication",
+        };
         researchContext.molecular_signaling[keyMap[id]] = value;
       } else if (numericId === 3001 && value && value.selectedOption) {
-          const mainAnswer = value.selectedOption;
-          const subAnswer = value.subs?.[mainAnswer] || "";
-          confidentialityLevel = subAnswer ? `${mainAnswer} (Level: ${subAnswer})` : mainAnswer;
+        const mainAnswer = value.selectedOption;
+        const subAnswer = value.subs?.[mainAnswer] || "";
+        confidentialityLevel = subAnswer
+          ? `${mainAnswer} (Level: ${subAnswer})`
+          : mainAnswer;
       } else {
         otherAnswers[id] = value;
       }
     });
 
-    // --- Step 5: Create the Main Response Record ---
     const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -386,7 +313,6 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
     const responseID = responseResult.id;
     const responseToken = responseResult.token;
 
-    // --- Step 6: Upload NEW Files ---
     if (newFilesToUpload.length > 0) {
       const uploadPromises = newFilesToUpload.map(({ questionId, file }) => {
         const formData = new FormData();
@@ -405,13 +331,9 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
       }
     }
 
-    // --- Step 7: Finalize Submission and show success ---
     await fetch(`${VITE_API_BASE_URL}/api/response/${responseID}/finalize`, {
       method: "POST",
     });
-    
-    console.log("--- SUBMISSION SUCCESSFUL ---");
-    console.log("Edit URL for this submission:", `${window.location.origin}/edit-response/${responseToken}`);
 
     submissionSuccess.value = true;
   } catch (error) {
@@ -422,10 +344,6 @@ console.log('🎯 DEBUG #1: Contents of store.liveFileAnswers:', JSON.stringify(
 const startNewSurvey = () => {
   store.resetStore();
   router.push("/");
-};
-
-const createObjectURL = (file: File) => {
-  return URL.createObjectURL(file);
 };
 
 // const summaryStep2 = computed(() => {
@@ -577,94 +495,108 @@ const createObjectURL = (file: File) => {
 
 const summaryParagraphs = computed(() => {
   const paragraphs: { text: string }[] = [];
-  const diseaseName = `<span class="dynamic-text">${store.answers[1006] || "the disease"}</span>`;
+  const diseaseName = `<span class="dynamic-text">${
+    store.answers[1006] || "the disease"
+  }</span>`;
 
-  const buildDecisionSentence = (text: string, words: string, route: string) => {
-    const styledText = text.replace(words, `<span class="decision-words">${words}</span>`);
-    return `<span class="decision-sentence">${styledText.replace(route, `<span class="route-name">${route}</span>`)}</span>`;
+  const buildDecisionSentence = (text: string, route: string) => {
+    return `<span class="decision-sentence">${text.replace(
+      route,
+      `<span class="route-name">${route}</span>`
+    )}</span>`;
   };
 
-  // Helper to safely get the string value of an answer
   const getAnswerKey = (answer: any): string => {
     if (!answer) return "";
-    return (typeof answer === 'object' && answer.selectedOption) ? answer.selectedOption : String(answer);
+    return typeof answer === "object" && answer.selectedOption
+      ? answer.selectedOption
+      : String(answer);
   };
-  
-  // Get all the answer keys we need at the top
-  const key102 = getAnswerKey(store.answers[102]);
-  const key201 = getAnswerKey(store.answers[201]);
-  const key201_5 = getAnswerKey(store.answers[201.5]);
-  const key203 = getAnswerKey(store.answers[203]);
 
-  // --- Route A Logic ---
-  if (store.answers[102]) {
-    const q102_text = getQuestionById2(102)?.question || "";
-    if (key102.startsWith("Yes, please explain the exact remission rate")) {
-      paragraphs.push({
-        text: `Based on your response to question - "<em>${q102_text}</em>", your assertion that the intervention can achieve a high rate of true remission suggests a highly effective mechanism targeting a core pathway. ${buildDecisionSentence("This supports the decision to pursue Route A.", "to pursue", "Route A")}`,
-      });
-    } else {
-      paragraphs.push({
-        text: `Based on your response to question - "<em>${q102_text}</em>", the inability of the intervention to achieve a high rate of true remission indicates that a single, clear molecular target is unlikely or unproven. ${buildDecisionSentence("This supports the decision not to pursue Route A.", "not to pursue", "Route A")}`,
-      });
-    }
-  }
+  const getCritCount = (answer: any, question: Question2 | null): number => {
+    if (
+      !answer ||
+      typeof answer !== "object" ||
+      !answer.inlineText ||
+      !question?.options
+    )
+      return 0;
+    const optionIndex = question.options.findIndex(
+      (opt) => opt === answer.selectedOption
+    );
+    if (optionIndex === -1) return 0;
+    const count = answer.inlineText[`${question.id}-${optionIndex}-select`];
+    return Number(count) || 0;
+  };
 
-  // --- Route B, G, H (from Q201) Logic ---
-  if (store.answers[201]) {
-    const q201_text = getQuestionById2(201)?.question || "";
-    if (key201.startsWith("No")) { // Route B
-      paragraphs.push({
-        text: `From your response to question B-1 - "<em>${q201_text}</em>", you've indicated there is no existing staging or typing classification for ${diseaseName}. ${buildDecisionSentence("This observation justifies choosing Route B.", "justifies choosing", "Route B")}`,
-      });
-    } 
-    if (key201.startsWith("Yes")) { // Not Route B
-        paragraphs.push({
-            text: `From your response to question - "<em>${q201_text}</em>", your acknowledgment of existing staging and/or typing for ${diseaseName} indicates the disease is not a single, uniform entity. ${buildDecisionSentence("This contradicts the core assumption of Route B, justifying the decision not to pursue this route.", "not to pursue this route", "Route B")}`,
-        });
-    }
-    if (key201.startsWith("Yes, typing only")) { // Route G
-      paragraphs.push({
-        text: `By specifying that ${diseaseName} has typing but not staging (question 201), the investigation is focused on the molecular differences between subtypes. ${buildDecisionSentence("This makes Route G the logical next step.", "makes Route G the logical next step", "Route G")}`,
-      });
-    }
-    if (key201.startsWith("Yes, both staging and typing")) { // Route H
-      paragraphs.push({
-        text: `Your confirmation of both staging and typing for ${diseaseName} (question 201) points to a complex pathogenesis. ${buildDecisionSentence("This supports Route H as the most appropriate and comprehensive approach.", "supports Route H as the most appropriate", "Route H")}`,
-      });
-    }
-  }
+  const finalRoute = store.suggestedRoutes[0];
+  let justificationText = "";
 
-  // --- Route C, D, H (from Q203) Logic ---
-  if (store.answers[203]) {
-    const q203_text = getQuestionById2(203)?.question || "";
-    if (key203.startsWith("Yes")) { // Route C
-      paragraphs.push({
-        text: `By identifying a contradiction within the diagnostic criteria (question - "<em>${q203_text}</em>"), you suggest that '${diseaseName}' may be a syndrome of related conditions. ${buildDecisionSentence("This critical insight directs the investigation towards Route C.", "directs the investigation towards", "Route C")}`,
-      });
-    } else if (key203 === "No") { // Route D or D+H
-      paragraphs.push({
-        text: `Your response to question - "<em>${q203_text}</em>", indicating no contradiction, supports the model of ${diseaseName} as a single, cohesive disease. ${buildDecisionSentence("This allows for the exploration of its pathway via Route D.", "allows for the exploration of its pathway via", "Route D")}`,
-      });
-      // if (key102 === "No") { // Special case for Route H
-      //     paragraphs.push({
-      //         text: `Additionally, because the intervention is unable to achieve a high rate of true remission (question A-2), this suggests the disease, while a single entity, has a complex pathogenesis that the current treatment does not fully address. ${buildDecisionSentence("This supports investigating its complexity via Route H.", "investigating its complexity via", "Route H")}`
-      //     });
-      // }
-    }
-  }
+  switch (finalRoute) {
+    case "Route A":
+      justificationText = `Based on the researcher's confirmation that the intervention achieves a high remission rate in both internal data (Question A-2) and published reports (Question A-3), the evidence points towards a well-understood and highly effective mechanism. ${buildDecisionSentence(
+        "This robust, positive data justifies pursuing Route A, focusing on a single, all-type remission target.",
+        "Route A"
+      )}`;
+      break;
 
-  // --- Route E, F (from Q201.5) Logic ---
-  if (store.answers[201.5]) {
-      if (key201_5.startsWith("Have 2 stages")) {
-          paragraphs.push({
-              text: `Your identification of two distinct stages (question B-1 | staging only) provides a clear framework for comparative analysis. ${buildDecisionSentence("This supports pursuing Route E to investigate the molecular transition between stages.", "supports pursuing", "Route E")}`
-          });
-      } else if (key201_5.startsWith("Have more than 2 stages")) {
-          paragraphs.push({
-              text: `The presence of more than two stages (question B-1 | more than 2 stages) suggests a complex, multi-step progression. ${buildDecisionSentence("This complexity warrants the detailed analysis provided by Route F.", "warrants the detailed analysis provided by", "Route F")}`
-          });
+    case "Route B":
+      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2 or B-4) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
+        "Therefore, the investigation logically proceeds via Route B to define this single-cell mechanism.",
+        "Route B"
+      )}`;
+      break;
+
+    case "Route C":
+      justificationText = `The identification of a direct contradiction within the diagnostic criteria (Question B-3) is a pivotal finding. It suggests that the clinical presentation may be a syndrome of multiple, distinct molecular conditions rather than a single disease. ${buildDecisionSentence(
+        "This critical insight mandates a re-evaluation via Route C.",
+        "Route C"
+      )}`;
+      break;
+
+    case "Route D":
+    case "Route E":
+    case "Route F":
+    case "Route G":
+    case "Route H":
+      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2 and B-4), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
+      let specificReason = "";
+
+      const ans201 = store.answers[201];
+      const key201 = getAnswerKey(ans201);
+
+      if (finalRoute === "Route D") {
+        specificReason = `Given the absence of defined staging or typing (Question B-1), the appropriate path is ${buildDecisionSentence(
+          "Route D, aiming to characterize this complex, undifferentiated disease.",
+          "Route D"
+        )}`;
+      } else if (finalRoute === "Route E") {
+        specificReason = `Given the classification as a two-stage disease (Question B-1), the investigation should proceed via ${buildDecisionSentence(
+          "Route E to analyze the molecular transition between these defined stages.",
+          "Route E"
+        )}`;
+      } else if (finalRoute === "Route F") {
+        specificReason = `Given the classification as a multi-stage disease (Question B-1), the investigation requires the more detailed analysis provided by ${buildDecisionSentence(
+          "Route F.",
+          "Route F"
+        )}`;
+      } else if (finalRoute === "Route G") {
+        specificReason = `Given the classification by molecular types without distinct stages (Question B-1), the logical path is ${buildDecisionSentence(
+          "Route G, focusing on the divergent triggers for each subtype.",
+          "Route G"
+        )}`;
+      } else if (finalRoute === "Route H") {
+        specificReason = `Given the classification involving both staging and typing (Question B-1), a comprehensive approach is necessary. The investigation must therefore proceed via ${buildDecisionSentence(
+          "Route H to address this dual complexity.",
+          "Route H"
+        )}`;
       }
+      justificationText = intro + specificReason;
+      break;
+  }
+
+  if (justificationText) {
+    paragraphs.push({ text: justificationText });
   }
 
   return paragraphs;
@@ -691,9 +623,7 @@ const hasNonsenseStagingTyping = computed(() => {
   const answer104 = answers.value[104];
   const answer201 = answers.value[201];
 
-  // Condition 1: User implies a shared pathway in Q104...
   if (typeof answer104 === "string" && answer104.startsWith("Yes")) {
-    // ...but then fails to select the corresponding staging/typing in Q201.
     if (
       typeof answer201 === "string" &&
       !answer201.startsWith("Yes, both staging and typing") &&
@@ -709,9 +639,7 @@ const hasNonsenseContradiction = computed(() => {
   const answer202 = answers.value[202];
   const answer203 = answers.value[203];
 
-  // Condition 2: User says no criteria exist in Q202...
   if (answer202 === "No") {
-    // ...but then claims to have found a contradiction within them in Q203.
     if (typeof answer203 === "string" && answer203.startsWith("Yes")) {
       return true;
     }
@@ -739,13 +667,11 @@ const lockedStatusText = computed(() => {
 });
 
 const openCancelModal = () => {
-  projectNameVerification.value = ""; // Reset verification text
+  projectNameVerification.value = "";
   showCancelModal.value = true;
 };
 
-// --- ADD: Function to handle the final cancellation ---
 const handleCancelProject = async () => {
-  // Double-check verification
   if (projectNameVerification.value !== store.answers[1002]) {
     alert("Project name does not match.");
     return;
@@ -753,12 +679,12 @@ const handleCancelProject = async () => {
 
   isCancelling.value = true;
   try {
-const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-- CHANGE THIS URL
+    const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         token: store.currentToken,
-        status: -1, // -1 for Canceled
+        status: -1,
         remark: "Canceled by researcher.",
       }),
     });
@@ -767,7 +693,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
       throw new Error("Failed to cancel project");
     }
 
-    // Update the local store to reflect the change immediately
     store.setCurrentStatus(-1);
     showCancelModal.value = false;
     showCancelSuccessModal.value = true;
@@ -808,12 +733,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
               :key="q.id"
               class="answer-item col-md-12"
             >
-              <!-- :class="{
-                'col-md-6': [1001, 1002, 1004, 1005, 1006, 1007].includes(q.id),
-                'col-md-12': [
-                  1003, 1008, 1009, 1010, 1011, 1012, 1013,
-                ].includes(q.id),
-              }" -->
               <span class="info-label"
                 >{{ q.question }}:
                 <span
@@ -834,21 +753,21 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
             </div>
           </div>
         </div>
-        <!-- <h3 v-if="suggestedRoutes.length > 0" style="margin-top: 16px">
-          Road Map Suggestion:
-          <span class="final-route-text">{{ finalDisplayRoute }}</span>
-        </h3> -->
         <div
           v-if="suggestedRoutes.length > 0"
           class="route-suggestion-container"
           style="margin-left: 10px"
         >
-          <h3 class="route-suggestion-header page-break-before" style="margin-bottom: 20px">
-            Road Map Suggestion
+          <h3
+            class="route-suggestion-header page-break-before"
+            style="margin-bottom: 20px"
+          >
+            Route of Suggestion
           </h3>
+
           <div
-            v-for="(route, index) in suggestedRouteDetails"
-            :key="index"
+            v-for="route in suggestedRouteDetails"
+            :key="route.route"
             class="route-item"
             style="margin-left: 16px; margin-bottom: 20px"
           >
@@ -858,19 +777,43 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
                 style="
                   font-weight: 200;
                   font-style: italic;
-                  font-size: 24px;
+                  font-size: 1.1rem;
                   color: #333;
                   margin-left: 10px;
                 "
-                >: {{ route.title }}</span
               >
+                : {{ route.title }}
+              </span>
             </h4>
-            <li
-              class="route-description"
-              style="margin-left: 16px; color: grey"
+
+            <div
+              v-if="interventionAspectDetails?.interventionAspect"
+              class="aspect-section"
             >
-              {{ route.description }}
-            </li>
+              <h5 class="aspect-title">Intervention Aspect</h5>
+              <ul class="route-description">
+                <li
+                  v-for="(
+                    aspect, i
+                  ) in interventionAspectDetails.interventionAspect"
+                  :key="i"
+                >
+                  {{ aspect }}
+                </li>
+              </ul>
+            </div>
+
+            <div
+              v-if="route.diseaseAspect && route.diseaseAspect.length > 0"
+              class="aspect-section"
+            >
+              <h5 class="aspect-title">Disease Aspect</h5>
+              <ul class="route-description">
+                <li v-for="(aspect, i) in route.diseaseAspect" :key="i">
+                  {{ aspect }}
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -1013,7 +956,7 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
         <div style="margin-left: 30px; margin-right: 30px">
           <ConfidentialForm />
         </div> -->
-        <br />
+        <!-- <br /> -->
       </div>
     </div>
     <div class="btn-container">
@@ -1162,8 +1105,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
             class="submit-btn"
             @click="submitFinalResponse"
           >
-                      <!-- :disabled="!isConfidentialFormComplete" -->
-
             Save
           </button>
           <button
@@ -1252,7 +1193,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
           <h3 class="h3">Data saved successfully.</h3>
           <p>Your information has been saved successfully.</p>
           <div class="modal-buttons">
-            <!-- <button @click="goToHome" class="btn btn-primary">กลับสู่หน้าหลัก</button> -->
             <button @click="startNewSurvey" class="btn btn-primary">
               Submit another response.
             </button>
@@ -1270,12 +1210,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
         </div>
       </div>
     </div>
-    <!-- <a
-      style="color: #eb4648; cursor: pointer; margin-left: 24px"
-      @click="exportToPdf"
-    >
-      Export to .pdf here
-    </a> -->
   </div>
 </template>
 <style scoped>
@@ -1523,7 +1457,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   color: #eb4648;
   font-weight: bold;
 }
-/* Other styles remain the same */
 .aa {
   font-size: 20px;
   font-weight: 400;
@@ -1531,52 +1464,7 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
 .btn-container {
   padding: 16px;
 }
-/* Add these styles to your <style scoped> block */
 
-.summary-item {
-  display: flex; /* Aligns bullet and text */
-  gap: 8px;
-  padding-bottom: 1rem;
-  line-height: 1.6;
-}
-
-.summary-bullet {
-  font-weight: bold;
-  color: #eb4648;
-}
-
-/* Class for dynamic text like the disease name */
-.dynamic-text {
-  color: #555;
-  font-style: italic;
-  font-weight: 500;
-}
-
-/* Class for the entire decision sentence */
-.decision-sentence {
-  color: #555;
-  display: block; /* Puts it on its own line */
-  margin-top: 4px;
-}
-
-/* Class for the route name itself */
-/* .route-name {
-  color: #d84315;
-  font-weight: bold;
-} */
-
-/* Class for positive decision words */
-.decision-words-positive {
-  color: #28a745; /* Green */
-  font-weight: bold;
-}
-
-/* Class for negative decision words */
-.decision-words-negative {
-  color: #d84315; /* Red */
-  font-weight: bold;
-}
-/* Styles for the dynamic summary paragraphs */
 .summary-item {
   display: flex;
   gap: 8px;
@@ -1589,36 +1477,63 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence */
 .decision-sentence {
-  color: #555; /* Gray color */
+  color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself */
-.route-name {
-  color: #d84315; /* Red */
+.decision-words-positive {
+  color: #28a745;
   font-weight: bold;
 }
 
-/* The decision words (e.g., "not to pursue", "justifies choosing") */
+.decision-words-negative {
+  color: #d84315;
+  font-weight: bold;
+}
+.summary-item {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.summary-bullet {
+  font-weight: bold;
+  color: #eb4648;
+}
+
+.dynamic-text {
+  color: #555;
+  font-style: italic;
+  font-weight: 500;
+}
+
+.decision-sentence {
+  color: #555;
+  display: block;
+  margin-top: 4px;
+}
+
+.route-name {
+  color: #d84315;
+  font-weight: bold;
+}
+
 .decision-words {
-  color: #d84315; /* Red */
+  color: #d84315;
   font-weight: bold;
 }
 </style>
 
 <style>
-/* These are now global styles that can affect v-html content */
-
 .summary-item {
   display: flex;
   gap: 8px;
@@ -1631,27 +1546,23 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   color: #eb4648;
 }
 
-/* Dynamic text like the disease name */
 .dynamic-text {
   color: #555;
   font-style: italic;
   font-weight: 500;
 }
 
-/* The entire decision sentence will be gray */
 .decision-sentence {
   color: #555;
   display: block;
   margin-top: 4px;
 }
 
-/* The route name itself will be red */
 .route-name {
   color: #d84315;
   font-weight: bold;
 }
 
-/* The decision words will be red */
 .decision-words {
   color: #d84315;
   font-weight: bold;
@@ -1660,18 +1571,17 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #fbe9e7; /* Light pink/red background */
-  color: #5d4037; /* Darker text for readability */
-  border: 1px solid #ffab91; /* Reddish border */
+  background-color: #fbe9e7;
+  color: #5d4037;
+  border: 1px solid #ffab91;
   border-radius: 8px;
   padding: 16px;
   margin: 0 8px 1.5rem 8px;
 }
 
 .preamble-icon {
-  /* margin-top: 2px; */
   flex-shrink: 0;
-  color: #d84315; /* Red icon color */
+  color: #d84315;
 }
 
 .preamble-text {
@@ -1683,15 +1593,12 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   font-weight: 600;
 }
 
-/* Add these styles to your <style scoped> block */
-
 .answer-item {
   margin-bottom: 16px;
   padding: 0 8px;
 }
 
 .info-label {
-  /* font-weight: 600; */
   color: #333;
   font-size: 18px;
 }
@@ -1701,7 +1608,7 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   color: #555;
   margin-top: 4px;
   padding-left: 8px;
-  white-space: pre-wrap; /* This is important: it preserves line breaks */
+  white-space: pre-wrap;
   word-wrap: break-word;
 }
 
@@ -1709,10 +1616,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   margin-left: 20px;
 }
 
-/*
-  This targets the container for the "Explore the precision intervention"
-  answers to ensure they are also indented consistently.
-*/
 .answer-block {
   margin-left: 20px;
 }
@@ -1724,9 +1627,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   align-content: end;
   text-align: end;
   font-size: 20px;
-  /* padding: 0.75rem 1rem; */
-  /* margin: 0 8px; */
-  /* background-color: #F3F4F6; */
   border-radius: 6px;
   color: #4b5563;
   font-weight: 500;
@@ -1735,7 +1635,6 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
   padding-right: 1%;
 }
 
-/* ADD THIS STYLE */
 .verification-input {
   width: 100%;
   padding: 8px;
@@ -1748,12 +1647,22 @@ const response = await fetch(`${VITE_API_BASE_URL}/api/response/cancel`, { // <-
 
 .action-bar {
   display: flex;
-  justify-content: space-between; /* This pushes the two groups apart */
+  justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 
 .action-bar-group {
   display: flex;
+}
+
+.aspect-section {
+  margin-top: 1rem;
+}
+
+.aspect-title {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0.5rem;
 }
 </style>

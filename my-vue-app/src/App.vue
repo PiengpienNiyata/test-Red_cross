@@ -16,7 +16,7 @@
         <h1 class="section-title" v-else-if="!isLoginPage">
           Questionnaire for Researcher
         </h1>
-        
+
         <div class="content-body" :class="{ 'center-content': isLoginPage }">
           <Sidebar v-if="!isLoginPage" />
           <div
@@ -48,12 +48,12 @@ import "@/assets/main.css";
 import { computed, ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
-import { jwtDecode } from "jwt-decode"; // <-- IMPORT DECODER
+import { jwtDecode } from "jwt-decode";
 
 const pageContent = ref<HTMLElement | null>(null);
 const route = useRoute();
 const router = useRouter();
-const store = useQuestionnaireStore(); // <-- GET THE STORE INSTANCE
+const store = useQuestionnaireStore();
 
 const isInstruction = computed(() => {
   return ["Instruction1", "Instruction2", "Glossary"].includes(
@@ -61,11 +61,9 @@ const isInstruction = computed(() => {
   );
 });
 
-// --- NEW STATE FOR SESSION MODAL ---
 const isSessionExpiredModalVisible = ref(false);
 let sessionTimeout: number | undefined;
 
-// --- NEW SESSION MANAGEMENT FUNCTIONS ---
 const handleLogoutAndRedirect = () => {
   store.clearAuthToken();
   clearTimeout(sessionTimeout);
@@ -76,17 +74,15 @@ const handleLogoutAndRedirect = () => {
 const startSessionTimer = (token: string) => {
   try {
     const decoded: { exp: number } = jwtDecode(token);
-    const expirationTime = decoded.exp * 1000; // Convert to milliseconds
+    const expirationTime = decoded.exp * 1000;
     const currentTime = Date.now();
     const timeoutDuration = expirationTime - currentTime;
 
     if (timeoutDuration <= 0) {
-      // Token is already expired
       isSessionExpiredModalVisible.value = true;
       return;
     }
 
-    // Set a timer to show the modal just as the token expires
     sessionTimeout = setTimeout(() => {
       isSessionExpiredModalVisible.value = true;
     }, timeoutDuration);
@@ -100,7 +96,6 @@ const clearSessionTimer = () => {
   clearTimeout(sessionTimeout);
 };
 
-// --- WATCHER TO START/STOP TIMER BASED ON TOKEN ---
 watch(
   () => store.authToken,
   (newToken, oldToken) => {
@@ -113,9 +108,8 @@ watch(
     }
   },
   { immediate: true }
-); // `immediate: true` runs the watcher on component load
+);
 
-// --- EXISTING LOGIC ---
 const isLoginPage = computed(() => route.name === "AdminLogin");
 const isReviewPage = computed(() => route.path === "/Review");
 const isAdminDashboard = computed(() => route.path === "/admin/dashboard");
@@ -167,7 +161,6 @@ watch(
 .content-body {
   display: flex;
   width: 100%;
-  /* This allows the sidebar and content to stretch to their full height. */
   align-items: stretch;
 }
 
@@ -192,11 +185,6 @@ watch(
   max-height: none;
   overflow: visible;
   padding-bottom: 0;
-
-  /* ADD THESE LINES to center the content (the login page) */
-  /* display: flex;
-  justify-content: center;
-  align-items: center; */
 }
 
 .session-modal-overlay {

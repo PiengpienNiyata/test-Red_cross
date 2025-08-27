@@ -4,25 +4,28 @@ import { glossaryData } from "@/stores/glossary";
 defineProps<{
   isVisible: boolean;
 }>();
-const emit = defineEmits(['close']);
+const emit = defineEmits(["close"]);
 </script>
 
 <template>
   <div v-if="isVisible" class="modal-overlay" @click.self="emit('close')">
     <div class="modal-content">
-      <!-- REPLACE the content of modal-content -->
-<div class="modal-header">
-  <h2 class="modal-title">Glossary</h2>
-  <button class="close-button" @click="emit('close')">&times;</button>
-</div>
-<div class="modal-body">
-  <dl class="glossary-list">
-    <div v-for="item in glossaryData" :key="item.term" class="glossary-item">
-      <dt class="term">{{ item.term }}</dt>
-      <dd class="definition" v-html="item.definition"></dd>
-    </div>
-  </dl>
-</div>
+      <div class="modal-header">
+        <h2 class="modal-title">Glossary</h2>
+        <button class="close-button" @click="emit('close')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <dl class="glossary-list">
+          <div
+            v-for="item in glossaryData"
+            :key="item.term"
+            class="glossary-item"
+          >
+            <dt class="term">{{ item.term }}</dt>
+            <dd class="definition" v-html="item.definition"></dd>
+          </div>
+        </dl>
+      </div>
     </div>
   </div>
 </template>
@@ -46,9 +49,9 @@ const emit = defineEmits(['close']);
   width: 90%;
   max-width: 800px;
   max-height: 85vh;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   text-align: left;
-  
+
   /* NEW: Use flexbox to structure the modal */
   display: flex;
   flex-direction: column;
@@ -60,7 +63,6 @@ const emit = defineEmits(['close']);
   padding: 0 2.5rem;
   position: relative;
   flex-shrink: 0; /* Prevents the header from shrinking */
-
 }
 
 .modal-title {
@@ -75,15 +77,14 @@ const emit = defineEmits(['close']);
 .close-button {
   position: absolute;
   /* top: 1rem; */
-  right: 2.5rem; 
+  right: 2.5rem;
   border: none;
   background: none;
   font-size: 2.5rem;
   cursor: pointer;
   color: #aaa;
- line-height: 0.4;  
- padding-bottom: 1rem;
-
+  line-height: 0.4;
+  padding-bottom: 1rem;
 }
 .close-button:hover {
   color: #333;
@@ -120,15 +121,16 @@ const emit = defineEmits(['close']);
 }
 
 /* Deep selector to style the HTML from the store */
-:deep(ul), :deep(ol) {
-    padding-left: 2rem;
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
+:deep(ul),
+:deep(ol) {
+  padding-left: 2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 }
 :deep(strong) {
-    font-weight: 600;
+  font-weight: 600;
 }
 :deep(em) {
-    font-style: italic;
+  font-style: italic;
 }
 </style>

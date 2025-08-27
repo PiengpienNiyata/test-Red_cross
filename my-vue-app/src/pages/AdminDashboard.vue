@@ -2,12 +2,11 @@
 import { VITE_API_BASE_URL } from "@/stores/config";
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-// In <script setup>
 import { formatPhoneNumber } from "@/utils/formatters";
 import { useRoute } from "vue-router";
 import CustomDateInput from "@/components/CustomDateInput.vue";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
-// Define the structure of a submission object
+
 interface Submission {
   id: number;
   project_name: string;
@@ -17,7 +16,7 @@ interface Submission {
   phone_number: string;
   email: string;
   submitted_at: string;
-   first_submitted_at: string;
+  first_submitted_at: string;
   version: number;
   final_route: string;
   status: number;
@@ -28,11 +27,10 @@ const router = useRouter();
 const route = useRoute();
 const store = useQuestionnaireStore();
 
-// --- STATE MANAGEMENT ---
 const allSubmissions = ref<Submission[]>([]);
 const searchQuery = ref("");
-const selectedStatus = ref(""); // Default to show all
-const selectedRoute = ref(""); // Default to show all
+const selectedStatus = ref("");
+const selectedRoute = ref("");
 const selectedDate = ref("");
 const dateInputType = ref("text");
 
@@ -50,53 +48,31 @@ const sortRouteString = (routeString: string): string => {
   if (!routeString) {
     return "N/A";
   }
-  // Split the string into an array, sort it, and join it back
-  return routeString.split(', ').sort().join(', ');
+  return routeString.split(", ").sort().join(", ");
 };
-
-// --- DATA FETCHING ---
-
-
-// const fetchSubmissions = async () => {
-//   try {
-//     // NOTE: You must create this API endpoint on your Go backend.
-//     // It should return an array of all submissions.
-//     const response = await fetch(`${VITE_API_BASE_URL}/api/submissions`); // Assuming VITE_API_BASE_URL is configured
-//     if (!response.ok) throw new Error("Failed to fetch submissions");
-//     const data = await response.json();
-//     allSubmissions.value = data;
-//   } catch (error) {
-//     console.error("Error fetching submissions:", error);
-//     // You might want to set some mock data here for development if the API isn't ready
-//     // allSubmissions.value = MOCK_DATA;
-//   }
-// };
 
 const fetchSubmissions = async () => {
   try {
     const token = store.authToken;
 
     if (!token) {
-      // If for some reason there's no token, stop.
-      // The router guard should prevent this, but it's a good safety check.
       console.error("Authentication token not found.");
-      router.push('/login'); // Redirect to login
+      router.push("/login");
       return;
     }
 
     const response = await fetch(`${VITE_API_BASE_URL}/api/submissions`, {
       headers: {
-        'Authorization': `Bearer ${token}` // <-- This is the crucial part
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     if (!response.ok) {
-        // If the token is invalid or expired, the server will return 401
-        if (response.status === 401) {
-            store.clearAuthToken(); // Clear the bad token
-            router.push('/login');   // Send the user back to the login page
-        }
-        throw new Error("Failed to fetch submissions");
+      if (response.status === 401) {
+        store.clearAuthToken();
+        router.push("/login");
+      }
+      throw new Error("Failed to fetch submissions");
     }
 
     const data = await response.json();
@@ -108,11 +84,9 @@ const fetchSubmissions = async () => {
 onMounted(() => {
   fetchSubmissions();
 });
-// --- FILTERING AND SEARCHING ---
 const filteredAndSortedSubmissions = computed(() => {
   let submissions = allSubmissions.value;
 
-  // --- FILTERING LOGIC (This part is correct) ---
   if (searchQuery.value.trim()) {
     const lowerCaseQuery = searchQuery.value.toLowerCase();
     submissions = submissions.filter(
@@ -141,7 +115,6 @@ const filteredAndSortedSubmissions = computed(() => {
     });
   }
 
-  // --- SORTING LOGIC (This part has been fixed) ---
   const statusOrder: { [key: number]: number } = {
     0: 1, // New Submit
     1: 2, // Need Revise
@@ -150,19 +123,17 @@ const filteredAndSortedSubmissions = computed(() => {
     "-1": 5, // Cancel - Keys must be in quotes
   };
 
-  // Use a temporary variable for the sorted array
   const sortedSubmissions = [...submissions].sort((a, b) => {
     const statusComparison = statusOrder[a.status] - statusOrder[b.status];
     if (statusComparison !== 0) {
       return statusComparison;
     }
-    // If statuses are the same, sort by date (newest first)
     return (
       new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime()
     );
   });
- scrollToTop();
-  return sortedSubmissions; // Return the sorted array
+  scrollToTop();
+  return sortedSubmissions;
 });
 
 const paginatedSubmissions = computed(() => {
@@ -171,7 +142,6 @@ const paginatedSubmissions = computed(() => {
   return filteredAndSortedSubmissions.value.slice(start, end);
 });
 
-// --- ADD: Computed properties for pagination controls ---
 const totalPages = computed(() => {
   return Math.ceil(filteredAndSortedSubmissions.value.length / itemsPerPage);
 });
@@ -184,9 +154,6 @@ const paginationText = computed(() => {
   return `${start}-${end} of ${total}`;
 });
 
-// --- HELPER FUNCTIONS ---
-
-// This function centralizes all the logic for status display
 const getStatusInfo = (status: number) => {
   switch (status) {
     case 0:
@@ -217,7 +184,6 @@ const formatDate = (dateString: string) => {
 };
 
 const goToReview = (token: string) => {
-  // Navigate to the review page, which will fetch the data using the token
   router.push(`/review-response/${token}`);
 };
 
@@ -225,32 +191,30 @@ const resetFilters = () => {
   searchQuery.value = "";
   selectedStatus.value = "";
   selectedRoute.value = "";
-  selectedDate.value = ""; // --- ADD: Reset the date filter ---
-  currentPage.value = 1; // Reset to the first page
+  selectedDate.value = "";
+  currentPage.value = 1;
 };
 
 const scrollToTop = () => {
-  // Find the scrollable container from the parent App.vue
-  const contentArea = document.querySelector('.page-content');
+  const contentArea = document.querySelector(".page-content");
   if (contentArea) {
-    contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+    contentArea.scrollTo({ top: 0, behavior: "smooth" });
   }
 };
 
 const nextPage = () => {
   if (currentPage.value < totalPages.value) {
     currentPage.value++;
-    scrollToTop(); // Use the new function
+    scrollToTop();
   }
 };
 const prevPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--;
-    scrollToTop(); // Use the new function
+    scrollToTop();
   }
 };
 
-// --- STATIC OPTIONS FOR FILTERS ---
 const statusOptions = [
   { value: 0, text: "New Submit" },
   { value: 1, text: "Need Revise" },
@@ -280,24 +244,11 @@ watch(
 watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   currentPage.value = 1;
 });
-
 </script>
 
 <template>
   <div class="dashboard-container">
-    <!-- <h1 class="dashboard-title">Reviewer Dashboard</h1> -->
-
     <div class="filter-bar">
-      <!-- <select v-model="selectedStatus" class="filter-select">
-        <option value="">All Statuses</option>
-        <option
-          v-for="opt in statusOptions"
-          :key="opt.value"
-          :value="opt.value"
-        >
-          {{ opt.text }}
-        </option>
-      </select> -->
       <select v-model="selectedRoute" class="filter-select">
         <option value="">All Routes</option>
         <option v-for="route in routeOptions" :key="route" :value="route">
@@ -366,10 +317,12 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
             <span>Email:</span>
             <span class="detail-value">{{ submission.email }}</span>
           </div>
-              <div class="detail-row">
-        <span>First Submit:</span>
-        <span class="detail-value">{{ formatDate(submission.first_submitted_at) }}</span>
-    </div>
+          <div class="detail-row">
+            <span>First Submit:</span>
+            <span class="detail-value">{{
+              formatDate(submission.first_submitted_at)
+            }}</span>
+          </div>
           <div class="detail-row">
             <span>Last Update:</span>
             <span class="detail-value"
@@ -382,11 +335,13 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
         <div class="card-status-info">
           <div class="detail-row">
             <div class="detail-row">
-  <span>
-    Suggestion Route:
-    <span class="font-bold">{{ sortRouteString(submission.final_route) }}</span>
-  </span>
-</div>
+              <span>
+                Suggestion Route:
+                <span class="font-bold">{{
+                  sortRouteString(submission.final_route)
+                }}</span>
+              </span>
+            </div>
           </div>
           <div class="detail-row">
             <span
@@ -433,7 +388,6 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
 <style scoped>
 .dashboard-container {
   padding: 1.5rem;
-  /* background-color: #F9FAFB; */
   min-height: 100vh;
 }
 
@@ -444,7 +398,6 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   color: #1f2937;
 }
 
-/* --- Filter Bar --- */
 .filter-bar {
   padding-top: 0.5rem;
   display: flex;
@@ -459,7 +412,7 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   padding: 0 0.75rem;
-  width: 300px; /* Default width for larger screens */
+  width: 300px;
 }
 
 .filter-select {
@@ -492,12 +445,10 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   background-color: #f3f4f6;
 }
 
-/* --- Submissions Grid --- */
 .submissions-grid {
   margin-top: 1.5rem;
   display: grid;
   gap: 1.5rem;
-  /* Default to 3 columns on large screens */
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -516,21 +467,21 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
 }
 
 .card-title {
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .card-subtitle {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem;
   color: #6b7280;
 }
 .card-details {
   margin-top: 0.75rem;
   font-size: 0.875rem;
   color: #374151;
-  flex-grow: 1; /* Pushes status to the bottom */
+  flex-grow: 1;
 }
 .detail-row {
   display: flex;
@@ -556,10 +507,9 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   color: #1f2937;
 }
 
-/* --- Status Bar --- */
 .status-bar-container {
   margin-top: 0.75rem;
-  height: 0.5rem; /* 8px */
+  height: 0.5rem;
   width: 100%;
   background-color: #e5e7eb;
   border-radius: 9999px;
@@ -570,7 +520,6 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   border-radius: 9999px;
 }
 
-/* --- Canceled State --- */
 .item-canceled {
   filter: grayscale(80%) brightness(0.9);
   opacity: 0.7;
@@ -582,18 +531,14 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   color: #6b7280;
 }
 
-/* --- Filter Bar --- */
 .filter-bar {
   padding-top: 0.5rem;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  /* ADD: Justify content to push items apart */
-  /* justify-content: space-between; */
 }
 
-/* ADD: A new container for the left-side filters */
 .filter-group {
   display: flex;
   flex-wrap: wrap;
@@ -601,7 +546,6 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   align-items: center;
 }
 
-/* --- ADD: Styles for Pagination Controls --- */
 .pagination-controls {
   display: flex;
   align-items: center;
@@ -614,7 +558,7 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   align-items: center;
   gap: 0.75rem;
   color: #6b7280;
-  margin-left: auto; /* Add this line */
+  margin-left: auto;
 }
 
 .page-btn {
@@ -647,11 +591,8 @@ watch([searchQuery, selectedStatus, selectedRoute, selectedDate], () => {
   display: none;
 }
 
-/* --- RESPONSIVENESS --- */
-/* For screens 768px wide or smaller (iPad portrait and phones) */
 @media (max-width: 768px) {
   .submissions-grid {
-    /* Change to 1 column */
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
   .filter-input,

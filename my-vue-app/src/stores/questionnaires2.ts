@@ -32,7 +32,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "A-1: Availability of the molecular mechanism of the treatment",
             options: [
-              "Yes (Attach your evidence)||files",// (Please define the molecular mechanism : ___)
+              "Yes (Attach your evidence)||files", // (Please define the molecular mechanism : ___)
               "Not available yet",
               "No",
             ],
@@ -43,17 +43,15 @@ export const questionnaireData: Questionnaire2[] = [
           {
             id: 102,
             type: "radio",
-            question: "A-2: Does the chosen intervention produce ≥ 80 % true (molecular) remission in your research data (with molecular evidence)?",
+            question:
+              "A-2: Does the chosen intervention produce ≥ 80 % true (molecular) remission in your research data (with molecular evidence)?",
             options: [
-              "Yes (Attach your evidence)||files",//, please explain the exact remission rate: ___
+              "Yes (Attach your evidence)||files", //, please explain the exact remission rate: ___
               "No",
               "Uncertain",
             ],
             next: {
-              // "Yes (Attach your data with molecular evidence.)||files":
-              //   103,
               all: 103,
-              // Uncertain: "preResult",
             },
           },
           {
@@ -76,10 +74,7 @@ export const questionnaireData: Questionnaire2[] = [
             type: "radio",
             question:
               "A-4: Are there any evidence from the intervention implying that all the type of disease share the same pathway with distinct triggers? (See Glossary: “Molecular types of the disease”)",
-            options: [
-              "Yes (insert citation of the reference)||files",
-              "No",
-            ],
+            options: ["Yes (insert citation of the reference)||files", "No"],
             next: {
               all: 105,
             },
@@ -104,13 +99,13 @@ export const questionnaireData: Questionnaire2[] = [
               "B-1: Are there any staging and/or typing classification of the disease?",
             options: [
               "Yes, both staging and typing. (Please explain : ___ )||files",
-              "Yes, only staging.||sub",//
+              "Yes, only staging.||sub", //
               "Yes, only typing. (Please define the typing : ___)||files",
               "No staging and no typing. (Please explain : ___ )||files",
               "Uncertain",
             ],
-            
-              subOptionsType: {
+
+            subOptionsType: {
               "Yes, only staging.": "radio",
             },
             subOptions: {
@@ -125,18 +120,19 @@ export const questionnaireData: Questionnaire2[] = [
               // "Yes, typing only. (Please define the typing : ___)": 202,
               // "No (Please explain : ___ )": 202,
               // Uncertain: 202,
-                            all: 202,
-
+              all: 202,
             },
-
           },
-
 
           {
             id: 201.5,
             type: "radio",
-            question: "B-1 (Staging): Presence of Staging (See Stages of disease in glossary)",
-            options: ["Have 2 stages (Please explain : ___ ) ||files", "Have more than 2 stages (Please explain : ___ ) ||files"],
+            question:
+              "B-1 (Staging): Presence of Staging (See Stages of disease in glossary)",
+            options: [
+              "Have 2 stages (Please explain : ___ ) ||files",
+              "Have more than 2 stages (Please explain : ___ ) ||files",
+            ],
             next: {
               all: 202,
             },
@@ -156,7 +152,10 @@ export const questionnaireData: Questionnaire2[] = [
             type: "radio",
             question:
               "B-3: Are there any contradiction within the criteria for diagnosis? (see glossary: contradiction)",
-            options: ["Yes (Please define the contradiction : ___)||files", "No"],
+            options: [
+              "Yes (Please define the contradiction : ___)||files",
+              "No",
+            ],
             next: {
               all: 204,
             },
@@ -214,7 +213,6 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "B-7: Specify the group of mechanism of disease development? Choose one or more groups that match the molecular mechanisms or histo-pathogenesis.",
             options: [
-              //Cell, Tissue, Structure, Organ, I need to change these 4 options to radio instead of checkbox (can choose only one)
               "group1|/|Cell : ___",
               "group1|/|Tissue : ___",
               "group1|/|Structure : ___",

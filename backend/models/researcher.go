@@ -10,5 +10,4 @@ type ResearcherData struct {
 	PhoneNumber string    `json:"phone_number"`
 	Email       string    `json:"email"`
 	CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
-	// Responses   []Response `json:"responses" gorm:"foreignKey:ResearcherID"`
 }

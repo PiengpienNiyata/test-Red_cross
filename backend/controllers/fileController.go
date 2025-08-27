@@ -21,7 +21,7 @@ func formatQuestionID(qID string) string {
 	case strings.HasPrefix(qID, "20") && len(qID) == 3:
 		return fmt.Sprintf("B-%s", qID[2:])
 	}
-	return qID // Fallback for any other ID format
+	return qID
 }
 
 func UploadFile(c *gin.Context) {
@@ -68,20 +68,6 @@ func UploadFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file_id": uploadedFile.ID})
 }
 
-// func GetFileByID(c *gin.Context) {
-// 	fileID := c.Param("id")
-
-// 	var file models.UploadedFile
-// 	if err := database.DB.First(&file, fileID).Error; err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
-// 		return
-// 	}
-
-// 	c.Header("Content-Type", file.MimeType)
-
-// 	c.Data(http.StatusOK, file.MimeType, file.FileData)
-// }
-
 func GetFileByID(c *gin.Context) {
 	fileID := c.Param("id")
 
@@ -91,7 +77,6 @@ func GetFileByID(c *gin.Context) {
 		return
 	}
 
-	// Fetch related data to get the project name (same as before)
 	var response models.Response
 	if err := database.DB.First(&response, file.ResponseID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Associated response not found"})
@@ -104,7 +89,6 @@ func GetFileByID(c *gin.Context) {
 		return
 	}
 
-	// Build the custom filename (same as before)
 	projectName := researcher.ProjectName
 	formattedQNo := formatQuestionID(file.QuestionID)
 	originalFilename := file.FileName
@@ -113,9 +97,6 @@ func GetFileByID(c *gin.Context) {
 
 	fmt.Printf("DEBUG: Attempting to set download filename to: %s\n", newFilename)
 
-	// --- NEW CONDITIONAL LOGIC ---
-	// For file types the browser can't open, force a download ("attachment").
-	// For others (PDFs, images), suggest opening them in the browser ("inline").
 	dispositionType := "inline"
 	switch file.MimeType {
 	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
@@ -127,7 +108,6 @@ func GetFileByID(c *gin.Context) {
 		dispositionType = "attachment"
 	}
 
-	// Set the headers with the correct disposition type
 	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"%s\"", dispositionType, newFilename))
 	c.Header("Content-Type", file.MimeType)
 	c.Data(http.StatusOK, file.MimeType, file.FileData)

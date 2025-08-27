@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-// 1. IMPORT useRoute
-import { useRouter, useRoute } from 'vue-router';
-import { useQuestionnaireStore } from '@/stores/useQuestionnaireStore';
-import { VITE_API_BASE_URL } from '@/stores/config';
+import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
+import { VITE_API_BASE_URL } from "@/stores/config";
 
-const email = ref('');
-const password = ref('');
+const email = ref("");
+const password = ref("");
 const error = ref<string | null>(null);
 const isLoading = ref(false);
 
 const router = useRouter();
-const route = useRoute(); // 2. INITIALIZE useRoute
+const route = useRoute();
 const store = useQuestionnaireStore();
 
 const handleLogin = async () => {
@@ -19,23 +18,21 @@ const handleLogin = async () => {
   error.value = null;
   try {
     const response = await fetch(`${VITE_API_BASE_URL}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.value, password: password.value }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || 'Login failed');
+      throw new Error(data.error || "Login failed");
     }
 
     store.setAuthToken(data.token);
-    
-    // 3. REPLACE the hardcoded redirect with this dynamic one
-    const redirectPath = route.query.redirect || '/admin/dashboard';
-    router.push(redirectPath as string);
 
+    const redirectPath = route.query.redirect || "/admin/dashboard";
+    router.push(redirectPath as string);
   } catch (err: any) {
     error.value = err.message;
   } finally {
@@ -59,7 +56,7 @@ const handleLogin = async () => {
         </div>
         <div v-if="error" class="error-message">{{ error }}</div>
         <button type="submit" class="login-btn" :disabled="isLoading">
-          {{ isLoading ? 'Logging in...' : 'Login' }}
+          {{ isLoading ? "Logging in..." : "Login" }}
         </button>
       </form>
     </div>
@@ -72,20 +69,19 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-color: #f3f4f6;
+  /* background-color: #f3f4f6; */
 }
 .login-box {
   background: white;
   padding: 2.5rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  width: 100%;
+  width: 100vh;
   max-width: 400px;
 }
 .title {
   text-align: center;
   font-size: 1.5rem;
-  /* font-weight: 600; */
   margin-bottom: 2rem;
 }
 .input-group {

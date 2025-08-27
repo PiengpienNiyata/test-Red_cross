@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import GlossaryModal from "@/components/GlossaryModal.vue"; // Import the modal component
+import GlossaryModal from "@/components/GlossaryModal.vue";
 import { useRouter } from "vue-router";
-import { glossaryData } from "@/stores/glossary"; // <-- Import from new store
+import { glossaryData } from "@/stores/glossary"; 
 
 const router = useRouter();
 const isGlossaryVisible = ref(false);
@@ -56,14 +56,9 @@ const closeGlossaryModal = () => {
 <style scoped>
 .glossary-page {
   padding: 2rem;
-  /* max-width: 800px; */
   margin: 0 auto;
 }
-/* h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-} */
+
 .subtitle {
   font-size: 1rem;
   color: #555;
@@ -111,7 +106,6 @@ const closeGlossaryModal = () => {
   background-color: #c9302c;
 }
 
-/* Deep selector to style the HTML from the store */
 :deep(ul), :deep(ol) {
     padding-left: 2rem;
     margin-top: 0.5rem;
