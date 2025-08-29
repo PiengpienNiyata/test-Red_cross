@@ -85,7 +85,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "A-5: Are there any study of subsidence of a particular sign at significantly high rate (more than 80%) in a short period of time?",
             options: [
-              "Yes (insert citation of the reference or data collected )||files",
+              "Yes (insert citation of the reference or data collected)||files",
               "No",
             ],
             next: {

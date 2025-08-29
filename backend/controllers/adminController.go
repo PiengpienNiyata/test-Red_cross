@@ -44,6 +44,7 @@ func GetFullSubmissionData(c *gin.Context) {
 			r.token
 		FROM responses r
 		JOIN researcher_data rd ON r.researcher_id = rd.id
+		WHERE r.status != -5
 		ORDER BY r.token, r.version DESC
 	`).Scan(&results).Error
 
@@ -72,7 +73,7 @@ func GetAllVersionsByToken(c *gin.Context) {
 
 	err := database.DB.Table("responses").
 		Select("id", "version", "submitted_at", "status").
-		Where("token = ?", token).
+		Where("token = ? AND version > 0", token).
 		Order("version DESC").
 		Scan(&results).Error
 

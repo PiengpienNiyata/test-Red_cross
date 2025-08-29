@@ -10,6 +10,8 @@ import DynamicInlineInput from "@/components/DynamicInlineInput.vue";
 import { storeToRefs } from "pinia";
 import { VITE_API_BASE_URL } from "@/stores/config";
 import { instructions } from "@/stores/instructions2";
+import { questionnaireData as questionnaireData1 } from "@/stores/questionnaires1";
+import { formatPhoneNumber } from "@/utils/formatters";
 
 const File = window.File;
 
@@ -18,6 +20,12 @@ const store = useQuestionnaireStore();
 const { answers } = storeToRefs(store);
 
 const router = useRouter();
+
+const showDraftModal = ref(false);
+const showDraftSuccessModal = ref(false);
+const showDraftErrorModal = ref(false);
+const isSavingDraft = ref(false);
+const draftEditUrl = ref("");
 
 const getQuestionById2 = (id: number): Question2 | null => {
   for (const section of props.questionnaire.sections) {
@@ -161,7 +169,10 @@ const handleCloseContradictionPreamble = () => {
   }
 };
 
-const getCleanOptionLabel = (option: string) => option.split("||")[0];
+const getCleanOptionLabel = (option: string): string => {
+  if (typeof option !== "string") return "";
+  return option.split("||")[0];
+};
 const hasSubOptions = (option: string) => option.includes("||sub");
 const hasFileInput = (option: string) => option.includes("||files");
 const hasCritInput = (option: string) => option.includes("||crit");
@@ -755,6 +766,348 @@ const parseOption = (option: string) => {
     return { type: "radio", group: parts[0], label: parts[1] };
   }
   return { type: "checkbox", group: null, label: option };
+};
+
+const firstFormSummary = computed(() => {
+  return questionnaireData1[0].sections
+    .flatMap((s) => s.questions)
+    .map((q) => ({ ...q, answer: answers.value[q.id] }))
+    .filter(
+      (q) => q.answer !== undefined && q.answer !== null && q.answer !== ""
+    );
+});
+
+const secondFormSummary = computed(() => {
+  return props.questionnaire.sections
+    .flatMap((s) => s.questions)
+    .map((q) => ({ ...q, answer: answers.value[q.id] }))
+    .filter(
+      (q) => q.answer !== undefined && q.answer !== null && q.answer !== ""
+    );
+});
+
+const getConstructedAnswer = (question: Question2, answer: any): string => {
+  if (typeof answer !== "object" || !answer.selectedOption) {
+    if (typeof answer === "string") return answer.split("||")[0];
+    return answer;
+  }
+
+  let finalString = answer.selectedOption;
+
+  if (finalString.includes("___")) {
+    const parts = finalString.split("___");
+    let constructed = parts[0];
+
+    const optionIndex = question.options?.findIndex(
+      (opt) => parseOption(opt).label === finalString
+    );
+
+    if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
+      for (let i = 0; i < parts.length - 1; i++) {
+        const key = `${question.id}-${optionIndex}-${i}`;
+        const inlineValue = answer.inlineText[key] || "";
+        constructed += inlineValue + parts[i + 1];
+      }
+      finalString = constructed;
+    }
+  }
+  return finalString.split("||")[0];
+};
+
+const formatSubAnswer = (
+  question: Question2,
+  mainAnswer: any,
+  mainOptionKey: string
+): string => {
+  const subSelection = mainAnswer.subs?.[mainOptionKey];
+  if (!subSelection || typeof subSelection !== "string") return "";
+  if (subSelection.includes("___")) {
+    const mainOption = question.options?.find(
+      (opt) => getCleanOptionLabel(opt) === mainOptionKey
+    );
+    if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
+    const mainOptionIndex = question.options?.indexOf(mainOption);
+    const subOptions = question.subOptions?.[mainOptionKey];
+    const subIndex = subOptions?.indexOf(subSelection);
+    if (
+      mainOptionIndex === undefined ||
+      subIndex === undefined ||
+      mainOptionIndex === -1 ||
+      subIndex === -1
+    ) {
+      return `(${getCleanOptionLabel(subSelection)})`;
+    }
+    const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
+    const inlineValue = mainAnswer.inlineText?.[key] || "";
+    const constructedString = getCleanOptionLabel(subSelection).replace(
+      "___",
+      inlineValue
+    );
+    return `(${constructedString})`;
+  }
+  return `(${getCleanOptionLabel(subSelection)})`;
+};
+
+interface FormattedCritAnswer {
+  label: string;
+  count: number;
+  criteria: string[];
+}
+const formatCritAnswer = (
+  question: Question2,
+  answer: any
+): FormattedCritAnswer | null => {
+  if (
+    !answer ||
+    typeof answer !== "object" ||
+    !answer.selectedOption ||
+    !answer.inlineText ||
+    !question.options
+  )
+    return null;
+  const optionIndex = question.options.findIndex(
+    (opt) => opt === answer.selectedOption
+  );
+  if (optionIndex === -1) return null;
+  const count = Number(
+    answer.inlineText[`${question.id}-${optionIndex}-select`] || 0
+  );
+  const criteria: string[] = [];
+  for (let i = 1; i <= count; i++) {
+    criteria.push(
+      answer.inlineText[`${question.id}-${optionIndex}-list-${i}`] || "..."
+    );
+  }
+  const label = `${
+    answer.selectedOption.split("||")[0]
+  } (Number of criteria: ${count})`;
+  return { label, count, criteria };
+};
+
+const countTotalFiles = (answer: any): number => {
+  if (!answer || typeof answer !== "object") return 0;
+  let count = 0;
+  if (answer.fileData) {
+    Object.values(answer.fileData).forEach((fileInfo: any) => {
+      if (fileInfo && Array.isArray(fileInfo.files))
+        count += fileInfo.files.length;
+    });
+  }
+  if (Array.isArray(answer.files)) count += answer.files.length;
+  return count;
+};
+
+const formatCheckboxAnswer = (question: Question2, answer: any): string => {
+  // This helper is for complex checkboxes, like in Q207
+  if (!answer || !Array.isArray(answer.main)) return "";
+
+  const formattedParts = answer.main.map((mainOpt: string) => {
+    if (mainOpt.includes("___")) {
+      const parts = mainOpt.split("___");
+      let constructed = parts[0].split("||")[0];
+      const optionIndex = question.options?.findIndex(
+        (opt) => parseOption(opt).label === mainOpt
+      );
+      if (optionIndex !== undefined && optionIndex > -1 && answer.inlineText) {
+        for (let i = 0; i < parts.length - 1; i++) {
+          const key = `${question.id}-${optionIndex}-${i}`;
+          const inlineValue = answer.inlineText[key] || "";
+          constructed += inlineValue + parts[i + 1].split("||")[0];
+        }
+        return constructed;
+      }
+      return constructed;
+    }
+    const mainLabel = mainOpt.split("||")[0];
+    const subAnswer = answer.subs?.[mainLabel];
+    if (subAnswer && subAnswer.length > 0) {
+      const subAnswerString = Array.isArray(subAnswer)
+        ? subAnswer.join(", ")
+        : subAnswer;
+      return `${mainLabel} (${subAnswerString})`;
+    }
+    return mainLabel;
+  });
+
+  return formattedParts.join(", ");
+};
+
+const handleSaveDraft = async () => {
+  if (isSavingDraft.value) return;
+  isSavingDraft.value = true;
+
+  try {
+    // --- Step 1 & 2: Process researcher info (same as final submission) ---
+    store.processResearcherInfo(answers.value as Record<string, string>);
+    let researcherID = store.researcherID;
+
+    // Create researcher if they don't exist yet
+    if (!researcherID) {
+      const researcherResponse = await fetch(
+        `${VITE_API_BASE_URL}/api/researcher`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(store.researcher),
+        }
+      );
+      const researcherResult = await researcherResponse.json();
+      if (!researcherResponse.ok)
+        throw new Error("Failed to save researcher info for draft");
+      researcherID = researcherResult.researcher.id;
+      store.setResearcherID(researcherID!);
+    }
+
+    // --- Step 3: Gather file information ---
+    const newFilesToUpload: { questionId: string; file: File }[] = [];
+    const existingFileIds: number[] = [];
+
+    // WHY: This new, combined loop finds BOTH new files and existing files.
+    Object.entries(answers.value).forEach(([id, value]) => {
+      if (value && typeof value === "object") {
+        const processFiles = (files: any[]) => {
+          if (files && Array.isArray(files)) {
+            files.forEach((file: any) => {
+              if (file instanceof File) {
+                // Found a NEW file to upload
+                newFilesToUpload.push({ questionId: id, file: file });
+              } else if (file && file.rehydrated) {
+                // Found an EXISTING file to keep
+                existingFileIds.push(file.id);
+              }
+            });
+          }
+        };
+
+        // Check for files in both possible locations
+        if (value.fileData) {
+          Object.values(value.fileData).forEach((fileInfo: any) =>
+            processFiles(fileInfo.files)
+          );
+        }
+        if (value.files) {
+          processFiles(value.files);
+        }
+      }
+    });
+
+    // --- Step 4: Prepare answers payload (same as final submission) ---
+    const otherAnswers: Record<string, any> = {};
+    const researchContext: Record<string, any> = {
+      research_questions: {},
+      molecular_signaling: {},
+    };
+    let confidentialityLevel = "";
+
+    Object.entries(answers.value).forEach(([id, value]) => {
+      const numericId = Number(id);
+      const question = getQuestionById2(numericId);
+
+      if (
+        question &&
+        (question.type === "radio" || question.type === "checkbox") &&
+        typeof value === "object" &&
+        value !== null
+      ) {
+        const isComplexObjectToKeep =
+          question.id === 207 ||
+          (question.subOptions &&
+            Object.keys(question.subOptions).length > 0) ||
+          question.options?.some((opt) => opt.includes("||crit"));
+        if (isComplexObjectToKeep) {
+          otherAnswers[id] = value;
+        } else if (value.selectedOption) {
+          otherAnswers[id] = getConstructedAnswer(question, value);
+        } else {
+          otherAnswers[id] = value;
+        }
+      } else if (numericId >= 1008 && numericId <= 1010) {
+        const keyMap: Record<string, string> = {
+          "1008": "principle",
+          "1009": "factual_statement",
+          "1010": "implication",
+        };
+        researchContext.research_questions[keyMap[id]] = value;
+      } else if (numericId >= 1011 && numericId <= 1013) {
+        const keyMap: Record<string, string> = {
+          "1011": "principle",
+          "1012": "factual_statement",
+          "1013": "implication",
+        };
+        researchContext.molecular_signaling[keyMap[id]] = value;
+      } else if (numericId === 3001 && value && value.selectedOption) {
+        const mainAnswer = value.selectedOption;
+        const subAnswer = value.subs?.[mainAnswer] || "";
+        confidentialityLevel = subAnswer
+          ? `${mainAnswer} (Level: ${subAnswer})`
+          : mainAnswer;
+      } else {
+        otherAnswers[id] = value;
+      }
+    });
+
+    // --- Step 5: Create the Response Record with Status -5 ---
+    const response = await fetch(`${VITE_API_BASE_URL}/api/response`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        researcher_id: researcherID,
+        questionnaire_id: 1,
+        answers: otherAnswers,
+        status: -5,
+        token: store.currentToken,
+        // version is no longer needed, backend handles it for drafts
+        existing_file_ids: existingFileIds,
+        final_route: store.suggestedRoutes.length > 0 ? store.suggestedRoutes.join(", ") : "incomplete",
+        disease_name: answers.value[1006] || "",
+        intervention: answers.value[1007] || "",
+        research_context: researchContext,
+        confidentiality_level: confidentialityLevel,
+        researcher_name: store.researcher.name,
+        researcher_email: store.researcher.email,
+      }),
+    });
+
+    const responseResult = await response.json();
+    if (!response.ok)
+      throw new Error(responseResult.error || "Failed to save draft");
+
+    draftEditUrl.value = `${window.location.origin}/edit-response/${responseResult.token}`;
+    store.setCurrentTokenAndVersion(
+      responseResult.token,
+      responseResult.version
+    );
+
+    // --- Step 6: Upload NEW Files (same as final submission) ---
+    const responseID = responseResult.id;
+    if (newFilesToUpload.length > 0) {
+      const uploadPromises = newFilesToUpload.map(({ questionId, file }) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("response_id", String(responseID));
+        formData.append("question_id", questionId);
+        return fetch(`${VITE_API_BASE_URL}/api/response/file`, {
+          method: "POST",
+          body: formData,
+        });
+      });
+      await Promise.all(uploadPromises);
+    }
+
+    // --- Step 7: Finalize and show success ---
+    await fetch(`${VITE_API_BASE_URL}/api/response/${responseID}/finalize`, {
+      method: "POST",
+    });
+
+    showDraftModal.value = false;
+    showDraftSuccessModal.value = true;
+  } catch (err: any) {
+    console.error("Error saving draft:", err);
+    showDraftModal.value = false;
+    showDraftErrorModal.value = true;
+  } finally {
+    isSavingDraft.value = false;
+  }
 };
 
 watch(
@@ -1733,6 +2086,9 @@ watch(
         <button type="submit" class="next-btn" :disabled="isNextDisabled">
           Next
         </button>
+        <button type="button" class="draft-btn" @click="showDraftModal = true">
+          Save Draft
+        </button>
       </div>
       <a
         class="gls-btn"
@@ -1746,6 +2102,248 @@ watch(
         @close="closeGlossaryModal"
       />
     </form>
+    <div v-if="showDraftModal" class="modal-overlay">
+      <div class="modal-content draft-summary">
+        <h3 class="modal-title">Save Draft</h3>
+        <p>
+          This will save your current progress. You will receive a unique link
+          to continue later. Your answered questions are summarized below:
+        </p>
+
+        <div class="draft-summary-content">
+          <div v-if="firstFormSummary.length > 0" class="summary-section">
+            <div
+              v-for="section in questionnaireData1[0].sections"
+              :key="section.name"
+            >
+              <h4 class="summary-section-title">{{ section.name }}</h4>
+              <div
+                v-for="q in firstFormSummary.filter((item) =>
+                  section.questions.some((sq) => sq.id === item.id)
+                )"
+                :key="q.id"
+                class="summary-item"
+              >
+                <h5>{{ q.question }}:</h5>
+
+                <p v-if="q.id === 1004" class="summary-answer">
+                  {{
+                    typeof q.answer === "string"
+                      ? formatPhoneNumber(q.answer)
+                      : q.answer
+                  }}
+                </p>
+
+                <p v-else class="summary-answer">{{ q.answer }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="secondFormSummary.length > 0" class="summary-section">
+            <h4>Questionnaire Answers</h4>
+            <div
+              v-for="q in secondFormSummary"
+              :key="q.id"
+              class="answer-block"
+            >
+              <label class="question-label">{{ q.question }}</label>
+              <div class="answer-text">
+                <template v-if="typeof q.answer === 'string'">
+                  <span class="answer-prefix">Answer : </span>
+                  {{ q.answer.split("||")[0] }}
+                </template>
+                <template
+                  v-else-if="q.options?.some((opt) => opt.includes('||crit'))"
+                >
+                  <template v-if="q.answer.inlineText">
+                    <div>
+                      <span class="answer-prefix">Answer : </span
+                      >{{ formatCritAnswer(q, q.answer)?.label }}
+                    </div>
+                    <ol>
+                      <li
+                        v-for="item in formatCritAnswer(q, q.answer)?.criteria"
+                      >
+                        {{ item }}
+                      </li>
+                    </ol>
+                  </template>
+                  <template v-else
+                    ><span class="answer-prefix">Answer : </span
+                    >{{ q.answer.selectedOption.split("||")[0] }}</template
+                  >
+                </template>
+                <template v-else-if="q.id === 207 && q.answer">
+                  <div v-if="q.answer.radioSelection" class="q207-part">
+                    <strong class="answer-prefix">Level of Development:</strong>
+                    {{
+                      getConstructedAnswer(q, {
+                        selectedOption: q.answer.radioSelection,
+                        inlineText: q.answer.inlineText,
+                      })
+                    }}
+                  </div>
+
+                  <div
+                    v-if="q.answer.checkboxes && q.answer.checkboxes.length > 0"
+                    class="q207-part"
+                  >
+                    <strong class="answer-prefix"
+                      >Pathogenesis Mechanisms:</strong
+                    >
+                    <ul class="mechanism-list">
+                      <li
+                        v-for="mechanism in [...q.answer.checkboxes].sort(
+                          (a, b) => {
+                            const masterOptions =
+                              getQuestionById2(207)?.options || [];
+                            const indexA = masterOptions.findIndex(
+                              (opt) => parseOption(opt).label === a
+                            );
+                            const indexB = masterOptions.findIndex(
+                              (opt) => parseOption(opt).label === b
+                            );
+                            return indexA - indexB;
+                          }
+                        )"
+                        :key="mechanism"
+                      >
+                        {{
+                          formatCheckboxAnswer(q, {
+                            main: [mechanism],
+                            subs: q.answer.subs,
+                            inlineText: q.answer.inlineText,
+                          })
+                        }}
+                      </li>
+                    </ul>
+                  </div>
+                </template>
+                <template v-else-if="q.answer.selectedOption">
+                  <span class="answer-prefix">Answer : </span>
+                  {{ getConstructedAnswer(q, q.answer) }}
+                  <span v-for="(subAnswer, key) in q.answer.subs" :key="key">
+                    {{ formatSubAnswer(q, q.answer, String(key)) }}
+                  </span>
+                </template>
+                <template v-else>{{ JSON.stringify(q.answer) }}</template>
+
+                <div
+                  v-if="countTotalFiles(q.answer) > 0"
+                  style="margin-top: 8px"
+                >
+                  <strong>Attached Files:</strong>
+                  <ul>
+                    <template
+                      v-for="(fileInfo, key) in q.answer.fileData"
+                      :key="key"
+                    >
+                      <li v-for="file in fileInfo.files" :key="file.name">
+                        <a
+                          v-if="file.rehydrated"
+                          :href="getFileDownloadUrl(file.id)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          >{{ file.name }}</a
+                        >
+                        <a
+                          v-else-if="file instanceof File"
+                          :href= "createObjectURL(file)"
+                          target= "_blank"
+                          rel="noopener noreferrer"
+                          >{{ file.name }}</a
+                        >
+                        <span v-else-if="file.isNewUnsavedFile">{{
+                          file.name
+                        }}</span>
+                      </li>
+                    </template>
+
+                    <template v-for="file in q.answer.files">
+                      <li v-for="file in q.answer.files" :key="file.name">
+                        <a
+                          v-if="file.rehydrated"
+                          :href="getFileDownloadUrl(file.id)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          >{{ file.name }}</a
+                        >
+                        <a
+                          v-else-if="file instanceof File"
+                          :href= "createObjectURL(file)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          >{{ file.name }}</a
+                        >
+                        <span v-else-if="file.isNewUnsavedFile">{{
+                          file.name
+                        }}</span>
+                      </li>
+                    </template>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-buttons">
+          <button
+            @click="showDraftModal = false"
+            class="modal-btn cancel-btn"
+            :disabled="isSavingDraft"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleSaveDraft"
+            class="modal-btn confirm-btn"
+            :disabled="isSavingDraft"
+          >
+            {{ isSavingDraft ? "Saving..." : "Confirm & Save" }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDraftSuccessModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">Draft Saved Successfully!</h3>
+        <p>
+          Please copy and save this link to continue your questionnaire later.
+          You can now continue filling out the form.
+        </p>
+        <div class="edit-url-box">
+          <input type="text" :value="draftEditUrl" readonly />
+        </div>
+        <div class="modal-buttons-center">
+          <button
+            @click="showDraftSuccessModal = false"
+            class="modal-btn confirm-btn"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDraftErrorModal" class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">Error</h3>
+        <p>
+          There was a problem saving your draft. Please check your connection
+          and try again.
+        </p>
+        <div class="modal-buttons-center">
+          <button
+            @click="showDraftErrorModal = false"
+            class="modal-btn cancel-btn"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -2024,5 +2622,173 @@ watch(
   margin: 0 0 0.5rem 32px;
   white-space: pre-wrap;
   line-height: 1.6;
+}
+
+.draft-btn {
+  height: 100%;
+  width: 120px; /* A bit wider */
+  padding: 8px;
+  border: 1px solid #fbbf24; /* Amber/Yellow */
+  background-color: #fffbeb;
+  color: #d97706;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.draft-btn:hover {
+  background-color: #fef3c7;
+}
+
+/* Styles for the new modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 1000px;
+  text-align: left;
+}
+.modal-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.modal-buttons-center {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.modal-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+.cancel-btn {
+  background-color: #e5e7eb;
+}
+.confirm-btn {
+  background-color: #eb4648;
+  color: white;
+}
+
+/* Styles for the draft summary modal */
+.draft-summary {
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.draft-summary-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  padding: 1rem 0;
+}
+.summary-item {
+  margin-bottom: 8px;
+  margin-left: 16px;
+}
+.summary-item strong {
+  display: block;
+}
+.summary-item p {
+  margin: 0 0 0 0;
+  color: #555;
+  font-style: italic;
+}
+.edit-url-box input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  font-family: monospace;
+}
+
+.summary-answer {
+  margin: 0 0 0 0;
+  color: #555;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+.summary-answer ol {
+  margin: 0.5rem 0 0 1rem;
+}
+.summary-answer ul {
+  margin: 0.5rem 0 0 1rem;
+  list-style-type: disc;
+}
+.summary-section-title {
+  margin-bottom: 16px;
+}
+
+/* --- Styles for the Draft Modal Summary (mimicking Q3) --- */
+.draft-summary-content .summary-section {
+  margin-top: 1.5rem;
+}
+.draft-summary-content .summary-section:first-child {
+  margin-top: 0;
+}
+.draft-summary-content h4 {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+.draft-summary-content .answer-block {
+  margin-bottom: 1.5rem;
+}
+.draft-summary-content .question-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+.draft-summary-content .answer-text {
+  font-size: 0.95rem;
+  color: #555;
+  padding-left: 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.draft-summary-content .answer-prefix {
+  color: #d84315;
+  font-weight: 500;
+}
+.draft-summary-content ol,
+.draft-summary-content ul {
+  margin: 0.5rem 0 0 1.5rem;
+}
+
+.q207-part {
+  margin-bottom: 0.75rem;
+}
+.q207-part:last-child {
+  margin-bottom: 0;
+}
+.mechanism-list {
+  margin-top: 0.25rem;
+  padding-left: 20px;
+  list-style-type: disc;
 }
 </style>

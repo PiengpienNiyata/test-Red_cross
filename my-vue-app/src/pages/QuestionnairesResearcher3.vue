@@ -28,7 +28,7 @@ const {
 type FileItem =
   | File
   | { id: number; name: string; rehydrated: true }
-  | { name: string; isNewUnsavedFile: true }; 
+  | { name: string; isNewUnsavedFile: true };
 
 const getFileDownloadUrl = (fileId: number) => {
   return `${VITE_API_BASE_URL}/api/file/${fileId}`;
@@ -369,7 +369,7 @@ const formatSubAnswer = (
       mainOptionIndex === -1 ||
       subIndex === -1
     ) {
-      return `(${getCleanOptionLabel(subSelection)})`; 
+      return `(${getCleanOptionLabel(subSelection)})`;
     }
 
     const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
@@ -453,6 +453,86 @@ const countTotalFiles = (answer: any): number => {
   }
 
   return count;
+};
+
+const isViewingLatestDraft = computed(() => {
+  // This is true only if the loaded version is a draft (-999999)
+  return store.currentVersion === -999999;
+});
+
+const isUnfinishedDraft = computed(() => {
+  // It's only an unfinished draft if the status from the DB says so.
+  if (store.currentStatus !== -5) {
+    return false;
+  }
+
+  // --- Condition 1: Check if all REQUIRED questions from the first form are answered ---
+  // Note: We exclude the optional questions 1008-1013
+  const requiredFirstFormIds = [1001, 1002, 1003, 1004, 1005, 1006, 1007];
+  for (const id of requiredFirstFormIds) {
+    const answer = store.answers[id];
+    if (!answer || String(answer).trim() === '') {
+      // If any required question is missing, the draft is incomplete.
+      return true;
+    }
+  }
+
+  // --- Condition 2: Check if the user has reached the end of the second form ---
+  const secondFormQuestionIds = Object.keys(store.answers)
+    .map(Number)
+    .filter(id => id < 1000)
+    .sort((a, b) => b - a); // Sort descending to easily find the last answered question
+
+  // If no questions from the second form have been answered, it's incomplete.
+  if (secondFormQuestionIds.length === 0) {
+    return true;
+  }
+  
+  const lastAnsweredId = secondFormQuestionIds[0];
+  const lastQuestion = getQuestionById2(lastAnsweredId);
+  const lastAnswer = store.answers[lastAnsweredId];
+
+  if (!lastQuestion || !lastAnswer || !lastQuestion.next) {
+    // If we can't find the last question or its 'next' logic, assume it's incomplete.
+    return true;
+  }
+
+  // Determine what the next step would have been based on the user's last answer.
+  let nextStep;
+  if ('all' in lastQuestion.next) {
+    nextStep = lastQuestion.next.all;
+  } else {
+    const answerKey = (typeof lastAnswer === 'object' && lastAnswer.selectedOption) ? lastAnswer.selectedOption : String(lastAnswer);
+    nextStep = lastQuestion.next[answerKey];
+  }
+  
+  // If the next step is NOT 'preResult' or 'finalResult', the questionnaire is not finished.
+  if (nextStep !== 'preResult' && nextStep !== 'finalResult') {
+    return true;
+  }
+  
+  // If all checks pass, the draft is considered "complete" for display purposes.
+  return false;
+});
+
+// 2. Add this new function to handle the button click
+const continueQuestionnaire = () => {
+  // Get a flat list of all question IDs from the second questionnaire in order
+  const allQuestionIds = questionnaireData2[0].sections.flatMap((s) =>
+    s.questions.map((q) => q.id)
+  );
+
+  // Find the ID of the first question that does NOT have an answer
+  const firstUnansweredId = allQuestionIds.find(
+    (id) => !answers.value.hasOwnProperty(id)
+  );
+
+  // Set the question to start on in the form component
+  // If all questions are somehow answered but status is still -5, default to the first question (101)
+  store.setCurrentQuestionId(firstUnansweredId || 101);
+
+  // Navigate to the form
+  router.push("/questionnairesResearcher2");
 };
 </script>
 
@@ -649,8 +729,8 @@ const countTotalFiles = (answer: any): number => {
                   </a>
 
                   <a
-                    v-else-if = "file instanceof File"
-                    :href="createObjectURL(file as File)"
+                    v-else-if="file instanceof File"
+                    :href= "createObjectURL(file as File)"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -668,18 +748,18 @@ const countTotalFiles = (answer: any): number => {
                 :key="file.name"
               >
                 <a
-                  v-if="'rehydrated' in file"
-                  :href="getFileDownloadUrl(file.id)"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  v-if= "'rehydrated' in file"
+                  :href= "getFileDownloadUrl(file.id)"
+                  target= "_blank"
+                  rel= "noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
                 <a
                   v-else-if= "file instanceof File"
-                  :href="createObjectURL(file as File)"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  :href= "createObjectURL(file as File)"
+                  target= "_blank"
+                  rel= "noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
@@ -694,6 +774,8 @@ const countTotalFiles = (answer: any): number => {
         </div>
       </div>
 
+
+
       <div class="btn-container">
         <div
           v-if="currentRemark && showReviewerFeedback"
@@ -702,9 +784,30 @@ const countTotalFiles = (answer: any): number => {
           <h4 class="feedback-title">Reviewer's Feedback</h4>
           <p class="feedback-text">{{ currentRemark }}</p>
         </div>
+        
+        <div v-if="isViewingLatestDraft" class="preamble-inline" style="border-color: #60a5fa; background-color: #eff6ff;">
+  <div class="preamble-icon" style="color: #2563eb;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" fill="currentColor"></path></svg>
+  </div>
+  <div class="preamble-text-group">
+    <p style="color: #1e40af;"><strong>You are viewing your latest saved draft.</strong></p>
+    <p style="color: #1e40af;">This version has not been submitted to the reviewer. You can review your answers and proceed to the final summary and submission page by clicking "Next".</p>
+  </div>
+</div>
+
+        <div v-if="isUnfinishedDraft" class="preamble-inline" style="border-color: #60a5fa; background-color: #eff6ff;">
+  <div class="preamble-icon" style="color: #2563eb;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" fill="currentColor"></path></svg>
+  </div>
+  <div class="preamble-text-group">
+    <p style="color: #1e40af;"><strong>This is an unfinished draft.</strong></p>
+    <p style="color: #1e40af;">You can review your previous answers below or click "Go to latest question" to continue where you left off.</p>
+  </div>
+</div>
+
         <div
           v-if="
-            suggestedRoutes.includes('Route C') && !hasNonsenseContradiction
+            suggestedRoutes.includes('Route C') && !hasNonsenseContradiction && !isUnfinishedDraft
           "
           class="preamble-inline"
         >
@@ -761,7 +864,7 @@ const countTotalFiles = (answer: any): number => {
           </div>
         </div>
 
-        <div v-if="hasNonsenseStagingTyping" class="preamble-inline">
+        <div v-if="hasNonsenseStagingTyping && !isUnfinishedDraft" class="preamble-inline">
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -796,7 +899,7 @@ const countTotalFiles = (answer: any): number => {
           </div>
         </div>
 
-        <div v-if="hasNonsenseContradiction" class="preamble-inline">
+        <div v-if="hasNonsenseContradiction && !isUnfinishedDraft" class="preamble-inline">
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -831,7 +934,8 @@ const countTotalFiles = (answer: any): number => {
           </div>
         </div>
 
-        <div v-if="hasNoValidRoute" class="preamble-inline">
+
+        <div v-if="hasNoValidRoute && !isUnfinishedDraft" class="preamble-inline">
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -871,13 +975,15 @@ const countTotalFiles = (answer: any): number => {
           </div>
         </div>
 
-        <div v-if="!isSubmissionLocked" class="action-bar"></div>
 
         <div v-if="!isSubmissionLocked" class="action-bar">
           <div class="action-bar-group">
             <button type="button" class="edit-btn" @click="editAnswers">
               Edit answer
             </button>
+            <button v-if="isUnfinishedDraft" type="button" class="edit-btn" @click="continueQuestionnaire">
+      Go to latest question
+    </button>
             <button
               v-if="
                 !hasNoValidRoute &&
@@ -896,6 +1002,7 @@ const countTotalFiles = (answer: any): number => {
               type="button"
               class="submit-btn"
               @click="startNewSurvey"
+              style="margin-left: 8px;"
             >
               Reset form
             </button>
@@ -1255,7 +1362,7 @@ const countTotalFiles = (answer: any): number => {
 }
 
 .summary-item {
-  display: flex; 
+  display: flex;
   gap: 8px;
   padding-bottom: 1rem;
   line-height: 1.6;
@@ -1277,7 +1384,6 @@ const countTotalFiles = (answer: any): number => {
   display: block;
   margin-top: 4px;
 }
-
 
 .decision-words-positive {
   color: #28a745;
@@ -1361,9 +1467,9 @@ const countTotalFiles = (answer: any): number => {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  background-color: #fbe9e7; 
-  color: #5d4037; 
-  border: 1px solid #ffab91; 
+  background-color: #fbe9e7;
+  color: #5d4037;
+  border: 1px solid #ffab91;
   border-radius: 8px;
   padding: 16px;
   margin: 0 8px 1.5rem 8px;
@@ -1383,8 +1489,8 @@ const countTotalFiles = (answer: any): number => {
   font-weight: 600;
 }
 .feedback-panel {
-  border: 1px solid #fbbf24; 
-  background-color: #fffbeb; 
+  border: 1px solid #fbbf24;
+  background-color: #fffbeb;
   border-radius: 8px;
   padding: 1rem;
   margin: 0 8px 1.5rem 8px;
@@ -1393,7 +1499,7 @@ const countTotalFiles = (answer: any): number => {
 .feedback-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #d97706; 
+  color: #d97706;
   margin-bottom: 0.5rem;
 }
 
@@ -1440,7 +1546,7 @@ const countTotalFiles = (answer: any): number => {
 
 .action-bar {
   display: flex;
-  justify-content: space-between; 
+  justify-content: space-between;
   align-items: center;
   width: 100%;
 }
@@ -1450,14 +1556,14 @@ const countTotalFiles = (answer: any): number => {
 }
 
 .q207-part {
-  margin-bottom: 0.75rem; 
+  margin-bottom: 0.75rem;
 }
 .q207-part:last-child {
   margin-bottom: 0;
 }
 .mechanism-list {
   margin-top: 0.25rem;
-  padding-left: 20px; 
+  padding-left: 20px;
   list-style-type: disc;
 }
 

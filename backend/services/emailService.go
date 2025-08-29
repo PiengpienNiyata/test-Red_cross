@@ -125,3 +125,28 @@ func SendCancellationNotificationToAdmin(researcherName, projectName, token stri
 
 	smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{adminEmail}, msg)
 }
+
+func SendDraftNotification(researcherName, researcherEmail, projectName, token string) {
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+	fromEmail := os.Getenv("SMTP_EMAIL")
+	password := os.Getenv("SMTP_PASSWORD")
+	auth := smtp.PlainAuth("", fromEmail, password, smtpHost)
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+	editURL := fmt.Sprintf("%s/edit-response/%s", frontendURL, token)
+
+	userSubject := fmt.Sprintf("Your RIRM Draft for '%s' has been Saved", projectName)
+	userBody := fmt.Sprintf("Hello %s,\n\nYour draft for the project '%s' has been saved.\n\nYou can continue your submission at any time using the following link:\n%s\n\nBest regards,\nThe RIRM Team", researcherName, projectName, editURL)
+
+	userMsg := []byte("To: " + researcherEmail + "\r\n" +
+		"Subject: " + userSubject + "\r\n" +
+		"\r\n" +
+		userBody + "\r\n")
+
+	// Send only to the user
+	go smtp.SendMail(smtpHost+":"+smtpPort, auth, fromEmail, []string{researcherEmail}, userMsg)
+}
