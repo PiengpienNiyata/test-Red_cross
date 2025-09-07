@@ -13,6 +13,8 @@ export interface Question2 {
   type: "text" | "radio" | "checkbox" | "files" | "textarea";
   question: string;
   options?: string[];
+    levelOptions?: string[];
+    mechanismOptions?: string[];
   subOptionsType?: Record<string, "radio" | "checkbox">;
   subOptions?: Record<string, string[]>;
   next?: Record<string, number | "preResult" | "finalResult" | "contradiction">;
@@ -207,44 +209,83 @@ export const questionnaireData: Questionnaire2[] = [
               all: 207,
             },
           },
+          // {
+          //   id: 207,
+          //   type: "checkbox",
+          //   question:
+          //     "B-7: Specify the group of mechanism of disease development? Choose one or more groups that match the molecular mechanisms or histo-pathogenesis.",
+          //   options: [
+          //     "group1|/|Cell : ___",
+          //     "group1|/|Tissue : ___",
+          //     "group1|/|Structure : ___",
+          //     "group1|/|Organ : ___",
+
+          //     "Inflammation||sub",
+          //     "Proliferation",
+          //     "Dysdifferentiation",
+          //     "Dysfunction",
+          //     "Degeneration",
+          //     "Growth abnormalities Neovascularization",
+          //     "Wounding (tissue or cell damage)",
+          //     "Ecological and environmental factors",
+          //     // "Other : ___",
+          //   ],
+          //   subOptionsType: { Inflammation: "radio" },
+          //   subOptions: {
+          //     Inflammation: [
+          //       "Graft versus host (GVH) (HLA)",
+          //       "Innate immunity (Pathogen Associated Molecular Pattern)",
+          //       "Inflammation's Damage Associated Molecular Pattern (DAMP) host derived signal secondary from chronic inflammation or damage cell",
+          //       "Acquire immunity (antigen / antibody reactions)",
+          //       "Innate -acquired immunity",
+          //       "Auto antibody (cGAS auto inflammation)",
+          //       "Inflammaging",
+          //     ],
+          //   },
+
+          //   next: {
+          //     all: "finalResult",
+          //   },
+          // },
           {
-            id: 207,
-            type: "checkbox",
-            question:
-              "B-7: Specify the group of mechanism of disease development? Choose one or more groups that match the molecular mechanisms or histo-pathogenesis.",
-            options: [
-              "group1|/|Cell : ___",
-              "group1|/|Tissue : ___",
-              "group1|/|Structure : ___",
-              "group1|/|Organ : ___",
+  id: 207,
+  type: "checkbox", // The type remains checkbox as a base
+  question: "B-7: Specify the group of mechanism of disease development? Choose one or more groups that match the molecular mechanisms or histo-pathogenesis.",
 
-              "Inflammation||sub",
-              "Proliferation",
-              "Dysdifferentiation",
-              "Dysfunction",
-              "Degeneration",
-              "Growth abnormalities Neovascularization",
-              "Wounding (tissue or cell damage)",
-              "Ecological and environmental factors",
-              // "Other : ___",
-            ],
-            subOptionsType: { Inflammation: "radio" },
-            subOptions: {
-              Inflammation: [
-                "Graft versus host (GVH) (HLA)",
-                "Innate immunity (Pathogen Associated Molecular Pattern)",
-                "Inflammation's Damage Associated Molecular Pattern (DAMP) host derived signal secondary from chronic inflammation or damage cell",
-                "Acquire immunity (antigen / antibody reactions)",
-                "Innate -acquired immunity",
-                "Auto antibody (cGAS auto inflammation)",
-                "Inflammaging",
-              ],
-            },
-
-            next: {
-              all: "finalResult",
-            },
-          },
+  // WHY: We've split the options into two distinct groups for easier handling.
+  levelOptions: [
+    "Cell : ___",
+    "Tissue : ___",
+    "Structure : ___",
+    "Organ : ___"
+  ],
+  mechanismOptions: [
+    "Inflammation||sub",
+    "Proliferation",
+    "Dysdifferentiation",
+    "Dysfunction",
+    "Degeneration",
+    "Growth abnormalities Neovascularization",
+    "Wounding (tissue or cell damage)",
+    "Ecological and environmental factors",
+    // "Other : ___",
+  ],
+  subOptionsType: { Inflammation: "radio" },
+  subOptions: {
+    Inflammation: [
+      "Graft versus host (GVH) (HLA)",
+      "Innate immunity (Pathogen Associated Molecular Pattern)",
+      "Inflammation's Damage Associated Molecular Pattern (DAMP) host derived signal secondary from chronic inflammation or damage cell",
+      "Acquire immunity (antigen / antibody reactions)",
+      "Innate -acquired immunity",
+      "Auto antibody (cGAS auto inflammation)",
+      "Inflammaging",
+    ],
+  },
+  next: {
+    all: "finalResult",
+  },
+},
         ],
       },
     ],

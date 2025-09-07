@@ -197,7 +197,7 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
     });
 
     finalParts.push(
-      `<span style="color: red">Pathogenesis Mechanisms:</span> ${mechanismParts.join(
+      `<span style="color: red">Pathogenesis Mechanisms</span> ${mechanismParts.join(
         ", "
       )}`
     );
@@ -880,44 +880,29 @@ const countTotalFiles = (answer: any): number => {
               !Array.isArray(q.answer)
             "
           >
-            <div v-if="q.id === 207 && q.answer" class="answer-text">
-              <div v-if="(q.answer as any).radioSelection" class="q207-part">
-                <span style="color: red">Level of Development : </span>
-                {{
-                  getConstructedAnswer(q, {
-                    selectedOption: (q.answer as any).radioSelection,
-                    inlineText: (q.answer as any).inlineText,
-                  })
-                }}
-              </div>
-
-              <div
-                v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
-                class="q207-part"
-              >
-                <span style="color: red">Pathogenesis Mechanisms : </span>
-
-                <ul class="mechanism-list">
-                  <li
-                    v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
-                    const masterOptions = getQuestionById2(207)?.options || [];
-                    const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
-                    const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
-                    return indexA - indexB;
-                    })"
-                    :key="mechanism"
-                  >
-                    {{
-                      formatCheckboxAnswer(q, {
-                        main: [mechanism],
-                        subs: (q.answer as any).subs,
-                        inlineText: (q.answer as any).inlineText,
-                      })
-                    }}
-                  </li>
-                </ul>
-              </div>
-            </div>
+<div v-if="q.id === 207 && q.answer && typeof q.answer === 'object'" class="answer-text">
+  <div v-for="(levelData, levelName) in q.answer as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
+    <p>
+        <span class="answer-prefix" style="color: red;">Level of Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
+        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
+    </p>
+    
+    <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
+        <strong>Pathogenesis Mechanisms:</strong>
+        <ul class="mechanism-list">
+            <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
+                {{ getCleanOptionLabel(mechanism) }}
+                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                    ({{ levelData.subs['Inflammation'] }})
+                </template>
+                 <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
+                   : {{ levelData.inlineTextOther }}
+                </template>
+            </li>
+        </ul>
+    </div>
+  </div>
+</div>
             <div
               v-else-if="
                 q.options?.some((opt) => opt.includes('||crit')) &&
@@ -1036,47 +1021,29 @@ const countTotalFiles = (answer: any): number => {
               Previous Answer (version {{ currentVersion - 1 }})
             </div>
 
-            <div v-if="q.id === 207" class="previous-answer-text">
-              <div
-                v-if="(getAnswerDifference(q.id) as any).radioSelection"
-                class="q207-part"
-              >
-                <span style="margin-left: 12px">Level of Development:</span>
-                {{
-                  getConstructedAnswer(q, {
-                    selectedOption: (getAnswerDifference(q.id) as any)
-                      .radioSelection,
-                    inlineText: (getAnswerDifference(q.id) as any).inlineText,
-                  })
-                }}
-              </div>
-              <div
-                v-if="(getAnswerDifference(q.id) as any).checkboxes?.length > 0"
-                class="q207-part"
-              >
-                <span style="margin-left: 12px">Pathogenesis Mechanisms:</span>
-                <ul class="mechanism-list">
-                  <li
-                    v-for="mechanism in [...(getAnswerDifference(q.id) as any).checkboxes].sort((a, b) => {
-                    const masterOptions = getQuestionById2(207)?.options || [];
-                    const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
-                    const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
-                    return indexA - indexB;
-                })"
-                    :key="mechanism"
-                  >
-                    {{
-                      formatCheckboxAnswer(q, {
-                        main: [mechanism],
-                        subs: (getAnswerDifference(q.id) as any).subs,
-                        inlineText: (getAnswerDifference(q.id) as any)
-                          .inlineText,
-                      })
-                    }}
-                  </li>
-                </ul>
-              </div>
-            </div>
+<div v-if="q.id === 207" class="previous-answer-text">
+  <div v-for="(levelData, levelName) in getAnswerDifference(q.id) as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
+    <p>
+        <strong>Level of Development - {{ String(levelName).split('___')[0] }}</strong>
+        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
+    </p>
+    
+    <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
+        <strong>Pathogenesis Mechanisms:</strong>
+        <ul class="mechanism-list">
+            <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
+                {{ getCleanOptionLabel(mechanism) }}
+                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                    ({{ levelData.subs['Inflammation'] }})
+                </template>
+                 <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
+                   : {{ levelData.inlineTextOther }}
+                </template>
+            </li>
+        </ul>
+    </div>
+  </div>
+</div>
 
             <p v-else class="previous-answer-text" style="margin-left: 16px">
               <template v-if="typeof getAnswerDifference(q.id) === 'string'">
@@ -2252,5 +2219,17 @@ const countTotalFiles = (answer: any): number => {
   margin-left: 16px;
   font-style: italic;
   color: #555;
+}
+
+/* Add these for the Q207 summary */
+.q207-summary-level {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dotted #e0e0e0;
+}
+.q207-summary-level:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 </style>

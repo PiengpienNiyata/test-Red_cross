@@ -632,7 +632,7 @@ const continueQuestionnaire = () => {
           </p>
         </div>
 
-        <div v-if="q.id === 207 && q.answer" class="answer-text">
+        <!-- <div v-if="q.id === 207 && q.answer" class="answer-text">
           <div v-if="(q.answer as any).radioSelection" class="q207-part">
             <span style="color: red">Level of Development : </span>
             {{
@@ -669,7 +669,32 @@ const continueQuestionnaire = () => {
               </li>
             </ul>
           </div>
+        </div> -->
+<div v-else-if="q.id === 207 && q.answer && typeof q.answer === 'object'" class="answer-text">
+        <div v-for="(levelData, levelName) in q.answer as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
+            <p>
+                <span style="color: red">Level of Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
+        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
+            </p>
+            
+            <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
+                <span style="color: red">Pathogenesis Mechanisms</span>
+                <ul class="mechanism-list">
+                    <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
+                        {{ getCleanOptionLabel(mechanism) }}
+                        <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                            ({{ levelData.subs['Inflammation'] }})
+                        </template>
+                         <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
+                           : {{ levelData.inlineTextOther }}
+                        </template>
+                    </li>
+                </ul>
+            </div>
         </div>
+    </div>
+
+
 
         <div
           v-else-if="
@@ -1585,5 +1610,28 @@ const continueQuestionnaire = () => {
   margin-left: 16px;
   font-style: italic;
   color: #555;
+}
+/* Add these for the Q207 summary */
+.q207-summary-level {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dotted #e0e0e0;
+}
+.q207-summary-level:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.q207-part {
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+}
+.q207-part strong {
+  font-weight: 600;
+}
+.mechanism-list {
+  margin-top: 0.5rem;
+  list-style-type: disc;
+  padding-left: 20px;
 }
 </style>

@@ -15,7 +15,7 @@
         </li>
       </ul>
 
-<h3>Step 2: Fill in general information</h3>
+<h3>Step 2: Fill in the general information</h3>
 
 <ul>
   <template v-for="item in step2Instructions" :key="item.id">
@@ -99,13 +99,13 @@ const step2Instructions = [
   { 
     id: 1008,
     isGroup: true,
-    groupTitle: "• Describe research questions in terms of:",
+    groupTitle: "Describe research questions in terms of:",
     groupItems: [1008, 1009, 1010]
   },
   { 
     id: 1011,
     isGroup: true,
-    groupTitle: "• Describe molecular signaling principle in terms of:",
+    groupTitle: "Describe molecular signaling principle in terms of:",
     groupItems: [1011, 1012, 1013]
   },
 ];

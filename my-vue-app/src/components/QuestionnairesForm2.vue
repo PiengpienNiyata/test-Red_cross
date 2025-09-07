@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref, computed, watch } from "vue";
+import { defineProps, ref, computed, watch, onMounted } from "vue";
 import type { Questionnaire2, Question2 } from "@/stores/questionnaires2";
 import { useQuestionnaireStore } from "@/stores/useQuestionnaireStore";
 import { useRouter } from "vue-router";
@@ -412,6 +412,8 @@ const prevQuestion = () => {
 
 const radioSelection = computed({
   get() {
+    if (currentQuestion.value?.id === 207) return null;// <-- ADD THIS LINE
+
     if (!currentQuestion.value) return null;
     const answer = answers.value[currentQuestion.value.id];
 
@@ -433,6 +435,8 @@ const radioSelection = computed({
     return answer || null;
   },
   set(newValue) {
+      if (currentQuestion.value?.id === 207) return []; // <-- ADD THIS LINE
+
     if (!currentQuestion.value || !newValue) return;
     const questionId = currentQuestion.value.id;
     const q = currentQuestion.value;
@@ -585,7 +589,10 @@ const submitFinalResponse = async () => {
   saveResponsesToStore();
   router.push("/questionnairesResearcher3");
 };
-
+onMounted(() => {
+  console.log("DEBUG: State of 'answers' object when QuestionnaireResearcher3 LOADS:");
+  console.log(JSON.parse(JSON.stringify(store.answers)));
+});
 const isNextDisabled = computed(() => {
   if (!currentQuestion.value) return true;
 
@@ -593,38 +600,52 @@ const isNextDisabled = computed(() => {
   const answer = answers.value[q.id];
 
   if (!answer) return true;
-  if (q.id === 207) {
-    const ans207 = answer;
 
-    // Rule 1: Must select one of the radio buttons
-    if (!ans207.radioSelection) {
+
+if (q.id === 207) {
+    const answer207 = answers.value[207];
+    if (typeof answer207 !== 'object' || answer207 === null) return true;
+    
+    // WHY: This is the fix. We get the list of VALID level options from the
+    // question definition first.
+    const validLevels = q.levelOptions || [];
+    
+    // Then, we get the keys from the answer and FILTER them to ensure
+    // we only check properties that are actual, valid levels.
+    const selectedLevels = Object.keys(answer207).filter(key => validLevels.includes(key));
+
+    // Rule 1: At least one VALID level must be selected.
+    if (selectedLevels.length === 0) {
       return true;
     }
 
-    // Rule 2 & 3 combined: Check all selected options (radio and checkboxes)
-    const allSelections = [ans207.radioSelection, ...ans207.checkboxes];
-    for (const selection of allSelections) {
-      // Check if an inline input is required and not filled
-      if (selection.includes("___")) {
-        const optionIndex = q.options?.findIndex(
-          (opt) => parseOption(opt).label === selection
-        );
-        if (optionIndex === undefined) continue;
-        const key = `207-${optionIndex}-0`; // Assuming one inline input
-        if (!ans207.inlineText[key] || ans207.inlineText[key].trim() === "") {
+    // Now, we loop through the CLEAN list of selected levels.
+    for (const level of selectedLevels) {
+      const levelData = answer207[level];
+
+      // Rule 2: Inline text for the level must be filled.
+      if (!levelData.inlineText || levelData.inlineText.trim() === '') {
+        return true;
+      }
+
+      // Rule 3: At least one mechanism must be selected.
+      if (!levelData.mechanisms || levelData.mechanisms.length === 0) {
+        return true;
+      }
+      
+      // Rule 4: If "Inflammation" is selected, its sub-option must be chosen.
+      if (levelData.mechanisms.includes('Inflammation||sub')) {
+        if (!levelData.subs || !levelData.subs['Inflammation']) {
           return true;
         }
       }
-      // Check if "Inflammation" is selected and its sub-option is not
-      if (
-        selection.startsWith("Inflammation") &&
-        !ans207.subs?.["Inflammation"]
-      ) {
-        return true;
-      }
     }
-    return false; // If all rules pass, enable the button
-  }
+    
+    // If all rules pass for all selected levels, the button is enabled.
+    return false;
+}
+
+
   if (
     typeof answer === "string" &&
     !answer.includes("___") &&
@@ -1058,7 +1079,10 @@ const handleSaveDraft = async () => {
         token: store.currentToken,
         // version is no longer needed, backend handles it for drafts
         existing_file_ids: existingFileIds,
-        final_route: store.suggestedRoutes.length > 0 ? store.suggestedRoutes.join(", ") : "incomplete",
+        final_route:
+          store.suggestedRoutes.length > 0
+            ? store.suggestedRoutes.join(", ")
+            : "incomplete",
         disease_name: answers.value[1006] || "",
         intervention: answers.value[1007] || "",
         research_context: researchContext,
@@ -1110,27 +1134,28 @@ const handleSaveDraft = async () => {
   }
 };
 
-watch(
-  currentQuestion,
-  (q) => {
-    if (q && q.id === 207) {
-      const currentAnswer = answers.value[207];
-      if (
-        typeof currentAnswer !== "object" ||
-        currentAnswer === null ||
-        !("radioSelection" in currentAnswer)
-      ) {
-        answers.value[207] = {
-          radioSelection: "",
-          checkboxes: [],
-          subs: {},
-          inlineText: {},
-        };
-      }
-    }
-  },
-  { immediate: true }
-);
+// watch(
+//   currentQuestion,
+//   (q) => {
+//     if (q && q.id === 207) {
+//       const currentAnswer = answers.value[207];
+//       if (
+//         typeof currentAnswer !== "object" ||
+//         currentAnswer === null ||
+//         !("radioSelection" in currentAnswer)
+//       ) {
+//         answers.value[207] = {
+//           radioSelection: "",
+//           checkboxes: [],
+//           subs: {},
+//           inlineText: {},
+//         };
+//       }
+//     }
+//   },
+//   { immediate: true }
+// );
+
 
 watch(
   () =>
@@ -1184,6 +1209,8 @@ watch(
 watch(
   checkboxModel,
   (newSelection: string[], oldSelection: string[] | undefined) => {
+      if (currentQuestion.value?.id === 207) return; // <-- ADD THIS LINE
+
     if (
       currentQuestion.value?.type !== "checkbox" ||
       !Array.isArray(newSelection)
@@ -1237,6 +1264,7 @@ watch(radioSelection, (newSelection) => {
 });
 
 watch(radioSelection, (newSelection, oldSelection) => {
+    if (currentQuestion.value?.id === 207) return; 
   if (
     !currentQuestion.value ||
     !oldSelection ||
@@ -1290,107 +1318,8 @@ watch(
     if (selection !== "Yes, staging only.") {
       if (answers.value[201.5]) {
         delete answers.value[201.5];
-        console.log(
-          "WATCHER: Cleared orphaned answer for question 201.5 because 201 changed."
-        );
       }
     }
-  },
-  { deep: true }
-);
-
-watch(
-  () => answers.value[207],
-  (newAnswer, oldAnswer) => {
-    if (
-      !newAnswer ||
-      !oldAnswer ||
-      !currentQuestion.value ||
-      currentQuestion.value.id !== 207
-    )
-      return;
-
-    // 1. Cleanup for deselected radio button
-    if (
-      newAnswer.radioSelection !== oldAnswer.radioSelection &&
-      oldAnswer.radioSelection?.includes("___")
-    ) {
-      const oldOptionIndex = currentQuestion.value.options?.findIndex(
-        (opt) => parseOption(opt).label === oldAnswer.radioSelection
-      );
-      if (oldOptionIndex !== undefined && oldOptionIndex > -1) {
-        const key = `207-${oldOptionIndex}-0`;
-        if (newAnswer.inlineText && newAnswer.inlineText[key]) {
-          delete newAnswer.inlineText[key];
-        }
-      }
-    }
-
-    // 2. Cleanup for deselected checkboxes
-    const deselected = oldAnswer.checkboxes?.filter(
-      (opt: string) => !newAnswer.checkboxes?.includes(opt)
-    );
-    deselected?.forEach((deselectedOpt: string) => {
-      if (deselectedOpt.includes("___")) {
-        const oldOptionIndex = currentQuestion.value?.options?.findIndex(
-          (opt) => parseOption(opt).label === deselectedOpt
-        );
-        if (oldOptionIndex !== undefined && oldOptionIndex > -1) {
-          const key = `207-${oldOptionIndex}-0`;
-          if (newAnswer.inlineText && newAnswer.inlineText[key]) {
-            delete newAnswer.inlineText[key];
-          }
-        }
-      }
-    });
-  },
-  { deep: true }
-);
-
-watch(
-  () => answers.value[207]?.radioSelection,
-  (newRadio, oldRadio) => {
-    if (oldRadio && oldRadio !== newRadio && oldRadio.includes("___")) {
-      const oldOptionIndex = currentQuestion.value?.options?.findIndex(
-        (opt) => parseOption(opt).label === oldRadio
-      );
-      if (oldOptionIndex !== undefined && oldOptionIndex > -1) {
-        const key = `207-${oldOptionIndex}-0`;
-        if (answers.value[207]?.inlineText?.[key]) {
-          delete answers.value[207].inlineText[key];
-        }
-      }
-    }
-  }
-);
-
-watch(
-  () => answers.value[207]?.checkboxes,
-  (newBoxes, oldBoxes) => {
-    if (!oldBoxes || !newBoxes) return;
-
-    const deselected = oldBoxes.filter(
-      (opt: string) => !newBoxes.includes(opt)
-    );
-    deselected.forEach((deselectedOpt: string) => {
-      if (deselectedOpt.includes("___")) {
-        const oldOptionIndex = currentQuestion.value?.options?.findIndex(
-          (opt) => parseOption(opt).label === deselectedOpt
-        );
-        if (oldOptionIndex !== undefined && oldOptionIndex > -1) {
-          const key = `207-${oldOptionIndex}-0`;
-          if (answers.value[207]?.inlineText?.[key]) {
-            delete answers.value[207].inlineText[key];
-          }
-        }
-      }
-      if (
-        deselectedOpt.startsWith("Inflammation") &&
-        answers.value[207]?.subs?.["Inflammation"]
-      ) {
-        delete answers.value[207].subs["Inflammation"];
-      }
-    });
   },
   { deep: true }
 );
@@ -1406,6 +1335,97 @@ watch(
   },
   { immediate: true }
 );
+
+onMounted(() => {
+    if (currentQuestion.value?.id === 207 && !answers.value[207]) {
+        answers.value[207] = {};
+    }
+});
+
+watch(currentQuestion, (q) => {
+    if (q && q.id === 207 && !answers.value[207]) {
+        answers.value[207] = {};
+    }
+});
+
+// ADD THIS NEW WATCHER
+watch(
+  () => answers.value[207],
+  (newAnswer, oldAnswer) => {
+    // Safety checks
+    if (!newAnswer || !oldAnswer || typeof newAnswer !== 'object' || typeof oldAnswer !== 'object') {
+      return;
+    }
+
+    // This logic cleans up data when a "Pathogenesis Mechanism" is deselected
+    const allLevels = currentQuestion.value?.levelOptions || [];
+    
+    allLevels.forEach(level => {
+      // We only care about levels that exist in the new answer
+      if (newAnswer[level]) {
+        const newMechanisms = newAnswer[level].mechanisms || [];
+        const oldMechanisms = oldAnswer[level]?.mechanisms || [];
+        
+        // Find which mechanisms were deselected
+        const deselected = oldMechanisms.filter((mech: string) => !newMechanisms.includes(mech));
+
+        deselected.forEach((deselectedMech: string) => {
+          // If "Inflammation" is deselected, remove its sub-answer
+          if (deselectedMech.startsWith('Inflammation') && newAnswer[level].subs?.['Inflammation']) {
+            delete newAnswer[level].subs['Inflammation'];
+          }
+          
+          // If "Other" is deselected, remove its inlineText
+          // (This is for the future "Other : ___" option you had)
+          if (deselectedMech.includes('___') && newAnswer[level].inlineTextOther) {
+             delete newAnswer[level].inlineTextOther;
+          }
+        });
+      }
+    });
+  },
+  { deep: true } // "deep: true" is critical for watching nested objects
+);
+
+// In QuestionnairesForm2.vue, inside <script setup>
+
+// FOR DEBUGGING ONLY: This will log the entire answer for Q207 whenever it changes.
+watch(() => answers.value[207], (newAnswer) => {
+    // We use JSON.parse(JSON.stringify(...)) to get a clean, readable copy in the console.
+}, { deep: true }); // 'deep: true' is essential to watch for changes inside the object
+
+
+
+const handleLevelSelection = (levelOption: string, event: Event) => {
+  const isChecked = (event.target as HTMLInputElement).checked;
+
+  const oldAnswer = JSON.parse(JSON.stringify(answers.value[207] || {}));
+  
+  const validLevels = currentQuestion.value?.levelOptions || [];
+  const cleanOldAnswer: { [key: string]: any } = {};
+  Object.keys(oldAnswer).forEach(key => {
+    if (validLevels.includes(key)) {
+      cleanOldAnswer[key] = oldAnswer[key];
+    }
+  });
+
+
+  if (isChecked) {
+    const newAnswer = {
+      ...cleanOldAnswer,
+      [levelOption]: {
+        inlineText: "",
+        mechanisms: [],
+        subs: {}
+      }
+    };
+    answers.value[207] = newAnswer;
+  } else {
+    const newAnswer = { ...cleanOldAnswer };
+    delete newAnswer[levelOption];
+    answers.value[207] = newAnswer;
+  }
+};
 </script>
 
 <template>
@@ -1961,7 +1981,7 @@ watch(
             </div>
           </div>
         </div>
-        <div
+        <!-- <div
           v-else-if="currentQuestion.type === 'checkbox'"
           class="checkbox-group"
           :data-question-id="currentQuestion.id"
@@ -2076,6 +2096,136 @@ watch(
               </div>
             </div>
           </div>
+        </div> -->
+        <div
+          v-else-if="currentQuestion.type === 'checkbox'"
+          class="checkbox-group"
+        >
+          <template v-if="currentQuestion.id === 207">
+            <p class="level-selection-prompt">
+              Please select the Level of Development
+            </p>
+
+            <div
+              v-for="(levelOpt, levelIndex) in currentQuestion.levelOptions"
+              :key="levelOpt"
+              class="level-container"
+            >
+              <div class="option-item">
+                <input
+                  type="checkbox"
+                  :checked="answers[207] && answers[207][levelOpt]"
+                  @change="handleLevelSelection(levelOpt, $event)"
+                  class="checkbox-input"
+                />
+                <!-- <label class="checkbox-label inline-input-label">
+                  <span>{{ levelOpt.split("___")[0] }}</span>
+                  <template v-if="answers[207] && answers[207][levelOpt]">
+                    <DynamicInlineInput
+                      v-model="answers[207][levelOpt].inlineText"
+                    />
+                  </template>
+                  <template v-else>
+                    <DynamicInlineInput :modelValue="''" :disabled="true" />
+                  </template>
+                  <span>{{ levelOpt.split("___")[1] || "" }}</span>
+                </label> -->
+                <label class="checkbox-label inline-input-label">
+  <span class="level-label-text">{{ levelOpt.split('___')[0] }}</span>
+  <template v-if="answers[207] && answers[207][levelOpt]">
+    <DynamicInlineInput
+      v-model="answers[207][levelOpt].inlineText"
+    />
+  </template>
+  <template v-else>
+      <DynamicInlineInput
+      :modelValue="''"
+      :disabled="true"
+      />
+  </template>
+  <span>{{ levelOpt.split('___')[1] || '' }}</span>
+</label>
+              </div>
+
+              <div
+                v-if="answers[207] && answers[207][levelOpt]"
+                class="mechanisms-panel"
+              >
+                <h5 class="option-group-title">Pathogenesis Mechanisms</h5>
+                <div
+                  v-for="mechOpt in currentQuestion.mechanismOptions"
+                  :key="mechOpt"
+                  class="mechanism-item"
+                >
+                  <div class="option-item">
+                    <input
+                      type="checkbox"
+                      :value="mechOpt"
+                      v-model="answers[207][levelOpt].mechanisms"
+                      class="checkbox-input"
+                    />
+                    <label class="checkbox-label inline-input-label">
+                      {{ getCleanOptionLabel(mechOpt.split("___")[0]) }}
+                      <template
+                        v-if="
+                          mechOpt.includes('___') &&
+                          answers[207][levelOpt].mechanisms.includes(mechOpt)
+                        "
+                      >
+                        <DynamicInlineInput
+                          v-model="answers[207][levelOpt].inlineTextOther"
+                        />
+                      </template>
+                      <template v-else-if="mechOpt.includes('___')">
+                        <DynamicInlineInput :modelValue="''" :disabled="true" />      
+                      </template>
+                    </label>
+                  </div>
+
+                  <div
+                    v-if="
+                      mechOpt.startsWith('Inflammation') &&
+                      answers[207][levelOpt].mechanisms.includes(mechOpt)
+                    "
+                    class="sub-options-panel"
+                  >
+                    <div
+                      v-for="subOpt in currentQuestion.subOptions?.[
+                        'Inflammation'
+                      ]"
+                      :key="subOpt"
+                      class="sub-option"
+                    >
+                      <input
+                        type="radio"
+                        :name="`q207-${levelIndex}-inflammation-sub`"
+                        :value="subOpt"
+                        v-model="answers[207][levelOpt].subs['Inflammation']"
+                        class="radio-input"
+                      />
+                      <label class="radio-label">{{ subOpt }}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <template v-else>
+            <div
+              v-for="option in currentQuestion.options"
+              :key="option"
+              class="checkbox-option"
+            >
+              <input
+                type="checkbox"
+                :value="option"
+                v-model="checkboxModel"
+                class="checkbox-input"
+              />
+              <label class="checkbox-label">{{ option.split("||")[0] }}</label>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -2173,52 +2323,27 @@ watch(
                     >{{ q.answer.selectedOption.split("||")[0] }}</template
                   >
                 </template>
-                <template v-else-if="q.id === 207 && q.answer">
-                  <div v-if="q.answer.radioSelection" class="q207-part">
-                    <strong class="answer-prefix">Level of Development:</strong>
-                    {{
-                      getConstructedAnswer(q, {
-                        selectedOption: q.answer.radioSelection,
-                        inlineText: q.answer.inlineText,
-                      })
-                    }}
-                  </div>
-
-                  <div
-                    v-if="q.answer.checkboxes && q.answer.checkboxes.length > 0"
-                    class="q207-part"
-                  >
-                    <strong class="answer-prefix"
-                      >Pathogenesis Mechanisms:</strong
-                    >
-                    <ul class="mechanism-list">
-                      <li
-                        v-for="mechanism in [...q.answer.checkboxes].sort(
-                          (a, b) => {
-                            const masterOptions =
-                              getQuestionById2(207)?.options || [];
-                            const indexA = masterOptions.findIndex(
-                              (opt) => parseOption(opt).label === a
-                            );
-                            const indexB = masterOptions.findIndex(
-                              (opt) => parseOption(opt).label === b
-                            );
-                            return indexA - indexB;
-                          }
-                        )"
-                        :key="mechanism"
-                      >
-                        {{
-                          formatCheckboxAnswer(q, {
-                            main: [mechanism],
-                            subs: q.answer.subs,
-                            inlineText: q.answer.inlineText,
-                          })
-                        }}
-                      </li>
-                    </ul>
-                  </div>
-                </template>
+<template v-else-if="q.id === 207 && q.answer">
+    <div v-for="(levelData, levelName) in q.answer" :key="levelName" class="q207-summary-level">
+        <span class="answer-prefix">Level of Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
+        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
+        
+        <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
+            <span class="answer-prefix">Pathogenesis Mechanisms</span>
+            <ul class="mechanism-list">
+                <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
+                    {{ getCleanOptionLabel(mechanism) }}
+                    <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                        ({{ levelData.subs['Inflammation'] }})
+                    </template>
+                     <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
+                       : {{ levelData.inlineTextOther }}
+                    </template>
+                </li>
+            </ul>
+        </div>
+    </div>
+</template>
                 <template v-else-if="q.answer.selectedOption">
                   <span class="answer-prefix">Answer : </span>
                   {{ getConstructedAnswer(q, q.answer) }}
@@ -2249,7 +2374,7 @@ watch(
                         <a
                           v-else-if="file instanceof File"
                           :href= "createObjectURL(file)"
-                          target= "_blank"
+                          target="_blank"
                           rel="noopener noreferrer"
                           >{{ file.name }}</a
                         >
@@ -2431,8 +2556,13 @@ watch(
   cursor: pointer;
 }
 
-.radio-input,
 .checkbox-input {
+  accent-color: #eb4648;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.radio-input{
   accent-color: #eb4648;
   cursor: pointer;
   margin-top: 8px;
@@ -2564,7 +2694,7 @@ watch(
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .option-group-title {
@@ -2790,5 +2920,74 @@ watch(
   margin-top: 0.25rem;
   padding-left: 20px;
   list-style-type: disc;
+}
+
+.level-container {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.level-container:last-child {
+  border-bottom: none;
+}
+.mechanisms-panel {
+  padding-left: 42px; /* Indent mechanisms under their level */
+  margin-top: 1rem;
+}
+.mechanism-item {
+  margin-bottom: 0.5rem;
+}
+
+.level-selection-prompt {
+  color: #555;
+  margin: 0 0 1rem 0px;
+}
+
+/* Find this existing class */
+.level-container {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  /* WHY: 4. Remove the border to get rid of the separator lines */
+  /* border-bottom: 1px solid #e5e7eb; */
+}
+
+/* This existing class should also be updated to a smaller font-size if needed */
+.option-group-title {
+  color: #374151;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  font-size: 1.1rem; /* Adjust size as needed */
+}
+
+/* Find the existing .inline-input-label rule and modify it */
+.inline-input-label {
+  display: flex;         /* Use Flexbox for alignment */
+  align-items: center;   /* Vertically center the items */
+  width: 100%;           /* Make the label take up all available space */
+}
+
+/* Add this new rule for the label text */
+.level-label-text {
+  flex-grow: 1;          /* Allows the text to take up all free space */
+  /* text-align: right;     Aligns the text to the right */
+  margin-right: 0.5rem;  /* Adds a small gap before the input box */
+  max-width: 9%;
+}
+
+/* Add this new rule to give the inline input a fixed width */
+.inline-input-label .dynamic-input {
+  width: 250px; /* Adjust this value as needed */
+  flex-shrink: 0; /* Prevents the input from shrinking */
+}
+
+.q207-summary-level {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+}
+.q207-summary-level:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 </style>
