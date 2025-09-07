@@ -104,7 +104,7 @@ export const questionnaireData: Questionnaire2[] = [
               "Yes, only staging.||sub", //
               "Yes, only typing. (Please define the typing : ___)||files",
               "No staging and no typing. (Please explain : ___ )||files",
-              "Uncertain",
+              // "Uncertain",
             ],
 
             subOptionsType: {
@@ -197,8 +197,8 @@ export const questionnaireData: Questionnaire2[] = [
               "No",
             ],
             subOptionsType: {
-              "Yes, complete ___ ": "radio",
-              "Not complete ___ ": "radio",
+              "Yes, complete ___ ": "checkbox",
+              "Not complete ___ ": "checkbox",
             },
             subOptions: {
               "Yes, complete ___ ": ["Autocrine", "Paracrine", "Endrocrime"],
@@ -209,44 +209,7 @@ export const questionnaireData: Questionnaire2[] = [
               all: 207,
             },
           },
-          // {
-          //   id: 207,
-          //   type: "checkbox",
-          //   question:
-          //     "B-7: Specify the group of mechanism of disease development? Choose one or more groups that match the molecular mechanisms or histo-pathogenesis.",
-          //   options: [
-          //     "group1|/|Cell : ___",
-          //     "group1|/|Tissue : ___",
-          //     "group1|/|Structure : ___",
-          //     "group1|/|Organ : ___",
-
-          //     "Inflammation||sub",
-          //     "Proliferation",
-          //     "Dysdifferentiation",
-          //     "Dysfunction",
-          //     "Degeneration",
-          //     "Growth abnormalities Neovascularization",
-          //     "Wounding (tissue or cell damage)",
-          //     "Ecological and environmental factors",
-          //     // "Other : ___",
-          //   ],
-          //   subOptionsType: { Inflammation: "radio" },
-          //   subOptions: {
-          //     Inflammation: [
-          //       "Graft versus host (GVH) (HLA)",
-          //       "Innate immunity (Pathogen Associated Molecular Pattern)",
-          //       "Inflammation's Damage Associated Molecular Pattern (DAMP) host derived signal secondary from chronic inflammation or damage cell",
-          //       "Acquire immunity (antigen / antibody reactions)",
-          //       "Innate -acquired immunity",
-          //       "Auto antibody (cGAS auto inflammation)",
-          //       "Inflammaging",
-          //     ],
-          //   },
-
-          //   next: {
-          //     all: "finalResult",
-          //   },
-          // },
+         
           {
   id: 207,
   type: "checkbox", // The type remains checkbox as a base
@@ -270,7 +233,7 @@ export const questionnaireData: Questionnaire2[] = [
     "Ecological and environmental factors",
     // "Other : ___",
   ],
-  subOptionsType: { Inflammation: "radio" },
+  subOptionsType: { Inflammation: "checkbox" },
   subOptions: {
     Inflammation: [
       "Graft versus host (GVH) (HLA)",

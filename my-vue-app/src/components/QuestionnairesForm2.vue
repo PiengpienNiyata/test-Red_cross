@@ -119,6 +119,11 @@ const preambleData: Record<number, { term: string; definition: string }[]> = {
       definition:
         "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.",
     },
+    {
+      term: "True Remission",
+      definition:
+        "True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, accompanied by the complete disappearance of clinical signs and symptoms sustained for a duration longer than the onset timeframe of the designated disease.",
+    },
   ],
   205: [
     {
@@ -385,11 +390,11 @@ const nextQuestion = () => {
     const nextQ = allQuestions.find((q) => q.id === nextId);
 
     if (nextQ) {
-      if (nextQ.id === 203 && !hasSeenContradictionPreamble.value) {
-        pendingQuestion.value = nextQ;
-        showContradictionPreamble.value = true;
-        return;
-      }
+      // if (nextQ.id === 203 && !hasSeenContradictionPreamble.value) {
+      //   pendingQuestion.value = nextQ;
+      //   showContradictionPreamble.value = true;
+      //   return;
+      // }
       questionHistory.value.push(currentQuestion.value);
       currentQuestion.value = nextQ;
     }
@@ -841,32 +846,50 @@ const formatSubAnswer = (
   mainOptionKey: string
 ): string => {
   const subSelection = mainAnswer.subs?.[mainOptionKey];
-  if (!subSelection || typeof subSelection !== "string") return "";
-  if (subSelection.includes("___")) {
-    const mainOption = question.options?.find(
-      (opt) => getCleanOptionLabel(opt) === mainOptionKey
-    );
-    if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
-    const mainOptionIndex = question.options?.indexOf(mainOption);
-    const subOptions = question.subOptions?.[mainOptionKey];
-    const subIndex = subOptions?.indexOf(subSelection);
-    if (
-      mainOptionIndex === undefined ||
-      subIndex === undefined ||
-      mainOptionIndex === -1 ||
-      subIndex === -1
-    ) {
-      return `(${getCleanOptionLabel(subSelection)})`;
-    }
-    const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
-    const inlineValue = mainAnswer.inlineText?.[key] || "";
-    const constructedString = getCleanOptionLabel(subSelection).replace(
-      "___",
-      inlineValue
-    );
-    return `(${constructedString})`;
+
+  // Guard against empty/invalid sub-selections
+  if (!subSelection || (Array.isArray(subSelection) && subSelection.length === 0)) {
+    return "";
   }
-  return `(${getCleanOptionLabel(subSelection)})`;
+
+  // WHY: This new block handles the array from your new checkboxes
+  if (Array.isArray(subSelection)) {
+    return ` (${subSelection.join(", ")})`;
+  }
+
+  // This is the existing logic for single-string/radio button sub-options
+  if (typeof subSelection === "string") {
+    if (subSelection.includes("___")) {
+      const mainOption = question.options?.find(
+        (opt) => getCleanOptionLabel(opt) === mainOptionKey
+      );
+      if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
+
+      const mainOptionIndex = question.options?.indexOf(mainOption);
+      const subOptions = question.subOptions?.[mainOptionKey];
+      const subIndex = subOptions?.indexOf(subSelection);
+
+      if (
+        mainOptionIndex === undefined ||
+        subIndex === undefined ||
+        mainOptionIndex === -1 ||
+        subIndex === -1
+      ) {
+        return `(${getCleanOptionLabel(subSelection)})`;
+      }
+
+      const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
+      const inlineValue = mainAnswer.inlineText?.[key] || "";
+      const constructedString = getCleanOptionLabel(subSelection).replace(
+        "___",
+        inlineValue
+      );
+      return `(${constructedString})`;
+    }
+    return `(${getCleanOptionLabel(subSelection)})`;
+  }
+
+  return ""; // Fallback for any other unexpected types
 };
 
 interface FormattedCritAnswer {
@@ -1363,6 +1386,11 @@ watch(
     allLevels.forEach(level => {
       // We only care about levels that exist in the new answer
       if (newAnswer[level]) {
+                if (newAnswer[level].mechanisms?.includes('Inflammation||sub') && !Array.isArray(newAnswer[level].subs['Inflammation'])) {
+            // If it exists but isn't an array, make it one. If it doesn't exist, create it.
+            newAnswer[level].subs['Inflammation'] = [];
+        }
+
         const newMechanisms = newAnswer[level].mechanisms || [];
         const oldMechanisms = oldAnswer[level]?.mechanisms || [];
         
@@ -1371,9 +1399,21 @@ watch(
 
         deselected.forEach((deselectedMech: string) => {
           // If "Inflammation" is deselected, remove its sub-answer
-          if (deselectedMech.startsWith('Inflammation') && newAnswer[level].subs?.['Inflammation']) {
-            delete newAnswer[level].subs['Inflammation'];
-          }
+          // if (deselectedMech.startsWith('Inflammation') && newAnswer[level].subs?.['Inflammation']) {
+          //   delete newAnswer[level].subs['Inflammation'];
+          // }
+          Object.keys(newAnswer).forEach(levelKey => {
+      const levelData = newAnswer[levelKey];
+      if (levelData && levelData.mechanisms) {
+        
+        // WHY: This is the new logic.
+        // If "Inflammation" is a selected mechanism and its sub-answer is not an array,
+        // we initialize it as an empty array.
+        if (levelData.mechanisms.includes('Inflammation||sub') && !Array.isArray(levelData.subs['Inflammation'])) {
+          levelData.subs['Inflammation'] = [];
+        }
+      }
+    });
           
           // If "Other" is deselected, remove its inlineText
           // (This is for the future "Other : ___" option you had)
@@ -1399,6 +1439,8 @@ watch(() => answers.value[207], (newAnswer) => {
 const handleLevelSelection = (levelOption: string, event: Event) => {
   const isChecked = (event.target as HTMLInputElement).checked;
 
+  // WHY: This is the key change. We create a "deep copy" of the old answer.
+  // This ensures that nested objects like 'subs' are not shared between levels.
   const oldAnswer = JSON.parse(JSON.stringify(answers.value[207] || {}));
   
   const validLevels = currentQuestion.value?.levelOptions || [];
@@ -1429,7 +1471,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
 </script>
 
 <template>
-  <div v-if="showContradictionPreamble" class="questionnaire">
+  <!-- <div v-if="showContradictionPreamble" class="questionnaire">
     <div class="preamble-content">
       <h2>{{ contradictionText.title }}</h2>
       <p>{{ contradictionText.body }}</p>
@@ -1449,9 +1491,9 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
         Continue to Question
       </button>
     </div>
-  </div>
+  </div>  v-else-->
 
-  <div v-else class="questionnaire">
+  <div class="questionnaire">
     <PreResult
       v-if="isPreResult"
       :lastQuestion="lastAnsweredQuestion?.question"
@@ -1992,7 +2034,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
             class="checkbox-option-container"
           >
             <h4 v-if="index === 0" class="option-group-title">
-              Level of Development
+              Site of Disease Development
             </h4>
             <h4
               v-if="
@@ -2103,7 +2145,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
         >
           <template v-if="currentQuestion.id === 207">
             <p class="level-selection-prompt">
-              Please select the Level of Development
+              Please select the Site of Disease Development
             </p>
 
             <div
@@ -2197,13 +2239,13 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                       class="sub-option"
                     >
                       <input
-                        type="radio"
+                        type="checkbox"
                         :name="`q207-${levelIndex}-inflammation-sub`"
                         :value="subOpt"
                         v-model="answers[207][levelOpt].subs['Inflammation']"
-                        class="radio-input"
+                        class="checkbox-input"
                       />
-                      <label class="radio-label">{{ subOpt }}</label>
+                      <label class="checkbox-label">{{ subOpt }}</label>
                     </div>
                   </div>
                 </div>
@@ -2325,7 +2367,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                 </template>
 <template v-else-if="q.id === 207 && q.answer">
     <div v-for="(levelData, levelName) in q.answer" :key="levelName" class="q207-summary-level">
-        <span class="answer-prefix">Level of Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
+        <span class="answer-prefix">Site of Disease Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
         <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
         
         <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
@@ -2333,8 +2375,19 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
             <ul class="mechanism-list">
                 <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
                     {{ getCleanOptionLabel(mechanism) }}
-                    <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                    <!-- <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
                         ({{ levelData.subs['Inflammation'] }})
+                    </template> -->
+                    <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
+    <ul class="sub-mechanism-list">
+        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
+            {{ sub }}
+        </li>
+    </ul>                        </template>
+                        <template v-else>
+                            ({{ levelData.subs['Inflammation'] }})
+                        </template>
                     </template>
                      <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
                        : {{ levelData.inlineTextOther }}
@@ -2989,5 +3042,12 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
   border-bottom: none;
   padding-bottom: 0;
   margin-bottom: 0;
+}
+
+.sub-mechanism-list {
+  padding-left: 1rem;
+  list-style-type: circle;
+  font-style: italic;
+  color: #555;
 }
 </style>

@@ -27,8 +27,14 @@ const selectedDisease = ref("");
 const routeCDefinition = {
   route: "Route C",
   title: "Contradiction Reveals Complexity",
-  description:
-    "The treatment fails broadly, or contradictions in the data suggest the diagnosis may group multiple distinct diseases under a single name. More than one cell type is involved, but without clear molecular staging or typing.",
+  // WHY: Changed from a single string to an array of strings for list formatting.
+  description: [
+    "Multiple cell types are involved",
+    "Clinical variants show opposite or divergent responses to the same intervention",
+    "There’s clear contradiction in natural history of the disease and how lesions react",
+    "Suggests disease may be misclassified",
+    "Goal: Re-examine disease definition and core pathway",
+  ],
 };
 
 const goToStep2 = () => {
@@ -153,14 +159,16 @@ const restudyQuestionnaire = () => {
       <div class="summary-section">
         <h3>Recommended Research Pathway</h3>
         <div class="route-item">
-          <h4 class="route-title">
-            <span class="final-route-text">{{ routeCDefinition.route }}</span>
-            <span>: {{ routeCDefinition.title }}</span>
-          </h4>
-          <li class="route-description">
-            {{ routeCDefinition.description }}
-          </li>
-        </div>
+  <h4 class="route-title">
+    <span class="final-route-text">{{ routeCDefinition.route }}</span>
+    <span>: {{ routeCDefinition.title }}</span>
+  </h4>
+  <ul class="route-description">
+    <li v-for="(item, index) in routeCDefinition.description" :key="index">
+      {{ item }}
+    </li>
+  </ul>
+</div>
       </div>
 
       <div class="summary-section">

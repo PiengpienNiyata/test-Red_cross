@@ -148,7 +148,7 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
 
   const finalParts: string[] = [];
 
-  // Part 1: Format the "Level of Development" (radio button)
+  // Part 1: Format the "Site of Disease Development" (radio button)
   if (answer.radioSelection) {
     let radioText = answer.radioSelection;
     if (radioText.includes("___")) {
@@ -163,7 +163,7 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
     }
     // Add the formatted radio selection with its label
     finalParts.push(
-      `<span style="color: red">Level of Development:</span> ${
+      `<span style="color: red">Site of Disease Development:</span> ${
         radioText.split("||")[0]
       }`
     );
@@ -699,43 +699,49 @@ const formatSubAnswer = (
 ): string => {
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
-  // If there is no sub-selection, or it's not a string, return nothing.
-  if (!subSelection || typeof subSelection !== "string") {
+  // Guard against empty/invalid sub-selections
+  if (!subSelection || (Array.isArray(subSelection) && subSelection.length === 0)) {
     return "";
   }
 
-  // If the sub-option has an inline input, we need to build the final string.
-  if (subSelection.includes("___")) {
-    // Find the indexes needed to build the unique key for the inline text
-    const mainOption = question.options?.find(
-      (opt) => getCleanOptionLabel(opt) === mainOptionKey
-    );
-    if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
-
-    const mainOptionIndex = question.options?.indexOf(mainOption);
-    const subOptions = question.subOptions?.[mainOptionKey];
-    const subIndex = subOptions?.indexOf(subSelection);
-
-    if (
-      mainOptionIndex === undefined ||
-      subIndex === undefined ||
-      mainOptionIndex === -1 ||
-      subIndex === -1
-    ) {
-      return `(${getCleanOptionLabel(subSelection)})`;
-    }
-
-    const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
-    const inlineValue = mainAnswer.inlineText?.[key] || "";
-
-    const constructedString = getCleanOptionLabel(subSelection).replace(
-      "___",
-      inlineValue
-    );
-
-    return `(${constructedString})`;
+  // WHY: This new block handles the array from your new checkboxes
+  if (Array.isArray(subSelection)) {
+    return ` (${subSelection.join(", ")})`;
   }
-  return `(${getCleanOptionLabel(subSelection)})`;
+
+  // This is the existing logic for single-string/radio button sub-options
+  if (typeof subSelection === "string") {
+    if (subSelection.includes("___")) {
+      const mainOption = question.options?.find(
+        (opt) => getCleanOptionLabel(opt) === mainOptionKey
+      );
+      if (!mainOption) return `(${getCleanOptionLabel(subSelection)})`;
+
+      const mainOptionIndex = question.options?.indexOf(mainOption);
+      const subOptions = question.subOptions?.[mainOptionKey];
+      const subIndex = subOptions?.indexOf(subSelection);
+
+      if (
+        mainOptionIndex === undefined ||
+        subIndex === undefined ||
+        mainOptionIndex === -1 ||
+        subIndex === -1
+      ) {
+        return `(${getCleanOptionLabel(subSelection)})`;
+      }
+
+      const key = `${question.id}-${mainOptionIndex}-sub-${subIndex}-0`;
+      const inlineValue = mainAnswer.inlineText?.[key] || "";
+      const constructedString = getCleanOptionLabel(subSelection).replace(
+        "___",
+        inlineValue
+      );
+      return `(${constructedString})`;
+    }
+    return `(${getCleanOptionLabel(subSelection)})`;
+  }
+
+  return ""; // Fallback for any other unexpected types
 };
 
 interface FormattedCritAnswer {
@@ -883,7 +889,7 @@ const countTotalFiles = (answer: any): number => {
 <div v-if="q.id === 207 && q.answer && typeof q.answer === 'object'" class="answer-text">
   <div v-for="(levelData, levelName) in q.answer as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
     <p>
-        <span class="answer-prefix" style="color: red;">Level of Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
+        <span class="answer-prefix" style="color: red;">Site of Disease Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
         <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
     </p>
     
@@ -892,9 +898,20 @@ const countTotalFiles = (answer: any): number => {
         <ul class="mechanism-list">
             <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
                 {{ getCleanOptionLabel(mechanism) }}
-                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                <!-- <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
                     ({{ levelData.subs['Inflammation'] }})
-                </template>
+                </template> -->
+                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
+    <ul class="sub-mechanism-list">
+        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
+            {{ sub }}
+        </li>
+    </ul>                        </template>
+                        <template v-else>
+                            ({{ levelData.subs['Inflammation'] }})
+                        </template>
+                    </template>
                  <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
                    : {{ levelData.inlineTextOther }}
                 </template>
@@ -1024,7 +1041,7 @@ const countTotalFiles = (answer: any): number => {
 <div v-if="q.id === 207" class="previous-answer-text">
   <div v-for="(levelData, levelName) in getAnswerDifference(q.id) as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
     <p>
-        <strong>Level of Development - {{ String(levelName).split('___')[0] }}</strong>
+        <strong>Site of Disease Development - {{ String(levelName).split('___')[0] }}</strong>
         <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
     </p>
     
@@ -1034,8 +1051,16 @@ const countTotalFiles = (answer: any): number => {
             <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
                 {{ getCleanOptionLabel(mechanism) }}
                 <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
-                    ({{ levelData.subs['Inflammation'] }})
-                </template>
+                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
+    <ul class="sub-mechanism-list">
+        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
+            {{ sub }}
+        </li>
+    </ul>                        </template>
+                        <template v-else>
+                            ({{ levelData.subs['Inflammation'] }})
+                        </template>
+                    </template>
                  <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
                    : {{ levelData.inlineTextOther }}
                 </template>
@@ -2231,5 +2256,12 @@ const countTotalFiles = (answer: any): number => {
   border-bottom: none;
   padding-bottom: 0;
   margin-bottom: 0;
+}
+
+.sub-mechanism-list {
+  padding-left: 1rem;
+  list-style-type: circle;
+  font-style: italic;
+  color: #555;
 }
 </style>
