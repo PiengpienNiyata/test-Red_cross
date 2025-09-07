@@ -34,7 +34,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "A-1: Availability of the molecular mechanism of the treatment",
             options: [
-              "Yes (Attach your evidence)||files", // (Please define the molecular mechanism : ___)
+              "Yes (Attach your evidence)||files", // (Please define the molecular mechanism) ___
               "Not available yet",
               "No",
             ],
@@ -100,10 +100,10 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "B-1: Are there any staging and/or typing classification of the disease?",
             options: [
-              "Yes, both staging and typing. (Please explain : ___ )||files",
+              "Yes, both staging and typing. (Please explain) ___ ||files",
               "Yes, only staging.||sub", //
-              "Yes, only typing. (Please define the typing : ___)||files",
-              "No staging and no typing. (Please explain : ___ )||files",
+              "Yes, only typing. (Please define the typing) ___||files",
+              "No staging and no typing. (Please explain) ___ ||files",
               // "Uncertain",
             ],
 
@@ -112,15 +112,15 @@ export const questionnaireData: Questionnaire2[] = [
             },
             subOptions: {
               "Yes, only staging.": [
-                "Have 2 stages  (Please explain : ___ )||files",
-                "Have more than 2 stages (Please explain : ___ )||files",
+                "Have 2 stages  (Please explain) ___ ||files",
+                "Have more than 2 stages (Please explain) ___ ||files",
               ],
             },
             next: {
-              // "Yes, both staging and typing. (Please explain : ___ )": 202,
+              // "Yes, both staging and typing. (Please explain) ___ ": 202,
               // "Yes, staging only.": 201.5,
-              // "Yes, typing only. (Please define the typing : ___)": 202,
-              // "No (Please explain : ___ )": 202,
+              // "Yes, typing only. (Please define the typing) ___": 202,
+              // "No (Please explain) ___ ": 202,
               // Uncertain: 202,
               all: 202,
             },
@@ -132,8 +132,8 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "B-1 (Staging): Presence of Staging (See Stages of disease in glossary)",
             options: [
-              "Have 2 stages (Please explain : ___ ) ||files",
-              "Have more than 2 stages (Please explain : ___ ) ||files",
+              "Have 2 stages (Please explain) ___  ||files",
+              "Have more than 2 stages (Please explain) ___  ||files",
             ],
             next: {
               all: 202,
@@ -155,7 +155,7 @@ export const questionnaireData: Questionnaire2[] = [
             question:
               "B-3: Are there any contradiction within the criteria for diagnosis? (see glossary: contradiction)",
             options: [
-              "Yes (Please define the contradiction : ___)||files",
+              "Yes (Please define the contradiction) ___||files",
               "No",
             ],
             next: {
@@ -181,7 +181,7 @@ export const questionnaireData: Questionnaire2[] = [
             type: "radio",
             question:
               "B-5: Availability of timing of the natural end point time frame for the studying disease",
-            options: ["Yes (Please define : ___)", "Not able to define"],
+            options: ["Yes (Please define) ___", "Not able to define"],
             next: {
               all: 206,
             },

@@ -247,7 +247,10 @@ const recalculatedRoutes = computed(() => {
     ans102.startsWith("Yes") ||
     ans103.startsWith("More than 80% efficiency")
   ) {
-    return ["Route A"];
+    if(getAnswerKey(ans202).startsWith("Yes") &&
+  getAnswerKey(ans204).startsWith("Yes")){
+      return ["Route A"];
+    }
   }
 
   // --- Route B ---
@@ -255,14 +258,16 @@ const recalculatedRoutes = computed(() => {
     !ans102.startsWith("Yes") &&
     !ans103.startsWith("More than 80% efficiency") &&
     getAnswerKey(ans202).startsWith("Yes") &&
-    getCritCount(ans202, getQuestionById2(202)!) <= 2;
-
-  const meetsRouteB2 =
-    !ans103.startsWith("More than 80% efficiency") &&
+    getCritCount(ans202, getQuestionById2(202)!) <= 2 &&
     getAnswerKey(ans204).startsWith("Yes") &&
-    getCritCount(ans204, getQuestionById2(204)!) <= 2;
+    getCritCount(ans204, getQuestionById2(204)!) <= 2;;
 
-  if (meetsRouteB1 || meetsRouteB2) {
+  // const meetsRouteB2 =
+  //   !ans103.startsWith("More than 80% efficiency") &&
+  //   getAnswerKey(ans204).startsWith("Yes") &&
+  //   getCritCount(ans204, getQuestionById2(204)!) <= 2;  || meetsRouteB2
+
+  if (meetsRouteB1) {
     return ["Route B"];
   }
 
@@ -278,8 +283,8 @@ const recalculatedRoutes = computed(() => {
   if (meetsComplexRoutePreconditions) {
     const key201 = getAnswerKey(ans201);
     if (
-      key201.startsWith("No staging and no typing.") ||
-      key201.startsWith("Uncertain")
+      key201.startsWith("No staging and no typing.")
+      // || key201.startsWith("Uncertain")
     ) {
       return ["Route D"];
     }
