@@ -1634,6 +1634,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                 :value="option"
                 v-model="radioSelection"
                 class="radio-input"
+                style="margin-top: 10px;"
               />
 
               <label
@@ -1819,7 +1820,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                           getCleanOptionLabel(option)
                         ]
                       "
-                      
+                      style="margin-top: 0px;"
                     />
                     <input
                       v-else
@@ -2632,7 +2633,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
 
 .sub-options-panel {
   padding-left: 42px;
-  margin-top: 8px;
+  /* margin-top: 8px; */
 }
 
 .sub-option {
@@ -2946,5 +2947,9 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
 
 .preamble-item :deep(p) {
   display: inline;
+}
+
+.dynamic-input{
+  margin-top: 0 !important;
 }
 </style>
