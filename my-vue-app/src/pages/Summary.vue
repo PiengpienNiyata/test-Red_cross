@@ -935,7 +935,7 @@ const handleCancelProject = async () => {
         <span class="dynamic-answer">{{ dynamicDiseaseAspect.b3_main }}</span>
       </li>
       <li style="margin-bottom: 8px;">
-        The number of cells involved in the studied disease can be inferred from diagnostic/remission criteria: more complex (many) criteria indicate multiple cell involvement.
+        The number of cells involved in the studied disease can be inferred from diagnostic<!-- /remission --> criteria: more complex (many) criteria indicate multiple cell involvement.
         <ul style="list-style-type: circle; margin-top: 0.5rem;">
           <li>
             Number of the studied disease’s diagnostic criteria:
@@ -944,13 +944,13 @@ const handleCancelProject = async () => {
               Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b2_imply }}</span>
             </div>
           </li>
-           <li>
+           <!-- <li>
             Number of the studied disease’s remission criteria:
             <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_count }}</span>
             <div style="padding-left: 1.5rem;">
               Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_imply }}</span>
             </div>
-          </li>
+          </li> -->
         </ul>
       </li>
     </ul>

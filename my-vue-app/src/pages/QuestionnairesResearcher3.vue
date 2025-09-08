@@ -18,6 +18,25 @@ const isCancelling = ref(false);
 const showCancelSuccessModal = ref(false);
 const showCancelErrorModal = ref(false);
 
+// Add these interfaces at the top of your <script setup> block
+
+interface Q207LevelData {
+  inlineText?: string;
+  mechanisms?: string[];
+  subs?: { [key: string]: string | string[] };
+  inlineTextOther?: string;
+}
+
+interface Q207Answer {
+  [levelName: string]: Q207LevelData;
+}
+
+const getQ207Answer = (answer: any): Q207Answer => {
+  // This function simply tells TypeScript to treat the 'answer' object
+  // according to the Q207Answer blueprint we defined.
+  return answer as Q207Answer;
+}
+
 const {
   answers,
   suggestedRoutes,
@@ -342,7 +361,6 @@ const getConstructedAnswer = (question: Question2, answer: any): string => {
 
 const getCleanOptionLabel = (option: string) => option.split("||")[0];
 
-
 const formatSubAnswer = (
   question: Question2,
   mainAnswer: any,
@@ -351,7 +369,10 @@ const formatSubAnswer = (
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
   // Guard against empty/invalid sub-selections
-  if (!subSelection || (Array.isArray(subSelection) && subSelection.length === 0)) {
+  if (
+    !subSelection ||
+    (Array.isArray(subSelection) && subSelection.length === 0)
+  ) {
     return "";
   }
 
@@ -480,7 +501,7 @@ const isUnfinishedDraft = computed(() => {
   const requiredFirstFormIds = [1001, 1002, 1003, 1004, 1005, 1006, 1007];
   for (const id of requiredFirstFormIds) {
     const answer = store.answers[id];
-    if (!answer || String(answer).trim() === '') {
+    if (!answer || String(answer).trim() === "") {
       // If any required question is missing, the draft is incomplete.
       return true;
     }
@@ -489,14 +510,14 @@ const isUnfinishedDraft = computed(() => {
   // --- Condition 2: Check if the user has reached the end of the second form ---
   const secondFormQuestionIds = Object.keys(store.answers)
     .map(Number)
-    .filter(id => id < 1000)
+    .filter((id) => id < 1000)
     .sort((a, b) => b - a); // Sort descending to easily find the last answered question
 
   // If no questions from the second form have been answered, it's incomplete.
   if (secondFormQuestionIds.length === 0) {
     return true;
   }
-  
+
   const lastAnsweredId = secondFormQuestionIds[0];
   const lastQuestion = getQuestionById2(lastAnsweredId);
   const lastAnswer = store.answers[lastAnsweredId];
@@ -508,18 +529,21 @@ const isUnfinishedDraft = computed(() => {
 
   // Determine what the next step would have been based on the user's last answer.
   let nextStep;
-  if ('all' in lastQuestion.next) {
+  if ("all" in lastQuestion.next) {
     nextStep = lastQuestion.next.all;
   } else {
-    const answerKey = (typeof lastAnswer === 'object' && lastAnswer.selectedOption) ? lastAnswer.selectedOption : String(lastAnswer);
+    const answerKey =
+      typeof lastAnswer === "object" && lastAnswer.selectedOption
+        ? lastAnswer.selectedOption
+        : String(lastAnswer);
     nextStep = lastQuestion.next[answerKey];
   }
-  
+
   // If the next step is NOT 'preResult' or 'finalResult', the questionnaire is not finished.
-  if (nextStep !== 'preResult' && nextStep !== 'finalResult') {
+  if (nextStep !== "preResult" && nextStep !== "finalResult") {
     return true;
   }
-  
+
   // If all checks pass, the draft is considered "complete" for display purposes.
   return false;
 });
@@ -558,7 +582,7 @@ const continueQuestionnaire = () => {
         </h4>
         <div class="row">
           <div
-            v-for="q in firstFormAnswers.filter(
+            v-for= "q in firstFormAnswers.filter(
               (fq) =>
                 (section as any).questions?.some((sq: any) => sq.id === fq.id)
             )"
@@ -641,80 +665,67 @@ const continueQuestionnaire = () => {
           </p>
         </div>
 
-        <!-- <div v-if="q.id === 207 && q.answer" class="answer-text">
-          <div v-if="(q.answer as any).radioSelection" class="q207-part">
-            <span style="color: red">Site of Disease Development : </span>
-            {{
-              getConstructedAnswer(q, {
-                selectedOption: (q.answer as any).radioSelection,
-                inlineText: (q.answer as any).inlineText,
-              })
-            }}
-          </div>
-
-          <div
-            v-if="(q.answer as any).checkboxes && (q.answer as any).checkboxes.length > 0"
-            class="q207-part"
-          >
-            <span style="color: red">Pathogenesis Mechanisms : </span>
-
-            <ul class="mechanism-list">
-              <li
-                v-for="mechanism in [...(q.answer as any).checkboxes].sort((a, b) => {
-      const masterOptions = getQuestionById2(207)?.options || [];
-      const indexA = masterOptions.findIndex(opt => parseOption(opt).label === a);
-      const indexB = masterOptions.findIndex(opt => parseOption(opt).label === b);
-      return indexA - indexB;
-    })"
-                :key="mechanism"
-              >
-                {{
-                  formatCheckboxAnswer(q, {
-                    main: [mechanism],
-                    subs: (q.answer as any).subs,
-                    inlineText: (q.answer as any).inlineText,
-                  })
-                }}
-              </li>
-            </ul>
-          </div>
-        </div> -->
-<div v-else-if="q.id === 207 && q.answer && typeof q.answer === 'object'" class="answer-text">
-        <div v-for="(levelData, levelName) in q.answer as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
+        <div
+          v-else-if="q.id === 207 && q.answer && typeof q.answer === 'object'"
+          class="answer-text"
+        >
+<div
+v-for="(levelData, levelName) in getQ207Answer(q.answer)"  :key="levelName"
+  class="q207-summary-level"
+>
             <p>
-                <span style="color: red">Site of Disease Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
-        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
+              <span style="color: red">Site of Disease Development - </span
+              ><strong> {{ String(levelName).split("___")[0] }}</strong>
+              <span v-if="levelData.inlineText">
+                {{ levelData.inlineText }}</span
+              >
             </p>
-            
-            <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
-                <span style="color: red">Pathogenesis Mechanisms</span>
-                <ul class="mechanism-list">
-                    <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
-                        {{ getCleanOptionLabel(mechanism) }}
-                        <!-- <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+
+            <div
+              v-if= "levelData.mechanisms && levelData.mechanisms.length > 0"
+              class="q207-part"
+            >
+              <span style="color: red">Pathogenesis Mechanisms</span>
+              <ul class="mechanism-list">
+                <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
+                  {{ getCleanOptionLabel(mechanism) }}
+                  <!-- <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
                             ({{ levelData.subs['Inflammation'] }})
                         </template> -->
-                        <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
-                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
-    <ul class="sub-mechanism-list">
-        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
-            {{ sub }}
-        </li>
-    </ul>                        </template>
-                        <template v-else>
-                            ({{ levelData.subs['Inflammation'] }})
-                        </template>
+                  <template
+                    v-if="
+                      mechanism.startsWith('Inflammation') &&
+                      levelData.subs?.['Inflammation']
+                    "
+                  >
+                    <template
+                      v-if="Array.isArray(levelData.subs['Inflammation'])"
+                    >
+                      <ul class="sub-mechanism-list">
+                        <li
+                          v-for="sub in levelData.subs['Inflammation']"
+                          :key="sub"
+                        >
+                          {{ sub }}
+                        </li>
+                      </ul>
                     </template>
-                         <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
-                           : {{ levelData.inlineTextOther }}
-                        </template>
-                    </li>
-                </ul>
+                    <template v-else>
+                      ({{ levelData.subs["Inflammation"] }})
+                    </template>
+                  </template>
+                  <template
+                    v-if="
+                      mechanism.includes('___') && levelData.inlineTextOther
+                    "
+                  >
+                    : {{ levelData.inlineTextOther }}
+                  </template>
+                </li>
+              </ul>
             </div>
+          </div>
         </div>
-    </div>
-
-
 
         <div
           v-else-if="
@@ -775,7 +786,7 @@ const continueQuestionnaire = () => {
 
                   <a
                     v-else-if="file instanceof File"
-                    :href= "createObjectURL(file as File)"
+                    :href="createObjectURL(file as File)"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -793,18 +804,18 @@ const continueQuestionnaire = () => {
                 :key="file.name"
               >
                 <a
-                  v-if= "'rehydrated' in file"
-                  :href= "getFileDownloadUrl(file.id)"
-                  target= "_blank"
-                  rel= "noopener noreferrer"
+                  v-if="'rehydrated' in file"
+                  :href="getFileDownloadUrl(file.id)"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
                 <a
-                  v-else-if= "file instanceof File"
-                  :href= "createObjectURL(file as File)"
-                  target= "_blank"
-                  rel= "noopener noreferrer"
+                  v-else-if="file instanceof File"
+                  :href="createObjectURL(file as File)"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   {{ file.name }}
                 </a>
@@ -819,8 +830,6 @@ const continueQuestionnaire = () => {
         </div>
       </div>
 
-
-
       <div class="btn-container">
         <div
           v-if="currentRemark && showReviewerFeedback"
@@ -829,30 +838,73 @@ const continueQuestionnaire = () => {
           <h4 class="feedback-title">Reviewer's Feedback</h4>
           <p class="feedback-text">{{ currentRemark }}</p>
         </div>
-        
-        <div v-if="isViewingLatestDraft" class="preamble-inline" style="border-color: #60a5fa; background-color: #eff6ff;">
-  <div class="preamble-icon" style="color: #2563eb;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" fill="currentColor"></path></svg>
-  </div>
-  <div class="preamble-text-group">
-    <p style="color: #1e40af;"><strong>You are viewing your latest saved draft.</strong></p>
-    <p style="color: #1e40af;">This version has not been submitted to the reviewer. You can review your answers and proceed to the final summary and submission page by clicking "Next".</p>
-  </div>
-</div>
 
-        <div v-if="isUnfinishedDraft" class="preamble-inline" style="border-color: #60a5fa; background-color: #eff6ff;">
-  <div class="preamble-icon" style="color: #2563eb;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" fill="currentColor"></path></svg>
-  </div>
-  <div class="preamble-text-group">
-    <p style="color: #1e40af;"><strong>This is an unfinished draft.</strong></p>
-    <p style="color: #1e40af;">You can review your previous answers below or click "Go to latest question" to continue where you left off.</p>
-  </div>
-</div>
+        <div
+          v-if="isViewingLatestDraft"
+          class="preamble-inline"
+          style="border-color: #60a5fa; background-color: #eff6ff"
+        >
+          <div class="preamble-icon" style="color: #2563eb">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </div>
+          <div class="preamble-text-group">
+            <p style="color: #1e40af">
+              <strong>You are viewing your latest saved draft.</strong>
+            </p>
+            <p style="color: #1e40af">
+              This version has not been submitted to the reviewer. You can
+              review your answers and proceed to the final summary and
+              submission page by clicking "Next".
+            </p>
+          </div>
+        </div>
+
+        <div
+          v-if="isUnfinishedDraft"
+          class="preamble-inline"
+          style="border-color: #60a5fa; background-color: #eff6ff"
+        >
+          <div class="preamble-icon" style="color: #2563eb">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </div>
+          <div class="preamble-text-group">
+            <p style="color: #1e40af">
+              <strong>This is an unfinished draft.</strong>
+            </p>
+            <p style="color: #1e40af">
+              You can review your previous answers below or click "Go to latest
+              question" to continue where you left off.
+            </p>
+          </div>
+        </div>
 
         <div
           v-if="
-            suggestedRoutes.includes('Route C') && !hasNonsenseContradiction && !isUnfinishedDraft
+            suggestedRoutes.includes('Route C') &&
+            !hasNonsenseContradiction &&
+            !isUnfinishedDraft
           "
           class="preamble-inline"
         >
@@ -909,7 +961,10 @@ const continueQuestionnaire = () => {
           </div>
         </div>
 
-        <div v-if="hasNonsenseStagingTyping && !isUnfinishedDraft" class="preamble-inline">
+        <div
+          v-if="hasNonsenseStagingTyping && !isUnfinishedDraft"
+          class="preamble-inline"
+        >
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -944,7 +999,10 @@ const continueQuestionnaire = () => {
           </div>
         </div>
 
-        <div v-if="hasNonsenseContradiction && !isUnfinishedDraft" class="preamble-inline">
+        <div
+          v-if="hasNonsenseContradiction && !isUnfinishedDraft"
+          class="preamble-inline"
+        >
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -979,8 +1037,10 @@ const continueQuestionnaire = () => {
           </div>
         </div>
 
-
-        <div v-if="hasNoValidRoute && !isUnfinishedDraft" class="preamble-inline">
+        <div
+          v-if="hasNoValidRoute && !isUnfinishedDraft"
+          class="preamble-inline"
+        >
           <div class="preamble-icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1020,15 +1080,19 @@ const continueQuestionnaire = () => {
           </div>
         </div>
 
-
         <div v-if="!isSubmissionLocked" class="action-bar">
           <div class="action-bar-group">
             <button type="button" class="edit-btn" @click="editAnswers">
               Edit answer
             </button>
-            <button v-if="isUnfinishedDraft" type="button" class="edit-btn" @click="continueQuestionnaire">
-      Go to latest question
-    </button>
+            <button
+              v-if="isUnfinishedDraft"
+              type="button"
+              class="edit-btn"
+              @click="continueQuestionnaire"
+            >
+              Go to latest question
+            </button>
             <button
               v-if="
                 !hasNoValidRoute &&
@@ -1047,7 +1111,7 @@ const continueQuestionnaire = () => {
               type="button"
               class="submit-btn"
               @click="startNewSurvey"
-              style="margin-left: 8px;"
+              style="margin-left: 8px"
             >
               Reset form
             </button>

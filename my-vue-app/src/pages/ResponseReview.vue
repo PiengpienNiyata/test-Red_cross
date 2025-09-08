@@ -23,6 +23,25 @@ const remarkText = ref("");
 const isSubmitting = ref(false);
 const modalActionType = ref<"approve" | "revise" | "reject" | null>(null);
 
+// Add these interfaces at the top of your <script setup> block
+
+interface Q207LevelData {
+  inlineText?: string;
+  mechanisms?: string[];
+  subs?: { [key: string]: string | string[] };
+  inlineTextOther?: string;
+}
+
+interface Q207Answer {
+  [levelName: string]: Q207LevelData;
+}
+
+const getQ207Answer = (answer: any): Q207Answer => {
+  // This function simply tells TypeScript to treat the 'answer' object
+  // according to the Q207Answer blueprint we defined.
+  return answer as Q207Answer;
+}
+
 const {
   answers,
   suggestedRoutes,
@@ -223,40 +242,44 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
 // });
 
 const dynamicInterventionAspect = computed(() => {
-    const answer102 = answers.value[102];
-    const answer103 = answers.value[103];
+  const answer102 = answers.value[102];
+  const answer103 = answers.value[103];
 
-    if (!answer102 || !answer103) return null;
+  if (!answer102 || !answer103) return null;
 
-    let a2_intro = 'According to your research data, ';
-    let a2_main = '';
-    let a2_bullets: string[] = [];
-    
-    const a2_key = (typeof answer102 === 'object' && answer102.selectedOption) 
-      ? answer102.selectedOption 
+  let a2_intro = "According to your research data, ";
+  let a2_main = "";
+  let a2_bullets: string[] = [];
+
+  const a2_key =
+    typeof answer102 === "object" && answer102.selectedOption
+      ? answer102.selectedOption
       : String(answer102);
-    
-    const a3_key = (typeof answer103 === 'object' && answer103.selectedOption) 
-      ? answer103.selectedOption 
+
+  const a3_key =
+    typeof answer103 === "object" && answer103.selectedOption
+      ? answer103.selectedOption
       : String(answer103);
 
-    if (a2_key.startsWith('Yes')) {
-        a2_main = 'a molecular intervention is known to achieve remission by targeting to originating cell:';
-        a2_bullets = [
-            'A single intervention achieves >80% remission',
-            'There is no contradiction in treatment response',
-            'The treatment is known to act on the originating cell or its direct signalling pathway',
-        ];
-    } else if (a2_key.startsWith('No')) {
-        a2_main = 'a single intervention fails to induce true remission.';
-    } else if (a2_key.startsWith('Uncertain')) {
-        a2_main = 'it is not clear whether remission occurs across all clinical variants.';
-    }
+  if (a2_key.startsWith("Yes")) {
+    a2_main =
+      "a molecular intervention is known to achieve remission by targeting to originating cell:";
+    a2_bullets = [
+      "A single intervention achieves >80% remission",
+      "There is no contradiction in treatment response",
+      "The treatment is known to act on the originating cell or its direct signalling pathway",
+    ];
+  } else if (a2_key.startsWith("No")) {
+    a2_main = "a single intervention fails to induce true remission.";
+  } else if (a2_key.startsWith("Uncertain")) {
+    a2_main =
+      "it is not clear whether remission occurs across all clinical variants.";
+  }
 
-    const a3_intro = 'Published/public reports also show the remission rate of: ';
-    const a3_main = getCleanOptionLabel(a3_key) + '.';
+  const a3_intro = "Published/public reports also show the remission rate of: ";
+  const a3_main = getCleanOptionLabel(a3_key) + ".";
 
-    return { a2_intro, a2_main, a2_bullets, a3_intro, a3_main };
+  return { a2_intro, a2_main, a2_bullets, a3_intro, a3_main };
 });
 
 // ADD THIS NEW COMPUTED PROPERTY
@@ -269,87 +292,116 @@ const dynamicDiseaseAspect = computed(() => {
   // Helper function to get the key from a simple answer
   const getAnswerKey = (answer: any): string => {
     if (!answer) return "";
-    return typeof answer === 'object' && answer.selectedOption 
-      ? answer.selectedOption 
+    return typeof answer === "object" && answer.selectedOption
+      ? answer.selectedOption
       : String(answer);
   };
-  
+
   // Helper function to get the crit count for B-2 and B-4
   const getCritCount = (answer: any, questionId: number): number => {
     const q = getQuestionById2(questionId);
-    if (!q || !answer || typeof answer !== 'object' || !answer.inlineText || !q.options) return 0;
-    const optionIndex = q.options.findIndex(opt => opt === answer.selectedOption);
+    if (
+      !q ||
+      !answer ||
+      typeof answer !== "object" ||
+      !answer.inlineText ||
+      !q.options
+    )
+      return 0;
+    const optionIndex = q.options.findIndex(
+      (opt) => opt === answer.selectedOption
+    );
     if (optionIndex === -1) return 0;
     const count = answer.inlineText[`${q.id}-${optionIndex}-select`];
     return Number(count) || 0;
   };
 
   // --- Process B-1 Answer ---
-  let b1_main = '';
+  let b1_main = "";
   let b1_bullets: string[] = [];
   const key201 = getAnswerKey(answer201);
 
-  if (key201.startsWith('Yes, both staging and typing')) {
-    b1_main = 'The disease shows both molecular types and stages.';
-    b1_bullets = ['More than one type of lesion, all lesion types arise from the same upstream signal and those lesions also change over time.'];
-  } else if (key201.startsWith('Yes, only staging.')) {
+  if (key201.startsWith("Yes, both staging and typing")) {
+    b1_main = "The disease shows both molecular types and stages.";
+    b1_bullets = [
+      "More than one type of lesion, all lesion types arise from the same upstream signal and those lesions also change over time.",
+    ];
+  } else if (key201.startsWith("Yes, only staging.")) {
     const subSelection = answer201.subs?.[getCleanOptionLabel(key201)];
-    if (subSelection?.startsWith('Have 2 stages')) {
-      b1_main = 'Disease evolves through two molecular stages e.g. early vs. late.';
-      b1_bullets = ['Each stage involves the same core signal and triggers', 'Example: Acute → chronic switch, early → fibrotic lesion'];
-    } else if (subSelection?.startsWith('Have more than 2 stages')) {
-      b1_main = 'Several- Molecular Staging or Branching Model.';
-      b1_bullets = ['Disease progresses through more than two molecular stages or lesions may branch into different paths.'];
+    if (subSelection?.startsWith("Have 2 stages")) {
+      b1_main =
+        "Disease evolves through two molecular stages e.g. early vs. late.";
+      b1_bullets = [
+        "Each stage involves the same core signal and triggers",
+        "Example: Acute → chronic switch, early → fibrotic lesion",
+      ];
+    } else if (subSelection?.startsWith("Have more than 2 stages")) {
+      b1_main = "Several- Molecular Staging or Branching Model.";
+      b1_bullets = [
+        "Disease progresses through more than two molecular stages or lesions may branch into different paths.",
+      ];
     }
-  } else if (key201.startsWith('Yes, only typing')) {
-    b1_main = 'All lesion types arise from the same upstream signal, suggesting unified origin despite clinical variation.';
-    b1_bullets = ['Disease contains molecular types, each triggered by a distinct signal, but originating from the same cell types'];
-  } else if (key201.startsWith('No staging and no typing')) {
-    b1_main = 'The treatment fails to induce full remission, but this failure cannot be attributed to known subtypes, stages, or diverging lesion types.';
+  } else if (key201.startsWith("Yes, only typing")) {
+    b1_main =
+      "All lesion types arise from the same upstream signal, suggesting unified origin despite clinical variation.";
+    b1_bullets = [
+      "Disease contains molecular types, each triggered by a distinct signal, but originating from the same cell types",
+    ];
+  } else if (key201.startsWith("No staging and no typing")) {
+    b1_main =
+      "The treatment fails to induce full remission, but this failure cannot be attributed to known subtypes, stages, or diverging lesion types.";
   }
 
   // --- Process B-3 Answer ---
-  let b3_main = '';
+  let b3_main = "";
   const key203 = getAnswerKey(answer203);
-  if (key203.startsWith('No')) {
-    b3_main = 'There is no clear contradiction in lesion behavior or treatment response. This suggests the disease is likely driven by an explicit, single-axis core mechanism.';
+  if (key203.startsWith("No")) {
+    b3_main =
+      "There is no clear contradiction in lesion behavior or treatment response. This suggests the disease is likely driven by an explicit, single-axis core mechanism.";
   } else {
-    b3_main = 'N/A';
+    b3_main = "N/A";
   }
 
   // --- Process B-2 Answer ---
   const b2_count = getCritCount(answer202, 202);
-  let b2_imply = 'N/A';
+  let b2_imply = "N/A";
   const key202 = getAnswerKey(answer202);
-  if (key202.startsWith('Yes')) {
+  if (key202.startsWith("Yes")) {
     if (b2_count <= 2) {
-      b2_imply = 'Only one originating cell is responsible for disease initiation';
+      b2_imply =
+        "Only one originating cell is responsible for disease initiation";
     } else {
-      b2_imply = 'More than one cell type contributes to the disease process';
+      b2_imply = "More than one cell type contributes to the disease process";
     }
   }
 
   // --- Process B-4 Answer ---
   const b4_count = getCritCount(answer204, 204);
-  let b4_imply = 'N/A';
+  let b4_imply = "N/A";
   const key204 = getAnswerKey(answer204);
-  if (key204.startsWith('Yes')) {
+  if (key204.startsWith("Yes")) {
     if (b4_count <= 2) {
-      b4_imply = 'Only one originating cell is responsible for disease initiation';
+      b4_imply =
+        "Only one originating cell is responsible for disease initiation";
     } else {
-      b4_imply = 'More than one cell type contributes to the disease process';
+      b4_imply = "More than one cell type contributes to the disease process";
     }
-  } else if (key204.startsWith('Not yet')) {
-    b4_imply = 'Remission criteria for this disease have not yet been clearly defined, either clinically or molecularly. Further research is required to establish measurable remission endpoints.';
-  } else if (key204.startsWith('Not possible')) {
-    b4_imply = 'Remission is considered not possible to achieve for this disease, as no clinical or molecular framework exists to support remission assessment. The disease may currently only be managed in terms of symptom control or progression delay, but not true (molecular) remission.';
+  } else if (key204.startsWith("Not yet")) {
+    b4_imply =
+      "Remission criteria for this disease have not yet been clearly defined, either clinically or molecularly. Further research is required to establish measurable remission endpoints.";
+  } else if (key204.startsWith("Not possible")) {
+    b4_imply =
+      "Remission is considered not possible to achieve for this disease, as no clinical or molecular framework exists to support remission assessment. The disease may currently only be managed in terms of symptom control or progression delay, but not true (molecular) remission.";
   }
-  
+
   return {
-    b1_main, b1_bullets,
+    b1_main,
+    b1_bullets,
     b3_main,
-    b2_count, b2_imply,
-    b4_count, b4_imply
+    b2_count,
+    b2_imply,
+    b4_count,
+    b4_imply,
   };
 });
 
@@ -831,7 +883,10 @@ const formatSubAnswer = (
   const subSelection = mainAnswer.subs?.[mainOptionKey];
 
   // Guard against empty/invalid sub-selections
-  if (!subSelection || (Array.isArray(subSelection) && subSelection.length === 0)) {
+  if (
+    !subSelection ||
+    (Array.isArray(subSelection) && subSelection.length === 0)
+  ) {
     return "";
   }
 
@@ -953,7 +1008,7 @@ const countTotalFiles = (answer: any): number => {
           style="margin-bottom: 16px"
         >
           <h4
-            v-if="section.name !== 'null'"
+            v-if= "section.name !== 'null'"
             class="section-title"
             style="margin-left: 10px"
           >
@@ -971,7 +1026,7 @@ const countTotalFiles = (answer: any): number => {
               <span class="info-label"
                 >{{ q.question }}:
                 <span
-                  v-if="q.id === 1004"
+                  v-if= "q.id === 1004"
                   class="info-answer"
                   style="margin-left: 10px"
                 >
@@ -1001,7 +1056,7 @@ const countTotalFiles = (answer: any): number => {
         >
           <label class="question-label">{{ q.question }}</label>
 
-          <p v-if="typeof q.answer === 'string'" class="answer-text">
+          <p v-if= "typeof q.answer === 'string'" class="answer-text">
             <span style="color: red">Answer : </span
             >{{ q.answer.split("||")[0] }}
           </p>
@@ -1017,40 +1072,72 @@ const countTotalFiles = (answer: any): number => {
               !Array.isArray(q.answer)
             "
           >
-<div v-if="q.id === 207 && q.answer && typeof q.answer === 'object'" class="answer-text">
-  <div v-for="(levelData, levelName) in q.answer as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
-    <p>
-        <span class="answer-prefix" style="color: red;">Site of Disease Development - </span><strong> {{ String(levelName).split('___')[0] }}</strong>
-        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
-    </p>
-    
-    <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
-        <strong>Pathogenesis Mechanisms:</strong>
-        <ul class="mechanism-list">
-            <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
-                {{ getCleanOptionLabel(mechanism) }}
-                <!-- <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
+            <div
+              v-if= "q.id === 207 && q.answer && typeof q.answer === 'object'"
+              class="answer-text"
+            >
+              <div
+v-for="(levelData, levelName) in getQ207Answer(q.answer)" 
+               :key="levelName"
+                class="q207-summary-level"
+              >
+                <p>
+                  <span class="answer-prefix" style="color: red"
+                    >Site of Disease Development - </span
+                  ><strong> {{ String(levelName).split("___")[0] }}</strong>
+                  <span v-if= "levelData.inlineText">
+                    {{ levelData.inlineText }}</span
+                  >
+                </p>
+
+                <div
+                  v-if= "levelData.mechanisms && levelData.mechanisms.length > 0"
+                  class="q207-part"
+                >
+                  <strong>Pathogenesis Mechanisms:</strong>
+                  <ul class="mechanism-list">
+                    <li
+                      v-for="mechanism in levelData.mechanisms"
+                      :key="mechanism"
+                    >
+                      {{ getCleanOptionLabel(mechanism) }}
+                      <!-- <template v-if= "mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
                     ({{ levelData.subs['Inflammation'] }})
                 </template> -->
-                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
-                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
-    <ul class="sub-mechanism-list">
-        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
-            {{ sub }}
-        </li>
-    </ul>                        </template>
-                        <template v-else>
-                            ({{ levelData.subs['Inflammation'] }})
+                      <template
+                        v-if= "
+                          mechanism.startsWith('Inflammation') &&
+                          levelData.subs?.['Inflammation']
+                        "
+                      >
+                        <template
+                          v-if= "Array.isArray(levelData.subs['Inflammation'])"
+                        >
+                          <ul class="sub-mechanism-list">
+                            <li
+                              v-for="sub in levelData.subs['Inflammation']"
+                              :key="sub"
+                            >
+                              {{ sub }}
+                            </li>
+                          </ul>
                         </template>
-                    </template>
-                 <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
-                   : {{ levelData.inlineTextOther }}
-                </template>
-            </li>
-        </ul>
-    </div>
-  </div>
-</div>
+                        <template v-else>
+                          ({{ levelData.subs["Inflammation"] }})
+                        </template>
+                      </template>
+                      <template
+                        v-if= "
+                          mechanism.includes('___') && levelData.inlineTextOther
+                        "
+                      >
+                        : {{ levelData.inlineTextOther }}
+                      </template>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
             <div
               v-else-if="
                 q.options?.some((opt) => opt.includes('||crit')) &&
@@ -1058,7 +1145,7 @@ const countTotalFiles = (answer: any): number => {
                 q.answer !== null
               "
             >
-              <template v-if="(q.answer as any).inlineText">
+              <template v-if= "(q.answer as any).inlineText">
                 <p class="answer-text">
                   <span style="color: red">Answer : </span>
                   {{ formatCritAnswer(q)?.label }}
@@ -1105,12 +1192,12 @@ const countTotalFiles = (answer: any): number => {
             </div>
 
             <div
-              v-if="(q.answer as any).fileData || (q.answer as any).files"
+              v-if= "(q.answer as any).fileData || (q.answer as any).files"
               class="sub-answer-block"
             >
               <strong>Attached Files:</strong>
 
-              <template v-if="countTotalFiles(q.answer) > 0">
+              <template v-if= "countTotalFiles(q.answer) > 0">
                 <ul>
                   <template
                     v-for="(fileInfo, key) in (q.answer as any).fileData"
@@ -1121,7 +1208,7 @@ const countTotalFiles = (answer: any): number => {
                       :key="file.name"
                     >
                       <a
-                        v-if="'rehydrated' in file"
+                        v-if= "'rehydrated' in file"
                         :href="getFileDownloadUrl(file.id)"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1136,7 +1223,7 @@ const countTotalFiles = (answer: any): number => {
                     :key="file.name"
                   >
                     <a
-                      v-if="'rehydrated' in file"
+                      v-if= "'rehydrated' in file"
                       :href="getFileDownloadUrl(file.id)"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1160,49 +1247,79 @@ const countTotalFiles = (answer: any): number => {
           </div>
 
           <div
-            v-if="(q.answer as any).fileData || (q.answer as any).files"
+            v-if= "(q.answer as any).fileData || (q.answer as any).files"
             class="sub-answer-block"
           ></div>
 
-          <div v-if="getAnswerDifference(q.id)" class="previous-answer-block">
+          <div v-if= "getAnswerDifference(q.id)" class="previous-answer-block">
             <div class="previous-answer-heading">
               Previous Answer (version {{ currentVersion - 1 }})
             </div>
 
-<div v-if="q.id === 207" class="previous-answer-text">
-  <div v-for="(levelData, levelName) in getAnswerDifference(q.id) as { [key: string]: { inlineText?: string, mechanisms?: string[], subs?: { [key: string]: string }, inlineTextOther?: string } }" :key="levelName" class="q207-summary-level">
-    <p>
-        <strong>Site of Disease Development - {{ String(levelName).split('___')[0] }}</strong>
-        <span v-if="levelData.inlineText"> {{ levelData.inlineText }}</span>
-    </p>
-    
-    <div v-if="levelData.mechanisms && levelData.mechanisms.length > 0" class="q207-part">
-        <strong>Pathogenesis Mechanisms:</strong>
-        <ul class="mechanism-list">
-            <li v-for="mechanism in levelData.mechanisms" :key="mechanism">
-                {{ getCleanOptionLabel(mechanism) }}
-                <template v-if="mechanism.startsWith('Inflammation') && levelData.subs?.['Inflammation']">
-                        <template v-if="Array.isArray(levelData.subs['Inflammation'])">
-    <ul class="sub-mechanism-list">
-        <li v-for="sub in levelData.subs['Inflammation']" :key="sub">
-            {{ sub }}
-        </li>
-    </ul>                        </template>
-                        <template v-else>
-                            ({{ levelData.subs['Inflammation'] }})
+            <div v-if= "q.id === 207" class="previous-answer-text">
+              <div
+  v-for="(levelData, levelName) in getAnswerDifference(q.id)"
+                :key="levelName"
+                class="q207-summary-level"
+              >
+                <p>
+                  <strong
+                    >Site of Disease Development -
+                    {{ String(levelName).split("___")[0] }}</strong
+                  >
+                  <span v-if= "levelData.inlineText">
+                    {{ levelData.inlineText }}</span
+                  >
+                </p>
+
+                <div
+                  v-if= "levelData.mechanisms && levelData.mechanisms.length > 0"
+                  class="q207-part"
+                >
+                  <strong>Pathogenesis Mechanisms:</strong>
+                  <ul class="mechanism-list">
+                    <li
+                      v-for="mechanism in levelData.mechanisms"
+                      :key="mechanism"
+                    >
+                      {{ getCleanOptionLabel(mechanism) }}
+                      <template
+                        v-if= "
+                          mechanism.startsWith('Inflammation') &&
+                          levelData.subs?.['Inflammation']
+                        "
+                      >
+                        <template
+                          v-if= "Array.isArray(levelData.subs['Inflammation'])"
+                        >
+                          <ul class="sub-mechanism-list">
+                            <li
+                              v-for="sub in levelData.subs['Inflammation']"
+                              :key="sub"
+                            >
+                              {{ sub }}
+                            </li>
+                          </ul>
                         </template>
-                    </template>
-                 <template v-if="mechanism.includes('___') && levelData.inlineTextOther">
-                   : {{ levelData.inlineTextOther }}
-                </template>
-            </li>
-        </ul>
-    </div>
-  </div>
-</div>
+                        <template v-else>
+                          ({{ levelData.subs["Inflammation"] }})
+                        </template>
+                      </template>
+                      <template
+                        v-if= "
+                          mechanism.includes('___') && levelData.inlineTextOther
+                        "
+                      >
+                        : {{ levelData.inlineTextOther }}
+                      </template>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
             <p v-else class="previous-answer-text" style="margin-left: 16px">
-              <template v-if="typeof getAnswerDifference(q.id) === 'string'">
+              <template v-if= "typeof getAnswerDifference(q.id) === 'string'">
                 {{ getAnswerDifference(q.id).split("||")[0] }}
               </template>
               <template
@@ -1224,11 +1341,11 @@ const countTotalFiles = (answer: any): number => {
             </p>
 
             <div
-              v-if="(getAnswerDifference(q.id) as any).fileData || (getAnswerDifference(q.id) as any).files"
+              v-if= "(getAnswerDifference(q.id) as any).fileData || (getAnswerDifference(q.id) as any).files"
               class="sub-answer-block"
             >
               <strong style="color: #757575">Previous Files:</strong>
-              <template v-if="countTotalFiles(getAnswerDifference(q.id)) > 0">
+              <template v-if= "countTotalFiles(getAnswerDifference(q.id)) > 0">
                 <ul class="previous-files-list">
                   <template
                     v-for="(fileInfo, key) in (getAnswerDifference(q.id) as any).fileData"
@@ -1239,7 +1356,7 @@ const countTotalFiles = (answer: any): number => {
                       :key="file.name"
                     >
                       <a
-                        v-if="'rehydrated' in file"
+                        v-if= "'rehydrated' in file"
                         :href="getFileDownloadUrl(file.id)"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1254,7 +1371,7 @@ const countTotalFiles = (answer: any): number => {
                     :key="file.name"
                   >
                     <a
-                      v-if="'rehydrated' in file"
+                      v-if= "'rehydrated' in file"
                       :href="getFileDownloadUrl(file.id)"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -1269,7 +1386,7 @@ const countTotalFiles = (answer: any): number => {
             </div>
 
             <div
-              v-if="
+              v-if= "
                 q.id === 201 &&
                 typeof previousAnswers[201] === 'string' &&
                 previousAnswers[201].startsWith('Yes, staging only.') &&
@@ -1293,7 +1410,7 @@ const countTotalFiles = (answer: any): number => {
               </p>
 
               <div
-                v-if="(previousAnswers[201.5] as any).fileData || (previousAnswers[201.5] as any).files"
+                v-if= "(previousAnswers[201.5] as any).fileData || (previousAnswers[201.5] as any).files"
                 class="sub-answer-block"
               >
                 <strong style="color: #757575">Previous Files:</strong>
@@ -1307,7 +1424,7 @@ const countTotalFiles = (answer: any): number => {
                       :key="file.name"
                     >
                       <a
-                        v-if="'rehydrated' in file"
+                        v-if= "'rehydrated' in file"
                         :href="getFileDownloadUrl(file.id)"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -1323,7 +1440,7 @@ const countTotalFiles = (answer: any): number => {
         </div>
 
         <div
-          v-if="suggestedRoutes.length > 0"
+          v-if=  "suggestedRoutes.length > 0"
           class="route-suggestion-container"
           style="margin-left: 10px"
         >
@@ -1334,74 +1451,125 @@ const countTotalFiles = (answer: any): number => {
             Route of Suggestion
           </h3>
 
-          <div v-if="suggestedRoutes.length > 0" class="route-suggestion-container" style="margin-left: 10px">
+          <div
+            v-if=  "suggestedRoutes.length > 0"
+            class="route-suggestion-container"
+            style="margin-left: 10px"
+          >
+            <div
+              v-for="route in suggestedRouteDetails"
+              :key="route.route"
+              class="route-item"
+              style="margin-left: 16px; margin-bottom: 20px"
+            >
+              <h4 class="route-title">
+                <span class="final-route-text">{{ route.route }}</span>
+                <span
+                  style="
+                    font-weight: 200;
+                    font-style: italic;
+                    font-size: 1.1rem;
+                    color: #333;
+                    margin-left: 10px;
+                  "
+                >
+                  : {{ route.title }}
+                </span>
+              </h4>
 
-
-  <div v-for="route in suggestedRouteDetails" :key="route.route" class="route-item" style="margin-left: 16px; margin-bottom: 20px">
-    <h4 class="route-title">
-      <span class="final-route-text">{{ route.route }}</span>
-      <span style="font-weight: 200; font-style: italic; font-size: 1.1rem; color: #333; margin-left: 10px;">
-        : {{ route.title }}
-      </span>
-    </h4>
-
-<div v-if="dynamicInterventionAspect" class="aspect-section">
-  <h5 class="aspect-title" style="margin-bottom:8px;">Intervention Aspect</h5>
-  <div class="route-description" style="margin-left:1.5rem;">
-    <p>
-      {{ dynamicInterventionAspect.a2_intro }}
-      <span class="dynamic-answer">{{ dynamicInterventionAspect.a2_main }}</span>
-    </p>
-    <ol v-if="dynamicInterventionAspect.a2_bullets.length > 0">
-      <li v-for="(aspect, i) in dynamicInterventionAspect.a2_bullets" :key="i">
-        {{ aspect }}
-      </li>
-    </ol>
-    <p>
-      {{ dynamicInterventionAspect.a3_intro }}
-      <span class="dynamic-answer">{{ dynamicInterventionAspect.a3_main }}</span>
-    </p>
-  </div>
-</div>
-    <div v-if="dynamicDiseaseAspect" class="aspect-section">
-  <h5 class="aspect-title">Disease Aspect</h5>
-  <div class="route-description" style="margin-left:1.5rem;">
-    <ul>
-      <li style="margin-bottom: 8px;">
-        Staging and/or typing classification:
-        <span class="dynamic-answer">{{ dynamicDiseaseAspect.b1_main }}</span>
-        <ul v-if="dynamicDiseaseAspect.b1_bullets.length > 0">
-          <li v-for="(bullet, i) in dynamicDiseaseAspect.b1_bullets" :key="i">{{ bullet }}</li>
-        </ul>
-      </li>
-      <li  style="margin-bottom: 8px;">
-        Contradictory response or progression: Considering whether there is any contradictory response or contradiction in the natural progression of the disease, which may be inferred as evidence of more than one or different molecular mechanism within the disease:
-        <span class="dynamic-answer">{{ dynamicDiseaseAspect.b3_main }}</span>
-      </li>
-      <li style="margin-bottom: 8px;">
-        The number of cells involved in the studied disease can be inferred from diagnostic/remission criteria: more complex (many) criteria indicate multiple cell involvement.
-        <ul style="list-style-type: circle; margin-top: 0.5rem;">
-          <li>
-            Number of the studied disease’s diagnostic criteria:
-            <span class="dynamic-answer">{{ dynamicDiseaseAspect.b2_count }}</span>
-            <div style="padding-left: 1.5rem;">
-              Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b2_imply }}</span>
+              <div v-if= "dynamicInterventionAspect" class="aspect-section">
+                <h5 class="aspect-title" style="margin-bottom: 8px">
+                  Intervention Aspect
+                </h5>
+                <div class="route-description" style="margin-left: 1.5rem">
+                  <p>
+                    {{ dynamicInterventionAspect.a2_intro }}
+                    <span class="dynamic-answer">{{
+                      dynamicInterventionAspect.a2_main
+                    }}</span>
+                  </p>
+                  <ol v-if= "dynamicInterventionAspect.a2_bullets.length > 0">
+                    <li
+                      v-for="(
+                        aspect, i
+                      ) in dynamicInterventionAspect.a2_bullets"
+                      :key="i"
+                    >
+                      {{ aspect }}
+                    </li>
+                  </ol>
+                  <p>
+                    {{ dynamicInterventionAspect.a3_intro }}
+                    <span class="dynamic-answer">{{
+                      dynamicInterventionAspect.a3_main
+                    }}</span>
+                  </p>
+                </div>
+              </div>
+              <div v-if= "dynamicDiseaseAspect" class="aspect-section">
+                <h5 class="aspect-title">Disease Aspect</h5>
+                <div class="route-description" style="margin-left: 1.5rem">
+                  <ul>
+                    <li style="margin-bottom: 8px">
+                      Staging and/or typing classification:
+                      <span class="dynamic-answer">{{
+                        dynamicDiseaseAspect.b1_main
+                      }}</span>
+                      <ul v-if= "dynamicDiseaseAspect.b1_bullets.length > 0">
+                        <li
+                          v-for="(bullet, i) in dynamicDiseaseAspect.b1_bullets"
+                          :key="i"
+                        >
+                          {{ bullet }}
+                        </li>
+                      </ul>
+                    </li>
+                    <li style="margin-bottom: 8px">
+                      Contradictory response or progression: Considering whether
+                      there is any contradictory response or contradiction in
+                      the natural progression of the disease, which may be
+                      inferred as evidence of more than one or different
+                      molecular mechanism within the disease:
+                      <span class="dynamic-answer">{{
+                        dynamicDiseaseAspect.b3_main
+                      }}</span>
+                    </li>
+                    <li style="margin-bottom: 8px">
+                      The number of cells involved in the studied disease can be
+                      inferred from diagnostic<!-- /remission --> criteria: more complex
+                      (many) criteria indicate multiple cell involvement.
+                      <ul style="list-style-type: circle; margin-top: 0.5rem">
+                        <li>
+                          Number of the studied disease’s diagnostic criteria:
+                          <span class="dynamic-answer">{{
+                            dynamicDiseaseAspect.b2_count
+                          }}</span>
+                          <div style="padding-left: 1.5rem">
+                            Usually imply:
+                            <span class="dynamic-answer">{{
+                              dynamicDiseaseAspect.b2_imply
+                            }}</span>
+                          </div>
+                        </li>
+                        <!-- <li>
+                          Number of the studied disease’s remission criteria:
+                          <span class="dynamic-answer">{{
+                            dynamicDiseaseAspect.b4_count
+                          }}</span>
+                          <div style="padding-left: 1.5rem">
+                            Usually imply:
+                            <span class="dynamic-answer">{{
+                              dynamicDiseaseAspect.b4_imply
+                            }}</span>
+                          </div>
+                        </li> -->
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </li>
-           <li>
-            Number of the studied disease’s remission criteria:
-            <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_count }}</span>
-            <div style="padding-left: 1.5rem;">
-              Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_imply }}</span>
-            </div>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </div>
-</div>
-    </div>
-</div>
+          </div>
         </div>
       </div>
       <div class="questionnaire page-break-before">
@@ -1421,7 +1589,7 @@ const countTotalFiles = (answer: any): number => {
             class="summary-item"
           >
             <span class="summary-bullet">•</span>
-            <div v-if="p.text" class="summary-text-content">
+            <div v-if= "p.text" class="summary-text-content">
               <span v-html="p.text"></span>
             </div>
             <div v-else class="summary-text-content">
@@ -1444,7 +1612,7 @@ const countTotalFiles = (answer: any): number => {
           <div class="summary-item">
             <span class="summary-bullet">•</span> -->
 
-        <!-- <div v-if="summaryStep2" class="summary-text-content">
+        <!-- <div v-if= "summaryStep2" class="summary-text-content">
             <span v-html="summaryStep2"></span>
           </div>
           <div v-else class="summary-text-content">
@@ -1472,7 +1640,7 @@ const countTotalFiles = (answer: any): number => {
         <div style="margin-left: 30px; margin-right: 30px">
           <div class="summary-item">
             <span class="summary-bullet">•</span>
-            <div v-if="summaryStep3" class="summary-text-content">
+            <div v-if= "summaryStep3" class="summary-text-content">
               <span v-html="summaryStep3"></span>
             </div>
             <div v-else class="summary-text-content">
@@ -1494,7 +1662,7 @@ const countTotalFiles = (answer: any): number => {
           <div class="summary-item">
             <span class="summary-bullet">•</span> -->
 
-        <!-- <div v-if="summaryStep4" class="summary-text-content">
+        <!-- <div v-if= "summaryStep4" class="summary-text-content">
             <span v-html="summaryStep4"></span>
           </div>
           <div v-else class="summary-text-content">
@@ -1522,7 +1690,7 @@ const countTotalFiles = (answer: any): number => {
         <div style="margin-left: 30px; margin-right: 30px">
           <div class="summary-item">
             <span class="summary-bullet">•</span>
-            <div v-if="summaryStep5" class="summary-text-content">
+            <div v-if= "summaryStep5" class="summary-text-content">
               <span v-html="summaryStep5"></span>
             </div>
             <div v-else class="summary-text-content">
@@ -1607,7 +1775,7 @@ const countTotalFiles = (answer: any): number => {
         </div>
       </div>
 
-      <div v-if="hasNonsenseStagingTyping" class="preamble-inline">
+      <div v-if= "hasNonsenseStagingTyping" class="preamble-inline">
         <div class="preamble-icon"></div>
         <div class="preamble-text-group">
           <div>
@@ -1630,7 +1798,7 @@ const countTotalFiles = (answer: any): number => {
         </div>
       </div>
 
-      <div v-if="hasNonsenseContradiction" class="preamble-inline">
+      <div v-if= "hasNonsenseContradiction" class="preamble-inline">
         <div class="preamble-icon"></div>
         <div class="preamble-text-group">
           <div>
@@ -1669,7 +1837,7 @@ const countTotalFiles = (answer: any): number => {
           </button>
         </template>
         <div v-else class="status-display-box">
-          <span v-if="!isLatestVersion">
+          <span v-if= "!isLatestVersion">
             You are viewing an older version. Actions are disabled.
           </span>
           <span v-else>
@@ -1736,7 +1904,7 @@ const countTotalFiles = (answer: any): number => {
       </div>
 
       <!-- Success Modal -->
-      <div v-if="showSuccessModal" class="modal">
+      <div v-if= "showSuccessModal" class="modal">
         <div class="modal-content">
           <h3>Success!</h3>
           <p>
@@ -1751,7 +1919,7 @@ const countTotalFiles = (answer: any): number => {
         </div>
       </div>
 
-      <div v-if="submissionError" class="modal">
+      <div v-if= "submissionError" class="modal">
         <div class="modal-content">
           <h3 class="h3">An error occurred.</h3>
           <p>

@@ -188,15 +188,16 @@ const recalculatedRoutes = computed(() => {
   const ans103 = getAnswerKey(answers.value[103]);
   const ans201 = answers.value[201];
   const ans202 = answers.value[202];
-  const ans204 = answers.value[204];
+  // const ans204 = answers.value[204];
 
   // --- Route A ---
   if (
     ans102.startsWith("Yes") ||
     ans103.startsWith("More than 80% efficiency")
   ) {
-    if(getAnswerKey(ans202).startsWith("Yes") &&
-  getAnswerKey(ans204).startsWith("Yes")){
+    if(getAnswerKey(ans202).startsWith("Yes") 
+  // &&getAnswerKey(ans204).startsWith("Yes")
+){
       return ["Route A"];
     }
   }
@@ -206,9 +207,9 @@ const recalculatedRoutes = computed(() => {
     !ans102.startsWith("Yes") &&
     !ans103.startsWith("More than 80% efficiency") &&
     getAnswerKey(ans202).startsWith("Yes") &&
-    getCritCount(ans202, getQuestionById2(202)!) <= 2 &&
-    getAnswerKey(ans204).startsWith("Yes") &&
-    getCritCount(ans204, getQuestionById2(204)!) <= 2;;
+    getCritCount(ans202, getQuestionById2(202)!) <= 2 ;
+    // && getAnswerKey(ans204).startsWith("Yes") &&
+    // getCritCount(ans204, getQuestionById2(204)!) <= 2;
 
   // const meetsRouteB2 =
   //   !ans103.startsWith("More than 80% efficiency") &&
@@ -224,9 +225,9 @@ const recalculatedRoutes = computed(() => {
     !ans102.startsWith("Yes") &&
     !ans103.startsWith("More than 80% efficiency") &&
     getAnswerKey(ans202).startsWith("Yes") &&
-    getCritCount(ans202, getQuestionById2(202)!) > 2 &&
-    getAnswerKey(ans204).startsWith("Yes") &&
-    getCritCount(ans204, getQuestionById2(204)!) > 2;
+    getCritCount(ans202, getQuestionById2(202)!) > 2 ;
+    // &&getAnswerKey(ans204).startsWith("Yes") &&
+    // getCritCount(ans204, getQuestionById2(204)!) > 2;
 
   if (meetsComplexRoutePreconditions) {
     const key201 = getAnswerKey(ans201);
@@ -2913,15 +2914,12 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
   width: 100%;           /* Make the label take up all available space */
 }
 
-/* Add this new rule for the label text */
 .level-label-text {
-  flex-grow: 1;          /* Allows the text to take up all free space */
-  /* text-align: right;     Aligns the text to the right */
-  margin-right: 0.5rem;  /* Adds a small gap before the input box */
+  flex-grow: 1;         
+  margin-right: 0.5rem;  
   max-width: 9%;
 }
 
-/* Add this new rule to give the inline input a fixed width */
 .inline-input-label .dynamic-input {
   width: 250px; /* Adjust this value as needed */
   flex-shrink: 0; /* Prevents the input from shrinking */
