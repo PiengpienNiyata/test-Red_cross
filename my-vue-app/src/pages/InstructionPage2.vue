@@ -15,7 +15,7 @@
         </li>
       </ul>
 
-<h3>Step 2: Fill in the general information</h3>
+<h3>Step 2: Fill in the personal information</h3>
 
 <ul>
   <template v-for="item in step2Instructions" :key="item.id">

@@ -16,6 +16,6 @@ Select one:
 ◻ No — Remission criteria are not clearly defined
 ◻ Not possible to achieve remission-- the disease can only be managed symptomatically, without the possibility of achieving true remission (see Glossary: Remission).`,
   205: `• Please indicate whether a natural endpoint timeframe for the disease is known. This refers to the typical time it takes for the disease to reach resolution or plateau without intervention. Understanding this timeframe is essential for determining whether a remission is stable and exceeds the disease’s natural course (see Glossary: Remission).`,
-  206: `• Review the glossary. If the molecular cascade matches all diagnostic criteria, select “completed”. You may select multiple options if endocrine pathways are involved; otherwise, select only one.`,
+  206: `• Review the glossary. If the molecular cascade matches all diagnostic criteria, select “completed” and briefly explain the molecular mechanism. You may select multiple options if endocrine pathways are involved; otherwise, select only one.`,
   207: `• Multiple mechanisms may be selected corresponding to symptoms and signs of the designated disease.`
 };

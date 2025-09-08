@@ -228,7 +228,7 @@ export const questionnaireData: Questionnaire2[] = [
     "Dysdifferentiation",
     "Dysfunction",
     "Degeneration",
-    "Growth abnormalities Neovascularization",
+    "Growth abnormalities",
     "Wounding (tissue or cell damage)",
     "Ecological and environmental factors",
     // "Other : ___",

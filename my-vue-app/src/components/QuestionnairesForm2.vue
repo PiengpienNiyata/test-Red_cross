@@ -12,6 +12,7 @@ import { VITE_API_BASE_URL } from "@/stores/config";
 import { instructions } from "@/stores/instructions2";
 import { questionnaireData as questionnaireData1 } from "@/stores/questionnaires1";
 import { formatPhoneNumber } from "@/utils/formatters";
+import { glossaryData } from '@/stores/glossary';
 
 const File = window.File;
 
@@ -79,87 +80,34 @@ const closeGlossaryModal = () => {
   isGlossaryVisible.value = false;
 };
 
-const contradictionText = {
-  title: "Contradiction",
-  body: `If different types or stages of a disease show contradictory responses (exhibit divergent responses) to the same treatment, or exhibit distinct molecular signatures, it raises the possibility that: What we call one disease might represent separate disease entities with converging symptoms, or the disease is heterogeneous, and our current classification (by name or type) may be oversimplified or incorrect.`,
-  frameworkTitle:
-    "Within the RIRM framework, this contradiction prompts three actions:",
-  actions: [
-    "Re-examine treatment effects in each subtype to map precisely which molecular nodes are altered.",
-    "Interrogate divergent triggers, cells of origin, and signalling cascades that might account for the split response.",
-    "Entertain the “syndrome” hypothesis—i.e., that the disease label encompasses a family of related but separate conditions.",
+const preambleData: Record<number, string[]> = {
+  104: ["Molecular Stages / Types"],
+  201: ["Molecular Stages / Types"],
+  203: ["Contradiction"],
+  204: ["Remission", "True Remission", "Unstable Remission"],
+  205: ["True Remission"],
+  206: [
+    "Molecular Clinico-Pathological Cascade (Molecular Cascade)",
+    "Autocrine Signaling",
+    "Paracrine Signaling",
+    "Endocrine Signaling"
   ],
-  researchQuestionTitle: "Resulting research question",
-  researchQuestionBody: `Can systematic mapping of molecular responses to the standard treatment across all clinical variants identify both the shared core pathway and the subtype-specific triggers that, once targeted, will convert each variant from active disease to durable remission? Answering this question will clarify whether a unified therapeutic strategy plus subtype-tailored add-ons can achieve true remission across the full spectrum of what is currently grouped under a single disease name.`,
 };
 
-const preambleData: Record<number, { term: string; definition: string }[]> = {
-  104: [
-    {
-      term: "Molecular Types of the Disease",
-      definition:
-        "Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.",
-    },
-  ],
-  201: [
-    {
-      term: "Molecular Stages of the Disease",
-      definition:
-        "The natural progression of a disease in which all stages are molecularly driven by the same originating cell and core signal, differing only in intensity and duration over time.",
-    },
-    {
-      term: "Molecular Types of the Disease",
-      definition:
-        "Distinct clusters of disease presentations that share the same originating cell and base molecular trigger, but are further influenced by additional, subtype-specific signals that give rise to different clinical behaviors or lesion patterns.",
-    },
-  ],
-  204: [
-    {
-      term: "Remission",
-      definition:
-        "In a medical context, remission refers to a state in which the signs and symptoms of a disease have completely disappeared, either temporarily or permanently.",
-    },
-    {
-      term: "True Remission",
-      definition:
-        "True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, accompanied by the complete disappearance of clinical signs and symptoms sustained for a duration longer than the onset timeframe of the designated disease.",
-    },
-  ],
-  205: [
-    {
-      term: "True Remission",
-      definition:
-        "True remission is defined as the occurrence of molecular normalization in the originating cells of a disease, accompanied by the complete disappearance of clinical signs and symptoms sustained for a duration longer than the onset timeframe of the designated disease.",
-    },
-  ],
-  206: [
-    {
-      term: "Molecular Clinico-Pathological Cascade (Molecular Cascade)",
-      definition:
-        "A sequence of molecular signals initiated by a primary signal that drives the originating cell, leading to the development of clinical or pathological characteristics.",
-    },
-    {
-      term: "Autocrine Signaling",
-      definition:
-        "A signaling mechanism in which a single cell produces and responds to its own signaling molecules.",
-    },
-    {
-      term: "Paracrine Signaling",
-      definition:
-        "A mechanism which one cell secretes signaling molecules that act on neighboring or nearby cells.",
-    },
-    {
-      term: "Endocrine Signaling",
-      definition:
-        "A long-distance communication method where a cell releases hormones into the bloodstream, which travel to and affect distant cells.",
-    },
-  ],
-};
 
 const currentPreamble = computed(() => {
   if (!currentQuestion.value) return null;
-  return preambleData[currentQuestion.value.id] || null;
+
+  // Get the list of term names for the current question
+  const termsToShow = preambleData[currentQuestion.value.id];
+  if (!termsToShow) return null;
+
+  // Find the full glossary entries that match those term names
+  return glossaryData.filter(glossaryItem => 
+    termsToShow.includes(glossaryItem.term)
+  );
 });
+
 
 const handleCloseContradictionPreamble = () => {
   if (pendingQuestion.value) {
@@ -444,43 +392,48 @@ const radioSelection = computed({
     }
     return answer || null;
   },
-  set(newValue) {
-      if (currentQuestion.value?.id === 207) return []; // <-- ADD THIS LINE
+// In QuestionnairesForm2.vue
 
-    if (!currentQuestion.value || !newValue) return;
-    const questionId = currentQuestion.value.id;
-    const q = currentQuestion.value;
+set(newValue) {
+  if (currentQuestion.value?.id === 207) return;
 
-    const newAnswer: { [key: string]: any } = {
-      selectedOption: newValue,
-    };
+  if (!currentQuestion.value || !newValue) return;
+  const questionId = currentQuestion.value.id;
+  const q = currentQuestion.value;
 
-    let needsInlineText = String(newValue).includes("___");
+  const newAnswer: { [key: string]: any } = {
+    selectedOption: newValue,
+  };
 
-    if (hasSubOptions(newValue)) {
-      newAnswer.subs = {};
-      const mainLabel = getCleanOptionLabel(newValue);
-      const subOptions = q.subOptions?.[mainLabel];
-      if (subOptions?.some((subOpt) => subOpt.includes("___"))) {
-        needsInlineText = true;
-      }
-    }
+  // --- START: NEW LOGIC ---
+  // Check if the main option itself has an inline input
+  let needsInlineText = String(newValue).includes("___");
 
-    if (hasCritInput(newValue)) {
+  // Also check if the main option has sub-options that might need an inline input
+  if (hasSubOptions(newValue)) {
+    newAnswer.subs = {};
+    const mainLabel = getCleanOptionLabel(newValue);
+    const subOptions = q.subOptions?.[mainLabel];
+    // If any of the sub-options contain '___', we also need the inlineText object
+    if (subOptions?.some(subOpt => subOpt.includes('___'))) {
       needsInlineText = true;
-      newAnswer.fileData = {};
     }
+  }
+  // --- END: NEW LOGIC ---
 
-    if (needsInlineText) {
-      newAnswer.inlineText = {};
-    }
-
-    if (hasFileInput(newValue)) {
-      newAnswer.fileData = {};
-    }
-
-    answers.value[questionId] = newAnswer;
-  },
+  // This part remains the same
+  if (hasCritInput(newValue)) {
+    needsInlineText = true;
+    newAnswer.fileData = {};
+  }
+  if (needsInlineText) {
+    newAnswer.inlineText = {};
+  }
+  if (hasFileInput(newValue)) {
+    newAnswer.fileData = {};
+  }
+  answers.value[questionId] = newAnswer;
+},
 });
 
 const checkboxModel = computed({
@@ -1324,33 +1277,33 @@ watch(radioSelection, (newSelection, oldSelection) => {
   }
 });
 
-watch(
-  () => answers.value[201],
-  (newAnswerFor201) => {
-    if (newAnswerFor201 !== "Yes, staging only.") {
-      if (answers.value[201.5]) {
-        delete answers.value[201.5];
-      }
-    }
-  }
-);
+// watch(
+//   () => answers.value[201],
+//   (newAnswerFor201) => {
+//     if (newAnswerFor201 !== "Yes, staging only.") {
+//       if (answers.value[201.5]) {
+//         delete answers.value[201.5];
+//       }
+//     }
+//   }
+// );
 
-watch(
-  () => answers.value[201],
-  (newAnswerFor201) => {
-    const selection =
-      typeof newAnswerFor201 === "object" && newAnswerFor201 !== null
-        ? newAnswerFor201.selectedOption
-        : newAnswerFor201;
+// watch(
+//   () => answers.value[201],
+//   (newAnswerFor201) => {
+//     const selection =
+//       typeof newAnswerFor201 === "object" && newAnswerFor201 !== null
+//         ? newAnswerFor201.selectedOption
+//         : newAnswerFor201;
 
-    if (selection !== "Yes, staging only.") {
-      if (answers.value[201.5]) {
-        delete answers.value[201.5];
-      }
-    }
-  },
-  { deep: true }
-);
+//     if (selection !== "Yes, staging only.") {
+//       if (answers.value[201.5]) {
+//         delete answers.value[201.5];
+//       }
+//     }
+//   },
+//   { deep: true }
+// );
 
 watch(
   currentQuestion,
@@ -1440,6 +1393,76 @@ watch(() => answers.value[207], (newAnswer) => {
 }, { deep: true }); // 'deep: true' is essential to watch for changes inside the object
 
 
+// DELETE all other watchers for answers.value[201] and REPLACE with this one.
+watch(
+  () => answers.value[201],
+  (newAnswer, oldAnswer) => {
+    // Safety checks for both old and new answer objects
+    if (!newAnswer || typeof newAnswer !== 'object' || !oldAnswer || typeof oldAnswer !== 'object') {
+      return;
+    }
+
+    const mainOptionKey = 'Yes, only staging.';
+    
+    // --- PART 1: Cleanup when switching BETWEEN sub-options ---
+    const newSubSelection = newAnswer.subs?.[mainOptionKey];
+    const oldSubSelection = oldAnswer.subs?.[mainOptionKey];
+
+    if (newSubSelection !== oldSubSelection && oldSubSelection && typeof oldSubSelection === 'string') {
+      const q = getQuestionById2(201);
+      if (!q) return;
+
+      const mainOption = q.options?.find(opt => opt.startsWith(mainOptionKey));
+      if (!mainOption) return;
+      
+      const mainOptionIndex = q.options?.indexOf(mainOption);
+      const subOptions = q.subOptions?.[mainOptionKey];
+      const oldSubOptionIndex = subOptions?.indexOf(oldSubSelection);
+
+      if (mainOptionIndex !== undefined && mainOptionIndex > -1 && oldSubOptionIndex !== undefined && oldSubOptionIndex > -1) {
+        // 1. Clean up old inlineText from the deselected sub-option
+        const keyToDelete = `${201}-${mainOptionIndex}-sub-${oldSubOptionIndex}-0`;
+        if (newAnswer.inlineText?.[keyToDelete]) {
+          delete newAnswer.inlineText[keyToDelete];
+        }
+      }
+
+      // 2. Clean up old fileData from the deselected sub-option
+      const oldSubLabel = getCleanOptionLabel(oldSubSelection);
+      if (newAnswer.fileData?.[oldSubLabel]) {
+        delete newAnswer.fileData[oldSubLabel];
+      }
+    }
+
+    // --- PART 2: Cleanup when deselecting "Yes, only staging" ENTIRELY ---
+    const newMainSelection = newAnswer.selectedOption;
+    const oldMainSelection = oldAnswer.selectedOption;
+
+    if (newMainSelection !== oldMainSelection && oldMainSelection?.startsWith(mainOptionKey)) {
+        // If the user switches away from "Yes, only staging", clear out all its sub-data.
+        if (newAnswer.subs?.[mainOptionKey]) {
+            delete newAnswer.subs[mainOptionKey];
+        }
+        // Also clean up any leftover inlineText and fileData from its children
+        const q = getQuestionById2(201);
+        const subOptions = q?.subOptions?.[mainOptionKey] || [];
+        subOptions.forEach((subOpt, subIndex) => {
+            const mainOptionIndex = q?.options?.findIndex(opt => opt.startsWith(mainOptionKey));
+            if (mainOptionIndex !== undefined && mainOptionIndex > -1) {
+                const keyToDelete = `${201}-${mainOptionIndex}-sub-${subIndex}-0`;
+                if (newAnswer.inlineText?.[keyToDelete]) {
+                    delete newAnswer.inlineText[keyToDelete];
+                }
+                const subLabel = getCleanOptionLabel(subOpt);
+                if (newAnswer.fileData?.[subLabel]) {
+                    delete newAnswer.fileData[subLabel];
+                }
+            }
+        });
+    }
+  },
+  { deep: true }
+);
 
 const handleLevelSelection = (levelOption: string, event: Event) => {
   const isChecked = (event.target as HTMLInputElement).checked;
@@ -1517,51 +1540,20 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
       class="form-container"
     >
       <div class="question">
-        <div v-if="currentQuestion.id === 203" class="preamble-inline">
-          <div class="preamble-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
-              />
-            </svg>
-          </div>
-          <div class="preamble-text">
-            <strong>{{ contradictionText.title }}:</strong>
-            {{ contradictionText.body }}
-          </div>
-        </div>
-
-        <div v-if="currentPreamble" class="preamble-inline">
-          <div class="preamble-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 16 16"
-              width="16"
-              height="16"
-            >
-              <path
-                fill-rule="evenodd"
-                d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2"
-              />
-            </svg>
-          </div>
-          <div class="preamble-text-group">
-            <div
-              v-for="item in currentPreamble"
-              :key="item.term"
-              class="preamble-item"
-            >
-              <strong>{{ item.term }}:</strong>
-              {{ item.definition }}
-            </div>
-          </div>
-        </div>
+       <div v-if="currentPreamble && currentPreamble.length > 0" class="preamble-inline">
+  <div class="preamble-icon">
+    </div>
+  <div class="preamble-text-group">
+    <div
+      v-for="item in currentPreamble"
+      :key="item.term"
+      class="preamble-item"
+    >
+      <strong style="margin-top: 4px;">{{ item.term }}:</strong>
+      <div v-html="item.definition" style="margin-left:1.5rem; margin-bottom: 4px;"></div>
+    </div>
+  </div>
+</div>
 
         <label class="question-label">{{ currentQuestion.question }}</label>
         <div v-if="currentInstruction" class="question-instruction">
@@ -3054,5 +3046,9 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
   list-style-type: circle;
   font-style: italic;
   color: #555;
+}
+
+.preamble-item :deep(p) {
+  display: inline;
 }
 </style>
