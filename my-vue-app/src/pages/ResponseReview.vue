@@ -206,20 +206,151 @@ const formatQ207Answer = (question: Question2, answer: any): string => {
   return finalParts.join("<br>");
 };
 
-const interventionAspectDetails = computed(() => {
-  const answer102 = answers.value[102];
-  if (typeof answer102 !== "object" || !answer102.selectedOption) {
-    return null;
+// const interventionAspectDetails = computed(() => {
+//   const answer102 = answers.value[102];
+//   if (typeof answer102 !== "object" || !answer102.selectedOption) {
+//     return null;
+//   }
+//   const selectedOption = answer102.selectedOption;
+//   if (selectedOption.startsWith("Yes")) {
+//     return routeDefinitions["Intervention_Yes"];
+//   } else if (selectedOption.startsWith("No")) {
+//     return routeDefinitions["Intervention_No"];
+//   } else if (selectedOption.startsWith("Uncertain")) {
+//     return routeDefinitions["Intervention_Uncertain"];
+//   }
+//   return null;
+// });
+
+const dynamicInterventionAspect = computed(() => {
+    const answer102 = answers.value[102];
+    const answer103 = answers.value[103];
+
+    if (!answer102 || !answer103) return null;
+
+    let a2_intro = 'According to your research data, ';
+    let a2_main = '';
+    let a2_bullets: string[] = [];
+    
+    const a2_key = (typeof answer102 === 'object' && answer102.selectedOption) 
+      ? answer102.selectedOption 
+      : String(answer102);
+    
+    const a3_key = (typeof answer103 === 'object' && answer103.selectedOption) 
+      ? answer103.selectedOption 
+      : String(answer103);
+
+    if (a2_key.startsWith('Yes')) {
+        a2_main = 'a molecular intervention is known to achieve remission by targeting to originating cell:';
+        a2_bullets = [
+            'A single intervention achieves >80% remission',
+            'There is no contradiction in treatment response',
+            'The treatment is known to act on the originating cell or its direct signalling pathway',
+        ];
+    } else if (a2_key.startsWith('No')) {
+        a2_main = 'a single intervention fails to induce true remission.';
+    } else if (a2_key.startsWith('Uncertain')) {
+        a2_main = 'it is not clear whether remission occurs across all clinical variants.';
+    }
+
+    const a3_intro = 'Published/public reports also show the remission rate of: ';
+    const a3_main = getCleanOptionLabel(a3_key) + '.';
+
+    return { a2_intro, a2_main, a2_bullets, a3_intro, a3_main };
+});
+
+// ADD THIS NEW COMPUTED PROPERTY
+const dynamicDiseaseAspect = computed(() => {
+  const answer201 = answers.value[201];
+  const answer202 = answers.value[202];
+  const answer203 = answers.value[203];
+  const answer204 = answers.value[204];
+
+  // Helper function to get the key from a simple answer
+  const getAnswerKey = (answer: any): string => {
+    if (!answer) return "";
+    return typeof answer === 'object' && answer.selectedOption 
+      ? answer.selectedOption 
+      : String(answer);
+  };
+  
+  // Helper function to get the crit count for B-2 and B-4
+  const getCritCount = (answer: any, questionId: number): number => {
+    const q = getQuestionById2(questionId);
+    if (!q || !answer || typeof answer !== 'object' || !answer.inlineText || !q.options) return 0;
+    const optionIndex = q.options.findIndex(opt => opt === answer.selectedOption);
+    if (optionIndex === -1) return 0;
+    const count = answer.inlineText[`${q.id}-${optionIndex}-select`];
+    return Number(count) || 0;
+  };
+
+  // --- Process B-1 Answer ---
+  let b1_main = '';
+  let b1_bullets: string[] = [];
+  const key201 = getAnswerKey(answer201);
+
+  if (key201.startsWith('Yes, both staging and typing')) {
+    b1_main = 'The disease shows both molecular types and stages.';
+    b1_bullets = ['More than one type of lesion, all lesion types arise from the same upstream signal and those lesions also change over time.'];
+  } else if (key201.startsWith('Yes, only staging.')) {
+    const subSelection = answer201.subs?.[getCleanOptionLabel(key201)];
+    if (subSelection?.startsWith('Have 2 stages')) {
+      b1_main = 'Disease evolves through two molecular stages e.g. early vs. late.';
+      b1_bullets = ['Each stage involves the same core signal and triggers', 'Example: Acute → chronic switch, early → fibrotic lesion'];
+    } else if (subSelection?.startsWith('Have more than 2 stages')) {
+      b1_main = 'Several- Molecular Staging or Branching Model.';
+      b1_bullets = ['Disease progresses through more than two molecular stages or lesions may branch into different paths.'];
+    }
+  } else if (key201.startsWith('Yes, only typing')) {
+    b1_main = 'All lesion types arise from the same upstream signal, suggesting unified origin despite clinical variation.';
+    b1_bullets = ['Disease contains molecular types, each triggered by a distinct signal, but originating from the same cell types'];
+  } else if (key201.startsWith('No staging and no typing')) {
+    b1_main = 'The treatment fails to induce full remission, but this failure cannot be attributed to known subtypes, stages, or diverging lesion types.';
   }
-  const selectedOption = answer102.selectedOption;
-  if (selectedOption.startsWith("Yes")) {
-    return routeDefinitions["Intervention_Yes"];
-  } else if (selectedOption.startsWith("No")) {
-    return routeDefinitions["Intervention_No"];
-  } else if (selectedOption.startsWith("Uncertain")) {
-    return routeDefinitions["Intervention_Uncertain"];
+
+  // --- Process B-3 Answer ---
+  let b3_main = '';
+  const key203 = getAnswerKey(answer203);
+  if (key203.startsWith('No')) {
+    b3_main = 'There is no clear contradiction in lesion behavior or treatment response. This suggests the disease is likely driven by an explicit, single-axis core mechanism.';
+  } else {
+    b3_main = 'N/A';
   }
-  return null;
+
+  // --- Process B-2 Answer ---
+  const b2_count = getCritCount(answer202, 202);
+  let b2_imply = 'N/A';
+  const key202 = getAnswerKey(answer202);
+  if (key202.startsWith('Yes')) {
+    if (b2_count <= 2) {
+      b2_imply = 'Only one originating cell is responsible for disease initiation';
+    } else {
+      b2_imply = 'More than one cell type contributes to the disease process';
+    }
+  }
+
+  // --- Process B-4 Answer ---
+  const b4_count = getCritCount(answer204, 204);
+  let b4_imply = 'N/A';
+  const key204 = getAnswerKey(answer204);
+  if (key204.startsWith('Yes')) {
+    if (b4_count <= 2) {
+      b4_imply = 'Only one originating cell is responsible for disease initiation';
+    } else {
+      b4_imply = 'More than one cell type contributes to the disease process';
+    }
+  } else if (key204.startsWith('Not yet')) {
+    b4_imply = 'Remission criteria for this disease have not yet been clearly defined, either clinically or molecularly. Further research is required to establish measurable remission endpoints.';
+  } else if (key204.startsWith('Not possible')) {
+    b4_imply = 'Remission is considered not possible to achieve for this disease, as no clinical or molecular framework exists to support remission assessment. The disease may currently only be managed in terms of symptom control or progression delay, but not true (molecular) remission.';
+  }
+  
+  return {
+    b1_main, b1_bullets,
+    b3_main,
+    b2_count, b2_imply,
+    b4_count, b4_imply
+  };
 });
 
 const suggestedRouteDetails = computed(() => {
@@ -1203,56 +1334,76 @@ const countTotalFiles = (answer: any): number => {
             Route of Suggestion
           </h3>
 
-          <div
-            v-for="route in suggestedRouteDetails"
-            :key="route.route"
-            class="route-item"
-            style="margin-left: 16px; margin-bottom: 20px"
-          >
-            <h4 class="route-title">
-              <span class="final-route-text">{{ route.route }}</span>
-              <span
-                style="
-                  font-weight: 200;
-                  font-style: italic;
-                  font-size: 1.1rem;
-                  color: #333;
-                  margin-left: 10px;
-                "
-              >
-                : {{ route.title }}
-              </span>
-            </h4>
+          <div v-if="suggestedRoutes.length > 0" class="route-suggestion-container" style="margin-left: 10px">
+  <!-- <h3 class="route-suggestion-header page-break-before" style="margin-bottom: 20px">
+    Route of Suggestion
+  </h3> -->
 
-            <div
-              v-if="interventionAspectDetails?.interventionAspect"
-              class="aspect-section"
-            >
-              <h5 class="aspect-title">Intervention Aspect</h5>
-              <ul class="route-description">
-                <li
-                  v-for="(
-                    aspect, i
-                  ) in interventionAspectDetails.interventionAspect"
-                  :key="i"
-                >
-                  {{ aspect }}
-                </li>
-              </ul>
-            </div>
+  <div v-for="route in suggestedRouteDetails" :key="route.route" class="route-item" style="margin-left: 16px; margin-bottom: 20px">
+    <h4 class="route-title">
+      <span class="final-route-text">{{ route.route }}</span>
+      <span style="font-weight: 200; font-style: italic; font-size: 1.1rem; color: #333; margin-left: 10px;">
+        : {{ route.title }}
+      </span>
+    </h4>
 
-            <div
-              v-if="route.diseaseAspect && route.diseaseAspect.length > 0"
-              class="aspect-section"
-            >
-              <h5 class="aspect-title">Disease Aspect</h5>
-              <ul class="route-description">
-                <li v-for="(aspect, i) in route.diseaseAspect" :key="i">
-                  {{ aspect }}
-                </li>
-              </ul>
+<div v-if="dynamicInterventionAspect" class="aspect-section">
+  <h5 class="aspect-title" style="margin-bottom:8px;">Intervention Aspect</h5>
+  <div class="route-description" style="margin-left:1.5rem;">
+    <p>
+      {{ dynamicInterventionAspect.a2_intro }}
+      <span class="dynamic-answer">{{ dynamicInterventionAspect.a2_main }}</span>
+    </p>
+    <ol v-if="dynamicInterventionAspect.a2_bullets.length > 0">
+      <li v-for="(aspect, i) in dynamicInterventionAspect.a2_bullets" :key="i">
+        {{ aspect }}
+      </li>
+    </ol>
+    <p>
+      {{ dynamicInterventionAspect.a3_intro }}
+      <span class="dynamic-answer">{{ dynamicInterventionAspect.a3_main }}</span>
+    </p>
+  </div>
+</div>
+    <div v-if="dynamicDiseaseAspect" class="aspect-section">
+  <h5 class="aspect-title">Disease Aspect</h5>
+  <div class="route-description" style="margin-left:1.5rem;">
+    <ul>
+      <li style="margin-bottom: 8px;">
+        Staging and/or typing classification:
+        <span class="dynamic-answer">{{ dynamicDiseaseAspect.b1_main }}</span>
+        <ul v-if="dynamicDiseaseAspect.b1_bullets.length > 0">
+          <li v-for="(bullet, i) in dynamicDiseaseAspect.b1_bullets" :key="i">{{ bullet }}</li>
+        </ul>
+      </li>
+      <li  style="margin-bottom: 8px;">
+        Contradictory response or progression: Considering whether there is any contradictory response or contradiction in the natural progression of the disease, which may be inferred as evidence of more than one or different molecular mechanism within the disease:
+        <span class="dynamic-answer">{{ dynamicDiseaseAspect.b3_main }}</span>
+      </li>
+      <li style="margin-bottom: 8px;">
+        The number of cells involved in the studied disease can be inferred from diagnostic/remission criteria: more complex (many) criteria indicate multiple cell involvement.
+        <ul style="list-style-type: circle; margin-top: 0.5rem;">
+          <li>
+            Number of the studied disease’s diagnostic criteria:
+            <span class="dynamic-answer">{{ dynamicDiseaseAspect.b2_count }}</span>
+            <div style="padding-left: 1.5rem;">
+              Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b2_imply }}</span>
             </div>
-          </div>
+          </li>
+           <li>
+            Number of the studied disease’s remission criteria:
+            <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_count }}</span>
+            <div style="padding-left: 1.5rem;">
+              Usually imply: <span class="dynamic-answer">{{ dynamicDiseaseAspect.b4_imply }}</span>
+            </div>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</div>
+    </div>
+</div>
         </div>
       </div>
       <div class="questionnaire page-break-before">
@@ -2263,5 +2414,10 @@ const countTotalFiles = (answer: any): number => {
   list-style-type: circle;
   font-style: italic;
   color: #555;
+}
+
+.dynamic-answer {
+  font-style: italic;
+  color: #555; /* A standard grey color */
 }
 </style>

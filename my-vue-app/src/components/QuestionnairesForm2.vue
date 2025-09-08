@@ -597,11 +597,15 @@ if (q.id === 207) {
       }
       
       // Rule 4: If "Inflammation" is selected, its sub-option must be chosen.
-      if (levelData.mechanisms.includes('Inflammation||sub')) {
-        if (!levelData.subs || !levelData.subs['Inflammation']) {
-          return true;
-        }
-      }
+ if (levelData.mechanisms.includes('Inflammation||sub')) {
+  const inflammationSubs = levelData.subs?.['Inflammation'];
+  
+  // WHY: This is the new, more specific check.
+  // It ensures the sub-selection is an array AND has at least one item.
+  if (!inflammationSubs || !Array.isArray(inflammationSubs) || inflammationSubs.length === 0) {
+    return true;
+  }
+}
     }
     
     // If all rules pass for all selected levels, the button is enabled.
@@ -2020,122 +2024,6 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
             </div>
           </div>
         </div>
-        <!-- <div
-          v-else-if="currentQuestion.type === 'checkbox'"
-          class="checkbox-group"
-          :data-question-id="currentQuestion.id"
-        >
-          <div
-            v-for="(option, index) in currentQuestion.options"
-            :key="index"
-            class="checkbox-option-container"
-          >
-            <h4 v-if="index === 0" class="option-group-title">
-              Site of Disease Development
-            </h4>
-            <h4
-              v-if="
-                parseOption(option).type === 'checkbox' &&
-                index > 0 &&
-                currentQuestion?.options?.[index - 1] &&
-                parseOption(currentQuestion.options[index - 1]).type === 'radio'
-              "
-              class="option-group-title"
-            >
-              Pathogenesis Mechanisms
-            </h4>
-            <div class="checkbox-option">
-              <template v-if="currentQuestion.id === 207 && answers[207]">
-                <div class="option-item">
-                  <input
-                    v-if="parseOption(option).type === 'radio'"
-                    type="radio"
-                    :name="'q207-radio-group-' + parseOption(option).group"
-                    :value="parseOption(option).label"
-                    v-model="answers[207].radioSelection"
-                    class="radio-input"
-                  />
-                  <input
-                    v-else
-                    type="checkbox"
-                    :value="parseOption(option).label"
-                    v-model="answers[207].checkboxes"
-                    class="checkbox-input"
-                  />
-
-                  <label class="checkbox-label inline-input-label">
-                    <span
-                      v-for="(part, partIndex) in parseOption(
-                        option
-                      ).label.split('___')"
-                      :key="partIndex"
-                    >
-                      {{ part.split("||")[0] }}
-                      <DynamicInlineInput
-                        v-if="
-                          partIndex <
-                          parseOption(option).label.split('___').length - 1
-                        "
-                        v-model="
-                          answers[207].inlineText[`207-${index}-${partIndex}`]
-                        "
-                        :disabled="
-                          (parseOption(option).type === 'radio' &&
-                            answers[207].radioSelection !==
-                              parseOption(option).label) ||
-                          (parseOption(option).type === 'checkbox' &&
-                            !answers[207].checkboxes.includes(
-                              parseOption(option).label
-                            ))
-                        "
-                        @click.stop
-                      />
-                    </span>
-                  </label>
-                </div>
-              </template>
-
-              <template v-else>
-                <div class="option-item">
-                  <input
-                    type="checkbox"
-                    :value="option"
-                    v-model="checkboxModel"
-                    class="checkbox-input"
-                  />
-                  <label class="checkbox-label">{{
-                    option.split("||")[0]
-                  }}</label>
-                </div>
-              </template>
-            </div>
-
-            <div
-              v-if="
-                currentQuestion.id === 207 &&
-                parseOption(option).label === 'Inflammation||sub' &&
-                answers[207]?.checkboxes.includes('Inflammation||sub')
-              "
-              class="sub-options-panel"
-            >
-              <div
-                v-for="subOpt in currentQuestion.subOptions?.['Inflammation'] ||
-                []"
-                :key="subOpt"
-                class="sub-option"
-              >
-                <input
-                  type="radio"
-                  name="q207-inflammation-sub"
-                  :value="subOpt"
-                  v-model="answers[207].subs['Inflammation']"
-                  class="radio-input"
-                />
-                <label class="radio-label">{{ subOpt }}</label>
-              </div>
-            </div>
-          </div>
-        </div> -->
         <div
           v-else-if="currentQuestion.type === 'checkbox'"
           class="checkbox-group"
