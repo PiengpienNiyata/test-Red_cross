@@ -1819,6 +1819,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                           getCleanOptionLabel(option)
                         ]
                       "
+                      
                     />
                     <input
                       v-else
@@ -1829,6 +1830,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                           getCleanOptionLabel(option)
                         ]
                       "
+
                     />
 
                     <label class="radio-label inline-input-label">
@@ -2044,6 +2046,9 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                   :checked="answers[207] && answers[207][levelOpt]"
                   @change="handleLevelSelection(levelOpt, $event)"
                   class="checkbox-input"
+                                                   style="margin-top: 12px"           
+           
+
                 />
                 <!-- <label class="checkbox-label inline-input-label">
                   <span>{{ levelOpt.split("___")[0] }}</span>
@@ -2090,6 +2095,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                       :value="mechOpt"
                       v-model="answers[207][levelOpt].mechanisms"
                       class="checkbox-input"
+                      style="margin-top: 6px"
                     />
                     <label class="checkbox-label inline-input-label">
                       {{ getCleanOptionLabel(mechOpt.split("___")[0]) }}
@@ -2129,6 +2135,8 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
                         :value="subOpt"
                         v-model="answers[207][levelOpt].subs['Inflammation']"
                         class="checkbox-input"
+                                              
+
                       />
                       <label class="checkbox-label">{{ subOpt }}</label>
                     </div>
@@ -2497,7 +2505,7 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
 .checkbox-input {
   accent-color: #eb4648;
   cursor: pointer;
-  margin-top: 12px;
+  /* margin-top: 12px; */
 }
 
 .radio-input{

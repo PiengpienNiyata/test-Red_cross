@@ -1335,9 +1335,7 @@ const countTotalFiles = (answer: any): number => {
           </h3>
 
           <div v-if="suggestedRoutes.length > 0" class="route-suggestion-container" style="margin-left: 10px">
-  <!-- <h3 class="route-suggestion-header page-break-before" style="margin-bottom: 20px">
-    Route of Suggestion
-  </h3> -->
+
 
   <div v-for="route in suggestedRouteDetails" :key="route.route" class="route-item" style="margin-left: 16px; margin-bottom: 20px">
     <h4 class="route-title">
