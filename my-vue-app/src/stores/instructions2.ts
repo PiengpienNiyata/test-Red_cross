@@ -3,7 +3,10 @@ export const instructions: Record<number, string> = {
   102: `• Indicate whether the expected remission efficiency of the designated intervention according to your research data is approximately 80%.`,
   103: `• Provide any reported remission efficacy of the intervention.`,
   104: `• Provide evidence suggesting that the selected treatment/intervention is effective across all clinical types of the disease—supporting the hypothesis that these types share a common molecular pathway, and differ only by initial triggers(s).`,
-  105: `• Evaluate whether the response time of the intervention is significantly shorter than the natural resolution time.`,
+  105: `• Evaluate whether the clinical response time of the intervention (e.g., disappearance of specific lesions, signs, or symptoms) is significantly shorter than the natural resolution time without intervention.
+  If the disease has multiple stages (or lesion types), and some respond rapidly to the intervention, you may answer “Yes” and attach your explanation/reference.
+  By answering “Yes,” this question can be used to explore whether that particular stage/type can be traced back to a specific originating cell or signaling event.
+  This question supports deduction of several cell types of which may help to determine originating cell type.`,
   201: `• Before answering, refer to the glossary on “Molecular Stages” and “Molecular Types.” If more than one cell type contributes to disease development, consider whether their involvement reflects a disease progression (molecular stages), a trigger-specific differentiation (molecular types), or neither.`,
   202: `• Refer to the answer from A-4. Please state the diagnostic criteria used for the studied disease. If the chosen intervention from publications or reports is likely to induce remission, you may also state those reported diagnostic criteria.`,
   203: `• If the disease involves both molecular stages and types (see B-1), do any contradictions exist in their natural courses? For example, do some lesions appear self-limiting while others are progressive? If such contradictions exist, consider whether the disease should be separated into distinct conditions and revise your answers accordingly.`,

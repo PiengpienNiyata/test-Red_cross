@@ -21,6 +21,9 @@ const isCancelling = ref(false);
 const showCancelSuccessModal = ref(false);
 const showCancelErrorModal = ref(false);
 
+  const isRouteB = computed(() => {
+  return store.suggestedRoutes.includes("Route B");
+});
 const {
   answers,
   suggestedRoutes,
@@ -40,6 +43,8 @@ const exportToPdf = () => {
       "Project Name (answer 1002) is not available for the PDF filename."
     );
   }
+
+
 
   const options = {
     margin: [0.75, 0.5, 0.5, 0.7],
@@ -479,49 +484,49 @@ const startNewSurvey = () => {
   router.push("/");
 };
 
-// const summaryStep2 = computed(() => {
-//   const answer201 = answers.value[201];
-//   const answer202 = answers.value[202];
+const summaryStep2 = computed(() => {
+  const answer201 = answers.value[201];
+  const answer202 = answers.value[202];
 
-//   const q201 = getQuestionById2(201);
-//   const q202 = getQuestionById2(202);
+  const q201 = getQuestionById2(201);
+  const q202 = getQuestionById2(202);
 
-//   if (!answer201 || !answer202 || !q201 || !q202) {
-//     return null;
-//   }
+  if (!answer201 || !answer202 || !q201 || !q202) {
+    return null;
+  }
 
-//   let stagingTypingDesc = "";
-//   if (typeof answer201 === "string") {
-//     if (answer201.startsWith("Yes, both staging and typing")) {
-//       const ref = answer201.split("ref : ")[1] || "not specified";
-//       stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
-//     } else if (answer201 === "Yes, staging only.") {
-//       const answer201_5 = answers.value[201.5] || "details not provided";
-//       stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
-//     } else if (answer201.startsWith("Yes, typing only.")) {
-//       const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
-//       stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
-//     } else if (answer201 === "No") {
-//       stagingTypingDesc = "that there are no staging or typing classifications";
-//     } else if (answer201 === "Uncertain") {
-//       stagingTypingDesc =
-//         "that it is uncertain if staging or typing classifications exist";
-//     }
-//   }
+  let stagingTypingDesc = "";
+  if (typeof answer201 === "string") {
+    if (answer201.startsWith("Yes, both staging and typing")) {
+      const ref = answer201.split("ref : ")[1] || "not specified";
+      stagingTypingDesc = `that there is both staging and typing (ref: <span class="dynamic-text">${ref}</span>)`;
+    } else if (answer201 === "Yes, staging only.") {
+      const answer201_5 = answers.value[201.5] || "details not provided";
+      stagingTypingDesc = `that there is staging only, specifically: "<em>${answer201_5}</em>"`;
+    } else if (answer201.startsWith("Yes, typing only.")) {
+      const typing = answer201.split(": ")[1]?.slice(0, -1) || "not specified";
+      stagingTypingDesc = `that there is typing only, defined as: "<em>${typing}</em>"`;
+    } else if (answer201 === "No") {
+      stagingTypingDesc = "that there are no staging or typing classifications";
+    } else if (answer201 === "Uncertain") {
+      stagingTypingDesc =
+        "that it is uncertain if staging or typing classifications exist";
+    }
+  }
 
-//   let criteriaDesc = "";
-//   if (typeof answer202 === "string") {
-//     if (answer202.startsWith("Yes")) {
-//       const criteriaText =
-//         answer202.split(": ")[1]?.slice(0, -1) || "not provided";
-//       criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
-//     } else {
-//       criteriaDesc = "you do not have defined diagnostic criteria";
-//     }
-//   }
+  let criteriaDesc = "";
+  if (typeof answer202 === "string") {
+    if (answer202.startsWith("Yes")) {
+      const criteriaText =
+        answer202.split(": ")[1]?.slice(0, -1) || "not provided";
+      criteriaDesc = `you have defined criteria ("<em>${criteriaText}</em>")`;
+    } else {
+      criteriaDesc = "you do not have defined diagnostic criteria";
+    }
+  }
 
-//   return `From your response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
-// });
+  return `From your response to question - "<em>${q202.question}</em>", where ${criteriaDesc}, these are compared with the disease's classifications from question - "<em>${q201.question}</em>" (in which you indicated ${stagingTypingDesc}). Based on this comparison, the originating cell type is identified as <span class="dynamic-text">N/A</span>.`;
+});
 
 // const summaryStep3 = computed(() => {
 //   const answer101 = answers.value[101];
@@ -674,7 +679,7 @@ const summaryParagraphs = computed(() => {
       break;
 
     case "Route B":
-      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2 or B-4) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
+      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
         "Therefore, the investigation logically proceeds via Route B to define this single-cell mechanism.",
         "Route B"
       )}`;
@@ -692,7 +697,7 @@ const summaryParagraphs = computed(() => {
     case "Route F":
     case "Route G":
     case "Route H":
-      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2 and B-4), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
+      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
       let specificReason = "";
 
       const ans201 = store.answers[201];
@@ -998,9 +1003,9 @@ const handleCancelProject = async () => {
 
         <div style="margin-left: 30px; margin-right: 30px">
           <div class="summary-item">
-            <span class="summary-bullet">•</span> -->
+            <span class="summary-bullet">•</span>
 
-        <!-- <div v-if="summaryStep2" class="summary-text-content">
+        <div v-if="summaryStep2" class="summary-text-content">
             <span v-html="summaryStep2"></span>
           </div>
           <div v-else class="summary-text-content">
@@ -1008,14 +1013,14 @@ const handleCancelProject = async () => {
               (Answer questions 201 and 202 to generate this section.)
             </span>
           </div> -->
-        <!--           
-            <div class="summary-text-content">
+                  
+            <!-- <div class="summary-text-content">
               <span style="color: red"
                 >N/A (Insufficient data. <br />Need : originating cell type
                 identifier)</span
               >
-            </div>
-          </div>
+            </div> -->
+          <!-- </div>
         </div> -->
 
         <!-- <h1
@@ -1161,7 +1166,23 @@ const handleCancelProject = async () => {
           </div>
         </div>
       </div>
+<div v-if="isRouteB" class="preamble-inline">
+  <div class="preamble-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" /></svg>
+  </div>
+  <div class="preamble-text-group">
+    <strong>Note for Route B</strong>
+    <p>If your disease is showing up here but you know from research that it usually involves multiple cells or has diverse clinical features, this likely means your diagnostic or remission criteria were written too narrowly.</p>
+    <p style="margin-top: 1rem; margin-bottom: 0;"><strong>Please go back and:</strong></p>
+    <ul>
+      <li>Re-check your diagnostic criteria – complex, multi–cell type diseases usually require more than 2 key features to define, because different cell types contribute to different symptoms.</li>
+      <li>Re-check your remission criteria – durable remission in complex diseases typically requires controlling several pathways or cell types, not just one.</li>
+    </ul>
+  </div>
+</div>
 
+<div v-if="suggestedRoutes.length > 0" class="route-suggestion-container">
+  </div>
       <div v-if="hasNonsenseStagingTyping" class="preamble-inline">
         <div class="preamble-icon">
           <svg

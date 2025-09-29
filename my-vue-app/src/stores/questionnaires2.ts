@@ -66,6 +66,7 @@ export const questionnaireData: Questionnaire2[] = [
               "Close to 80% efficiency",
               "Much less than 80% efficiency",
               "Uncertain",
+              "No available molecular remission data",
             ],
             next: {
               all: 104,
@@ -75,7 +76,7 @@ export const questionnaireData: Questionnaire2[] = [
             id: 104,
             type: "radio",
             question:
-              "A-4: Are there any evidence from the intervention implying that all the type of disease share the same pathway with distinct triggers? (See Glossary: “Molecular types of the disease”)",
+              "A-4: Are there any evidence from the intervention suggesting that all the reported or clinically recognized “types” of the disease share a common molecular pathway, but are triggered by distinct factors? (See Glossary: “Molecular types of the disease”)",
             options: ["Yes (insert citation of the reference)||files", "No"],
             next: {
               all: 105,
@@ -243,6 +244,7 @@ export const questionnaireData: Questionnaire2[] = [
       "Innate -acquired immunity",
       "Auto antibody (cGAS auto inflammation)",
       "Inflammaging",
+      "Inflammasome",
     ],
   },
   next: {

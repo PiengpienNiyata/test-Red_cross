@@ -85,12 +85,21 @@ const preambleData: Record<number, string[]> = {
   201: ["Molecular Stages / Types"],
   203: ["Contradiction"],
   204: ["Remission", "True Remission", "Unstable Remission"],
-  205: ["True Remission"],
+  205: ["Remission", "True Remission", "Unstable Remission"],
   206: [
     "Molecular Clinico-Pathological Cascade (Molecular Cascade)",
     "Autocrine Signaling",
     "Paracrine Signaling",
-    "Endocrine Signaling"
+    "Endocrine Signaling",
+  ],
+  207: [
+    "DAMP (Damage-Associated Molecular Pattern)",
+    "Innate–Acquired (Mixed Term)",
+    "cGAS–STING Pathway",
+    "Inflammaging",
+    "Dysdifferentiation",
+    "Ecological and Environmental Factors",
+    "Inflammasome",
   ],
 };
 
@@ -1550,13 +1559,13 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
     </div>
   <div class="preamble-text-group">
     <div
-      v-for="item in currentPreamble"
-      :key="item.term"
-      class="preamble-item"
-    >
-      <strong style="margin-top: 4px;">{{ item.term }}:</strong>
-      <div v-html="item.definition" style="margin-left:1.5rem; margin-bottom: 4px;"></div>
-    </div>
+  v-for="item in currentPreamble"
+  :key="item.term"
+  class="preamble-item"
+>
+  <strong style="margin-top: 4px;">{{ item.term }}:</strong>
+  <div v-html="item.definition" style="margin-left:1.5rem; margin-bottom: 4px;"></div>
+</div>
   </div>
 </div>
 
@@ -2949,5 +2958,9 @@ const handleLevelSelection = (levelOption: string, event: Event) => {
 
 .dynamic-input{
   margin-top: 0 !important;
+}
+
+.preamble-item:not(:last-child) {
+  margin-bottom: 1rem; /* Or any spacing you prefer */
 }
 </style>

@@ -704,7 +704,7 @@ const summaryParagraphs = computed(() => {
       )}`;
       break;
     case "Route B":
-      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2 or B-4) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
+      justificationText = `The provided answers indicate that ${diseaseName} is defined by a limited number of diagnostic criteria (Question B-2) and does not meet the high-remission evidence required for Route A. This suggests a pathogenesis likely driven by a single cell type. ${buildDecisionSentence(
         "Therefore, the investigation logically proceeds via Route B to define this single-cell mechanism.",
         "Route B"
       )}`;
@@ -720,7 +720,7 @@ const summaryParagraphs = computed(() => {
     case "Route F":
     case "Route G":
     case "Route H":
-      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2 and B-4), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
+      let intro = `The responses indicate a complex pathogenesis, as supported by a high number of diagnostic criteria (Question B-2), a lack of contradictions (Question B-3), and the absence of a known high-remission therapy (Question A-2/A-3). The specific path forward is determined by the disease's classification: `;
       let specificReason = "";
       if (finalRoute === "Route D") {
         specificReason = `Given the absence of defined staging or typing (Question B-1), the appropriate path is ${buildDecisionSentence(

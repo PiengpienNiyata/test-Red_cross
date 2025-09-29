@@ -19,7 +19,9 @@ const showCancelSuccessModal = ref(false);
 const showCancelErrorModal = ref(false);
 
 // Add these interfaces at the top of your <script setup> block
-
+const isRouteB = computed(() => {
+  return store.suggestedRoutes.includes("Route B");
+});
 interface Q207LevelData {
   inlineText?: string;
   mechanisms?: string[];
@@ -765,7 +767,7 @@ v-for="(levelData, levelName) in getQ207Answer(q.answer)"  :key="levelName"
         >
           <strong>Attached Files:</strong>
 
-          <template v-if="countTotalFiles(q.answer) > 0">
+          <template v-if= "countTotalFiles(q.answer) > 0">
             <ul>
               <template
                 v-for="(fileInfo, key) in (q.answer as any).fileData"
@@ -786,7 +788,7 @@ v-for="(levelData, levelName) in getQ207Answer(q.answer)"  :key="levelName"
 
                   <a
                     v-else-if="file instanceof File"
-                    :href="createObjectURL(file as File)"
+                    :href= "createObjectURL(file as File)"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -998,7 +1000,23 @@ v-for="(levelData, levelName) in getQ207Answer(q.answer)"  :key="levelName"
             </div>
           </div>
         </div>
+<div v-if="isRouteB" class="preamble-inline">
+  <div class="preamble-icon">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16"><path fill-rule="evenodd" d="M8 1.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 0 0 0-13M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.25-2.25a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5a.75.75 0 0 1 .75-.75M8 11a1 1 0 1 1 0-2a1 1 0 0 1 0 2" /></svg>
+  </div>
+  <div class="preamble-text-group">
+    <strong>Note for Route B</strong>
+    <p>If your disease is showing up here but you know from research that it usually involves multiple cells or has diverse clinical features, this likely means your diagnostic or remission criteria were written too narrowly.</p>
+    <p style="margin-top: 1rem; margin-bottom: 0;"><strong>Please go back and:</strong></p>
+    <ul>
+      <li>Re-check your diagnostic criteria – complex, multi–cell type diseases usually require more than 2 key features to define, because different cell types contribute to different symptoms.</li>
+      <li>Re-check your remission criteria – durable remission in complex diseases typically requires controlling several pathways or cell types, not just one.</li>
+    </ul>
+  </div>
+</div>
 
+<div v-if="suggestedRoutes.length > 0" class="route-suggestion-container">
+  </div>
         <div
           v-if="hasNonsenseContradiction && !isUnfinishedDraft"
           class="preamble-inline"

@@ -15,9 +15,11 @@
         </li>
       </ul>
 
-<h3>Step 2: Fill in the personal information</h3>
+<h3>Step 2: Fill in the general information</h3>
 
-<ul>
+<ul>  
+<li class="instruction-item"><span>Fill in the personal information</span></li>
+
   <template v-for="item in step2Instructions" :key="item.id">
     <li v-if="!item.isGroup" class="instruction-item">
       <span>{{ instructions1[item.id] }}</span>

@@ -1,10 +1,27 @@
 <template>
   <header class="header">
-    <div class="logo_bg">
+   
+    <div v-if="isQuestionnaire1" class="logo_bg">
+      <div class="logotxt">RESEARCHER</div>
+    </div>
+    <div v-else-if="isQuestionnaire2" class="logo_bg">
+      <div class="logotxt">RIRM</div>
+    </div>
+     <div v-else class="logo_bg">
       <img src="@/assets/LOGO_red_cross.png" alt="Logo" class="logo" />
     </div>
   </header>
 </template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useRoute, useRouter } from "vue-router";
+const route = useRoute();
+
+const isQuestionnaire1 = computed(() => route.path === "/questionnairesResearcher");
+const isQuestionnaire2 = computed(() => route.path === "/questionnairesResearcher2");
+
+</script>
 
 <style scoped>
 .header {
@@ -26,9 +43,18 @@
   align-items: center; 
 }
 
-.logo {
+.logo, .logotxt {
   width: 128px !important;
   height: 94px !important;
+}
+
+.logotxt {
+  display: flex;                /* use flexbox */
+  justify-content: center;      /* horizontal center */
+  align-items: center;          /* vertical center */
+
+  font-size: 24px;              /* increase size */
+  font-weight: 400;             /* bold */
 }
 
 </style>
