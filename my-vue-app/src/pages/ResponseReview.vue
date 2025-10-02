@@ -1825,7 +1825,7 @@ v-for="(levelData, levelName) in getQ207Answer(q.answer)"
         </button>
         <button @click="goToDashboard" class="dashboard-btn">Dashboard</button>
 
-        <template v-if="!currentRemark && isLatestVersion">
+        <template v-if="!currentRemark && isLatestVersion && store.currentStatus!== -1 && store.currentStatus!== -2 && store.currentStatus!== -5">
           <button @click="openModal('approve')" class="action-btn approve-btn">
             Approve
           </button>
